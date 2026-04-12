@@ -14,8 +14,11 @@ den perfekten Spielpartner im Umkreis finden können.
   - Entfernung in km
 - **⚠ Warn-Tags** wie „Leinenaggressiv", „Ängstlich bei großen Hunden", „Teilt kein Spielzeug"
 - **📍 Standort-Matching** mit einstellbarem Umkreis-Slider (1–50 km)
-- **🗺️ Treffpunkt-Karte** mit markierten hundefreundlichen Orten:
+- **🗺️ Echte interaktive Karte** (Leaflet + OpenStreetMap – beides
+  kommerziell frei nutzbar) mit Pan/Zoom, Umkreis-Visualisierung,
+  Geolocation-Button und markierten hundefreundlichen Orten:
   - Hundewiesen, eingezäunte Auslaufflächen, Hundecafés
+  - Hunde im Umkreis werden als Pfoten-Marker angezeigt
 - **💬 Chat** mit Auto-Antworten pro Match
 - **📅 Treffpunkt-Planer** – Ort, Datum und Uhrzeit direkt im Chat vereinbaren
 - **🐶 Eigenes Profil** bearbeiten (Name, Rasse, Alter, Größe, Spielstil, …)
@@ -56,6 +59,14 @@ auf Mobile per Touch.
 | `styles.css` | Komplettes Styling (mobile-first, Tinder-Look) |
 | `data.js`    | Dummy-Hundeprofile, Treffpunkte, B2B-Ads       |
 | `app.js`     | State-Management, Swipe-Logik, Matches, Chat   |
+
+## 📜 Lizenzen externer Abhängigkeiten
+
+- **[Leaflet](https://leafletjs.com/)** – BSD-2-Clause, kommerziell frei nutzbar
+- **[OpenStreetMap](https://www.openstreetmap.org/copyright)** Kartenkacheln – ODbL,
+  kommerziell frei nutzbar mit Attribution (im Kartenrand angezeigt)
+- **[Google Fonts – Nunito](https://fonts.google.com/specimen/Nunito)** – SIL Open Font License
+
 
 ## 🧪 Ausprobieren
 

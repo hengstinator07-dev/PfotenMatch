@@ -10,6 +10,7 @@ const state = {
     likedBy: [],        // wer hat MICH gelikt (für Premium)
     premium: false,
     radius: 10,
+    userLocation: { lat: 52.5170, lng: 13.3889 }, // Default: Berlin Mitte
     filters: { size: "", play: "", energy: "", breed: "" },
     myProfile: {
         name: "Bello", breed: "Labrador-Mix", age: 3,
@@ -30,7 +31,8 @@ function saveState() {
         localStorage.setItem("pfotenMatch", JSON.stringify({
             matches: state.matches.map(m => ({ id: m.profile.id, messages: m.messages })),
             premium: state.premium,
-            myProfile: state.myProfile
+            myProfile: state.myProfile,
+            userLocation: state.userLocation
         }));
     } catch (e) { /* ignore */ }
 }
@@ -42,6 +44,7 @@ function loadState() {
         const data = JSON.parse(raw);
         if (data.premium) state.premium = true;
         if (data.myProfile) Object.assign(state.myProfile, data.myProfile);
+        if (data.userLocation) state.userLocation = data.userLocation;
         if (Array.isArray(data.matches)) {
             state.matches = data.matches
                 .map(m => {
@@ -293,41 +296,89 @@ function sendMessage(text) {
     }, 900 + Math.random() * 800);
 }
 
-// ---------- Map ----------
+// ---------- Map (Leaflet + OpenStreetMap) ----------
+let leafletMap = null;
+let mapLayers = { spots: [], dogs: [], me: null };
+
+function buildEmojiIcon(emoji, size = 32) {
+    return L.divIcon({
+        className: "emoji-marker",
+        html: `<div class="emoji-pin" style="font-size:${size}px">${emoji}</div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size]
+    });
+}
+
 function renderMap() {
-    const canvas = $("#mapCanvas");
-    canvas.innerHTML = "";
-    // Me
-    const me = document.createElement("div");
-    me.className = "map-pin me";
-    me.textContent = "📍";
-    me.style.left = "50%";
-    me.style.top = "50%";
-    me.title = "Dein Standort";
-    canvas.appendChild(me);
+    const canvas = document.getElementById("mapCanvas");
+    if (typeof L === "undefined") {
+        canvas.innerHTML = '<p style="padding:20px;text-align:center;color:#888">Karte wird geladen…</p>';
+        setTimeout(renderMap, 300);
+        return;
+    }
+
+    if (!leafletMap) {
+        leafletMap = L.map(canvas, {
+            center: [state.userLocation.lat, state.userLocation.lng],
+            zoom: 13,
+            zoomControl: true,
+            attributionControl: true
+        });
+        // OpenStreetMap tiles – ODbL, kommerziell frei mit Attribution
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>-Mitwirkende'
+        }).addTo(leafletMap);
+    }
+
+    // Alte Marker entfernen
+    mapLayers.spots.forEach(m => leafletMap.removeLayer(m));
+    mapLayers.dogs.forEach(m => leafletMap.removeLayer(m));
+    if (mapLayers.me) leafletMap.removeLayer(mapLayers.me);
+    mapLayers.spots = [];
+    mapLayers.dogs = [];
+
+    // Eigener Standort
+    mapLayers.me = L.marker([state.userLocation.lat, state.userLocation.lng], {
+        icon: buildEmojiIcon("📍", 36),
+        title: "Dein Standort"
+    }).addTo(leafletMap).bindPopup("<strong>Du bist hier</strong>");
+
+    // Umkreis-Kreis
+    if (mapLayers.radius) leafletMap.removeLayer(mapLayers.radius);
+    mapLayers.radius = L.circle([state.userLocation.lat, state.userLocation.lng], {
+        radius: state.radius * 1000,
+        color: "#ff6b6b",
+        weight: 2,
+        fillColor: "#ff6b6b",
+        fillOpacity: 0.08
+    }).addTo(leafletMap);
+
     // Treffpunkte
     MEETING_SPOTS.forEach(s => {
-        const pin = document.createElement("div");
-        pin.className = "map-pin";
-        pin.textContent = s.icon;
-        pin.style.left = s.x + "%";
-        pin.style.top = s.y + "%";
-        pin.title = s.name;
-        pin.addEventListener("click", () => alert(`${s.icon} ${s.name}\n\n${s.desc}`));
-        canvas.appendChild(pin);
+        const marker = L.marker([s.lat, s.lng], {
+            icon: buildEmojiIcon(s.icon, 32),
+            title: s.name
+        }).addTo(leafletMap);
+        marker.bindPopup(`<strong>${s.icon} ${s.name}</strong><br>${s.desc}`);
+        mapLayers.spots.push(marker);
     });
-    // Hunde in Umkreis als kleine Pfoten
-    state.profiles.slice(0, 6).forEach(d => {
-        const pin = document.createElement("div");
-        pin.className = "map-pin";
-        pin.textContent = "🐾";
-        pin.style.left = d.x + "%";
-        pin.style.top = d.y + "%";
-        pin.style.fontSize = "18px";
-        pin.title = d.name;
-        canvas.appendChild(pin);
+
+    // Hunde im Umkreis
+    state.profiles.forEach(d => {
+        if (!d.lat || !d.lng) return;
+        const marker = L.marker([d.lat, d.lng], {
+            icon: buildEmojiIcon(d.emoji, 28),
+            title: d.name
+        }).addTo(leafletMap);
+        marker.bindPopup(`<strong>${d.name}</strong><br>${d.breed} · ${d.distance} km`);
+        mapLayers.dogs.push(marker);
     });
-    // Spot-Liste
+
+    // Map muss nach Sichtbarkeitswechsel neu berechnet werden
+    setTimeout(() => leafletMap.invalidateSize(), 50);
+
+    // Spot-Liste unterhalb
     const list = $("#spotList");
     list.innerHTML = "";
     MEETING_SPOTS.forEach(s => {
@@ -340,8 +391,28 @@ function renderMap() {
                 <p>${s.desc}</p>
             </div>
         `;
+        el.addEventListener("click", () => {
+            leafletMap.setView([s.lat, s.lng], 15);
+            mapLayers.spots.find(m => m.getLatLng().lat === s.lat)?.openPopup();
+        });
         list.appendChild(el);
     });
+}
+
+function locateUser() {
+    if (!navigator.geolocation) {
+        alert("Geolocation wird von deinem Browser nicht unterstützt.");
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            state.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            saveState();
+            renderMap();
+            if (leafletMap) leafletMap.setView([state.userLocation.lat, state.userLocation.lng], 14);
+        },
+        () => alert("Standort konnte nicht ermittelt werden.")
+    );
 }
 
 // ---------- Meeting planner ----------
@@ -470,7 +541,10 @@ function bindEvents() {
         state.radius = parseInt(e.target.value);
         $("#radiusLabel").textContent = state.radius;
         applyFilters();
+        if (leafletMap) renderMap();
     });
+    // Locate button
+    $("#locateBtn")?.addEventListener("click", locateUser);
     // Filter modal
     $("#openFiltersBtn").addEventListener("click", () => $("#filterModal").classList.remove("hidden"));
     $("#applyFilterBtn").addEventListener("click", () => {

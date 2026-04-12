@@ -2,6 +2,9 @@
    PfotenMatch – Dummy-Daten (Hundeprofile, Treffpunkte, Ads)
    ============================================================ */
 
+// Standard-Standort des Nutzers (Berlin Mitte als Demo)
+const DEFAULT_LOCATION = { lat: 52.5170, lng: 13.3889 };
+
 // Hundeprofile
 const DOG_PROFILES = [
     {
@@ -19,7 +22,7 @@ const DOG_PROFILES = [
         bio: "Ich liebe es, Bällen hinterherzujagen und im See zu schwimmen! Suche ausdauernde Spielkameraden.",
         distance: 1.2,
         owner: "Lisa",
-        x: 35, y: 40
+        lat: 52.5205, lng: 13.3750
     },
     {
         id: 2,
@@ -36,7 +39,7 @@ const DOG_PROFILES = [
         bio: "Eine kleine Diva mit Herz. Ich mag sanftes Spielen und gemütliche Schnüffeltouren.",
         distance: 0.8,
         owner: "Thomas",
-        x: 60, y: 55
+        lat: 52.5155, lng: 13.3950
     },
     {
         id: 3,
@@ -53,7 +56,7 @@ const DOG_PROFILES = [
         bio: "Ich bin ein sanfter Riese. Nach einer Stunde Spielen bin ich bereit für ein Nickerchen.",
         distance: 3.5,
         owner: "Sabine",
-        x: 20, y: 70
+        lat: 52.4950, lng: 13.3650
     },
     {
         id: 4,
@@ -70,7 +73,7 @@ const DOG_PROFILES = [
         bio: "Welpenenergie pur! Ich rangele gerne und brauche geduldige Freunde zum Austoben.",
         distance: 2.1,
         owner: "Max",
-        x: 75, y: 30
+        lat: 52.5280, lng: 13.4100
     },
     {
         id: 5,
@@ -87,7 +90,7 @@ const DOG_PROFILES = [
         bio: "Frisbee-Champion auf der Suche nach Trainingspartnern. Ich apportiere alles!",
         distance: 4.7,
         owner: "Julia",
-        x: 50, y: 20
+        lat: 52.5400, lng: 13.3900
     },
     {
         id: 6,
@@ -104,7 +107,7 @@ const DOG_PROFILES = [
         bio: "Im Freilauf ein Schmusebär, an der Leine manchmal kompliziert. Suche geduldige Pfoten.",
         distance: 1.9,
         owner: "Michael",
-        x: 30, y: 25
+        lat: 52.5240, lng: 13.3700
     },
     {
         id: 7,
@@ -121,7 +124,7 @@ const DOG_PROFILES = [
         bio: "Klein aber oho! Ich kann mit den ganz Großen mithalten – wenn sie sanft spielen.",
         distance: 6.3,
         owner: "Anna",
-        x: 80, y: 65
+        lat: 52.4800, lng: 13.4400
     },
     {
         id: 8,
@@ -138,7 +141,7 @@ const DOG_PROFILES = [
         bio: "Schnee, Wald, Berge – ich will sie alle! Suche abenteuerlustige Freunde.",
         distance: 8.1,
         owner: "Stefan",
-        x: 15, y: 50
+        lat: 52.5600, lng: 13.3200
     },
     {
         id: 9,
@@ -155,7 +158,7 @@ const DOG_PROFILES = [
         bio: "Die ruhige Omi im besten Alter. Gemütlicher Plausch lieber als wildes Toben.",
         distance: 0.5,
         owner: "Claudia",
-        x: 65, y: 45
+        lat: 52.5180, lng: 13.3920
     },
     {
         id: 10,
@@ -172,18 +175,18 @@ const DOG_PROFILES = [
         bio: "Ich liebe Agility und lange Wanderungen. Immer für Abenteuer zu haben.",
         distance: 2.8,
         owner: "Peter",
-        x: 45, y: 75
+        lat: 52.5050, lng: 13.4050
     }
 ];
 
-// Hundefreundliche Treffpunkte
+// Hundefreundliche Treffpunkte (Demo-Koordinaten in Berlin)
 const MEETING_SPOTS = [
-    { id: 1, name: "Hundewiese am Stadtpark", type: "park",   icon: "🌳", desc: "Große freie Wiese, beliebt bei mittleren Hunden", x: 40, y: 35 },
-    { id: 2, name: "Eingezäunte Auslauffläche Ost", type: "fenced", icon: "🚧", desc: "Komplett eingezäunt, ideal für Welpen", x: 70, y: 60 },
-    { id: 3, name: "Waldlauf Nord", type: "park", icon: "🌲", desc: "Schöner Waldweg, Leinenpflicht", x: 25, y: 20 },
-    { id: 4, name: "Hundecafé ‚Pfote & Tasse'", type: "cafe", icon: "☕", desc: "Hundefreundliches Café mit Wassernapf", x: 55, y: 50 },
-    { id: 5, name: "Seeufer Süd", type: "park", icon: "🌊", desc: "Flacher Einstieg zum Planschen", x: 35, y: 80 },
-    { id: 6, name: "Agility-Platz Verein HSV", type: "fenced", icon: "🏅", desc: "Trainingsplatz, Mo–Fr ab 17 Uhr offen", x: 80, y: 25 }
+    { id: 1, name: "Hundewiese am Tiergarten",      type: "park",   icon: "🌳", desc: "Große freie Wiese, beliebt bei mittleren Hunden", lat: 52.5145, lng: 13.3501 },
+    { id: 2, name: "Eingezäunte Auslauffläche Ost", type: "fenced", icon: "🚧", desc: "Komplett eingezäunt, ideal für Welpen",          lat: 52.5220, lng: 13.4150 },
+    { id: 3, name: "Waldlauf Nord",                 type: "park",   icon: "🌲", desc: "Schöner Waldweg, Leinenpflicht",                  lat: 52.5450, lng: 13.3800 },
+    { id: 4, name: "Hundecafé 'Pfote & Tasse'",     type: "cafe",   icon: "☕", desc: "Hundefreundliches Café mit Wassernapf",           lat: 52.5180, lng: 13.3900 },
+    { id: 5, name: "Seeufer Süd",                   type: "park",   icon: "🌊", desc: "Flacher Einstieg zum Planschen",                  lat: 52.4900, lng: 13.3800 },
+    { id: 6, name: "Agility-Platz Verein HSV",      type: "fenced", icon: "🏅", desc: "Trainingsplatz, Mo–Fr ab 17 Uhr offen",           lat: 52.5300, lng: 13.4250 }
 ];
 
 // B2B-Werbung
