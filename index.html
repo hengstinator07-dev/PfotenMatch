@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#ff6b6b" />
+    <title>PfotenMatch – Finde den perfekten Spielkameraden</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+    <div id="app">
+        <!-- Top bar -->
+        <header class="topbar">
+            <div class="logo">
+                <span class="paw">🐾</span>
+                <span class="brand">PfotenMatch</span>
+            </div>
+            <button id="premiumBadge" class="premium-badge" title="Premium upgraden">
+                <span class="star">★</span> Premium
+            </button>
+        </header>
+
+        <!-- Main content area – views are swapped -->
+        <main id="views">
+
+            <!-- ============ SWIPE VIEW ============ -->
+            <section id="view-swipe" class="view active">
+                <div class="filter-bar">
+                    <label>
+                        Umkreis: <span id="radiusLabel">10</span> km
+                        <input type="range" id="radiusSlider" min="1" max="50" value="10" />
+                    </label>
+                    <button id="openFiltersBtn" class="btn-ghost">⚙ Filter</button>
+                </div>
+
+                <div id="cardStack" class="card-stack">
+                    <!-- cards injected here -->
+                </div>
+
+                <div class="action-bar">
+                    <button id="btnPass" class="action-btn pass" title="Nope">✕</button>
+                    <button id="btnSuper" class="action-btn super" title="Super-Like (Premium)">★</button>
+                    <button id="btnLike" class="action-btn like" title="Woof!">♥</button>
+                </div>
+            </section>
+
+            <!-- ============ MATCHES / CHAT VIEW ============ -->
+            <section id="view-matches" class="view">
+                <h2 class="view-title">Deine Matches</h2>
+                <div id="matchesList" class="matches-list">
+                    <p class="empty-state">Noch keine Matches – swipe los!</p>
+                </div>
+            </section>
+
+            <!-- ============ MAP VIEW ============ -->
+            <section id="view-map" class="view">
+                <h2 class="view-title">Hundefreundliche Treffpunkte</h2>
+                <div id="mapWrap" class="map-wrap">
+                    <div id="mapCanvas" class="map-canvas"></div>
+                    <div id="mapLegend" class="map-legend">
+                        <div><span class="dot park"></span> Hundewiese</div>
+                        <div><span class="dot fenced"></span> Eingezäunte Fläche</div>
+                        <div><span class="dot cafe"></span> Hundecafé</div>
+                        <div><span class="dot me"></span> Du</div>
+                    </div>
+                </div>
+                <div id="spotList" class="spot-list"></div>
+            </section>
+
+            <!-- ============ PROFILE VIEW ============ -->
+            <section id="view-profile" class="view">
+                <h2 class="view-title">Mein Hund</h2>
+                <form id="myProfileForm" class="profile-form">
+                    <div class="avatar-picker">
+                        <div class="avatar-preview" id="avatarPreview">🐕</div>
+                        <div class="avatar-options">
+                            <button type="button" data-emoji="🐕">🐕</button>
+                            <button type="button" data-emoji="🐶">🐶</button>
+                            <button type="button" data-emoji="🦮">🦮</button>
+                            <button type="button" data-emoji="🐩">🐩</button>
+                            <button type="button" data-emoji="🐕‍🦺">🐕‍🦺</button>
+                        </div>
+                    </div>
+                    <label>Name<input type="text" id="pfName" value="Bello" required /></label>
+                    <label>Rasse<input type="text" id="pfBreed" value="Labrador-Mix" /></label>
+                    <label>Alter (Jahre)<input type="number" id="pfAge" value="3" min="0" max="25" /></label>
+                    <label>Größe
+                        <select id="pfSize">
+                            <option>Klein (&lt;10kg)</option>
+                            <option selected>Mittel (10–25kg)</option>
+                            <option>Groß (25–40kg)</option>
+                            <option>Sehr groß (&gt;40kg)</option>
+                        </select>
+                    </label>
+                    <label>Kastriert
+                        <select id="pfNeutered">
+                            <option>Ja</option>
+                            <option selected>Nein</option>
+                        </select>
+                    </label>
+                    <label>Energielevel
+                        <select id="pfEnergy">
+                            <option>Couch-Potato 🛋️</option>
+                            <option selected>Ausgeglichen 🐾</option>
+                            <option>Duracell-Häschen ⚡</option>
+                        </select>
+                    </label>
+                    <label>Spielstil
+                        <select id="pfPlay">
+                            <option>Zurückhaltend 🤗</option>
+                            <option selected>Rennend 🏃</option>
+                            <option>Grob / Körperlich 🤼</option>
+                        </select>
+                    </label>
+                    <label>Warn-Tags (Kommas)
+                        <input type="text" id="pfTags" placeholder="z. B. Leinenaggressiv, Ängstlich bei großen Hunden" />
+                    </label>
+                    <label>Bio
+                        <textarea id="pfBio" rows="3" placeholder="Erzähl was über deinen Hund…">Liebt Stöckchen und Matschpfützen!</textarea>
+                    </label>
+                    <button type="submit" class="btn-primary">Profil speichern</button>
+                </form>
+            </section>
+
+        </main>
+
+        <!-- Bottom navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-view="swipe"><span>🐾</span>Swipe</button>
+            <button class="nav-btn" data-view="matches"><span>💬</span>Matches</button>
+            <button class="nav-btn" data-view="map"><span>📍</span>Karte</button>
+            <button class="nav-btn" data-view="profile"><span>🐶</span>Profil</button>
+        </nav>
+    </div>
+
+    <!-- ============ MODALS ============ -->
+
+    <!-- Match overlay -->
+    <div id="matchModal" class="modal hidden">
+        <div class="modal-content match-modal">
+            <h1 class="match-title">It's a Match! 🎉</h1>
+            <p id="matchText"></p>
+            <div class="match-avatars">
+                <div class="match-avatar" id="matchAvatarMine">🐕</div>
+                <div class="heart">♥</div>
+                <div class="match-avatar" id="matchAvatarOther">🐶</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="keepSwipingBtn">Weiter swipen</button>
+                <button class="btn-primary" id="sendMessageBtn">Nachricht senden</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat overlay -->
+    <div id="chatModal" class="modal hidden">
+        <div class="modal-content chat-modal">
+            <header class="chat-header">
+                <button id="chatBack" class="btn-ghost">←</button>
+                <div class="chat-title">
+                    <span id="chatAvatar" class="chat-avatar">🐶</span>
+                    <span id="chatName">Rex</span>
+                </div>
+            </header>
+            <div id="chatMessages" class="chat-messages"></div>
+            <form id="chatForm" class="chat-input">
+                <input type="text" id="chatInput" placeholder="Nachricht schreiben…" autocomplete="off" />
+                <button type="submit">➤</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Filter modal -->
+    <div id="filterModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Filter</h2>
+            <label>Größe
+                <select id="fSize">
+                    <option value="">Alle</option>
+                    <option>Klein</option><option>Mittel</option><option>Groß</option><option>Sehr groß</option>
+                </select>
+            </label>
+            <label>Spielstil
+                <select id="fPlay">
+                    <option value="">Alle</option>
+                    <option>Zurückhaltend</option>
+                    <option>Rennend</option>
+                    <option>Grob</option>
+                </select>
+            </label>
+            <label>Energielevel
+                <select id="fEnergy">
+                    <option value="">Alle</option>
+                    <option>Couch-Potato</option>
+                    <option>Ausgeglichen</option>
+                    <option>Duracell</option>
+                </select>
+            </label>
+            <label class="premium-only">
+                <span class="premium-tag">Premium</span>
+                Rasse enthält
+                <input type="text" id="fBreed" placeholder="z. B. Labrador" />
+            </label>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="resetFilterBtn">Zurücksetzen</button>
+                <button class="btn-primary" id="applyFilterBtn">Anwenden</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium modal -->
+    <div id="premiumModal" class="modal hidden">
+        <div class="modal-content premium-modal">
+            <h2>★ PfotenMatch Premium</h2>
+            <p class="lead">Mehr Pfoten, mehr Spielspaß.</p>
+            <ul class="premium-features">
+                <li>👀 Sieh, wer dein Profil gelikt hat</li>
+                <li>🎯 Erweiterte Filter (Rasse, Alter, Tags)</li>
+                <li>🥷 Unsichtbares Swipen</li>
+                <li>⭐ 5 Super-Likes pro Tag</li>
+                <li>🚫 Keine Werbung</li>
+            </ul>
+            <div class="price-box">
+                <div class="price">4,99 € <small>/ Monat</small></div>
+                <button class="btn-primary" id="buyPremiumBtn">Premium aktivieren</button>
+            </div>
+            <button class="btn-ghost" id="closePremiumBtn">Später</button>
+        </div>
+    </div>
+
+    <!-- Meeting planner modal -->
+    <div id="meetModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Treffen vorschlagen</h2>
+            <p id="meetWith"></p>
+            <label>Ort
+                <select id="meetSpot"></select>
+            </label>
+            <label>Datum<input type="date" id="meetDate" /></label>
+            <label>Uhrzeit<input type="time" id="meetTime" value="15:00" /></label>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="cancelMeetBtn">Abbrechen</button>
+                <button class="btn-primary" id="sendMeetBtn">Senden</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sponsored banner (B2B ads) -->
+    <div id="adBanner" class="ad-banner hidden">
+        <span class="ad-tag">Anzeige</span>
+        <span id="adText"></span>
+        <button id="adClose">✕</button>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
