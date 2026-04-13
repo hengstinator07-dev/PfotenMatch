@@ -947,10 +947,22 @@ button { font-family: inherit; }
 .image-msg {
     background: rgba(0, 0, 0, 0.05);
     border-radius: 8px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    max-width: 240px;
+    display: block;
+}
+.image-msg img {
+    display: block;
+    width: 100%;
+    max-height: 280px;
+    object-fit: cover;
+    cursor: pointer;
+}
+.image-msg.placeholder {
     padding: 40px 20px;
     text-align: center;
     font-size: 80px;
-    margin-bottom: 4px;
 }
 
 /* Location message */

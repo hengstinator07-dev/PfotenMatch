@@ -274,14 +274,6 @@ function renderMatches() {
 }
 
 // ---------- Chat (WhatsApp-Style) ----------
-const EMOJI_SET = [
-    "😀","😁","😂","🤣","😊","😇","🙂","😉","😍","🥰","😘","😜","🤪","😎","🤩","🥳",
-    "😏","😒","😔","😢","😭","😤","😡","🤯","😱","🤔","🤗","🤭","🤫","🙄","😴","🤤",
-    "❤️","🧡","💛","💚","💙","💜","🖤","🤍","💕","💖","💘","💝","💯","✨","🔥","⭐",
-    "👍","👎","👏","🙌","🙏","👋","🤝","💪","🫶","👀","🎉","🎈","🎁","🎂","🍀","🌈",
-    "🐶","🐕","🐩","🦮","🐕‍🦺","🐾","🦴","🎾","🥎","🧸","🏞️","🌳","🌲","☀️","🌙","💧"
-];
-const PHOTO_SET = ["🐕","🐾","🌳","🎾","🏞️","🦴","🌅","🌊","🦮","🐩","🏖️","🌈","🐶","🎉","🌻","🍖"];
 const ATTACH_LOCATIONS = [
     { name: "Kannenfeldpark", desc: "47.5617, 7.5700" },
     { name: "St. Johanns-Park", desc: "47.5678, 7.5795" },
@@ -365,8 +357,6 @@ function openChat(dogId) {
 function resetChatUi() {
     chatUi.replyTo = null;
     $("#replyPreview").classList.add("hidden");
-    $("#emojiPicker").classList.add("hidden");
-    $("#photoPicker").classList.add("hidden");
     $("#attachMenu").classList.add("hidden");
     $("#typingIndicator").classList.add("hidden");
     $("#voiceRecording").classList.add("hidden");
@@ -426,7 +416,10 @@ function renderBubbleBody(msg) {
         </div>`;
     }
     if (msg.type === "image") {
-        return `<div class="image-msg">${msg.image || "🖼️"}</div>${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}`;
+        if (msg.image && msg.image.startsWith("data:")) {
+            return `<div class="image-msg"><img src="${msg.image}" alt="Foto" /></div>${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}`;
+        }
+        return `<div class="image-msg placeholder">${msg.image || "🖼️"}</div>${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}`;
     }
     if (msg.type === "location") {
         return `<div class="location-msg">
@@ -643,50 +636,48 @@ function closeMsgContextMenu() {
     $("#msgContextMenu").classList.add("hidden");
 }
 
-// --- Emoji ---
-function buildEmojiGrid() {
-    const grid = $("#emojiGrid");
-    grid.innerHTML = "";
-    EMOJI_SET.forEach(e => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = e;
-        btn.addEventListener("click", () => {
-            const inp = $("#chatInput");
-            inp.value += e;
-            inp.focus();
-            toggleSendButton();
-        });
-        grid.appendChild(btn);
-    });
+// --- Foto-Upload (echtes Bild) ---
+function pickPhoto() {
+    $("#photoInput").click();
 }
-function buildPhotoGrid() {
-    const grid = $("#photoGrid");
-    grid.innerHTML = "";
-    PHOTO_SET.forEach(e => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = e;
-        btn.addEventListener("click", () => {
-            $("#photoPicker").classList.add("hidden");
-            const match = state.matches.find(m => m.profile.id === state.activeChatId);
-            if (!match) return;
-            pushMessage(match, {
-                id: genMsgId(),
-                from: "me",
-                type: "image",
-                image: e,
-                ts: Date.now(),
-                status: "sent",
-                reactions: [],
-                replyTo: chatUi.replyTo
-            });
-            cancelReply();
-            scheduleStatusProgression(match);
-            scheduleAutoReply(match);
-        });
-        grid.appendChild(btn);
+function handlePhotoFile(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        // Auf vernünftige Grösse downscalen, damit localStorage nicht explodiert
+        const img = new Image();
+        img.onload = () => {
+            const maxW = 800;
+            const scale = Math.min(1, maxW / img.width);
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+            sendPhoto(dataUrl);
+        };
+        img.onerror = () => sendPhoto(ev.target.result);
+        img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+function sendPhoto(dataUrl) {
+    const match = state.matches.find(m => m.profile.id === state.activeChatId);
+    if (!match) return;
+    pushMessage(match, {
+        id: genMsgId(),
+        from: "me",
+        type: "image",
+        image: dataUrl,
+        ts: Date.now(),
+        status: "sent",
+        reactions: [],
+        replyTo: chatUi.replyTo
     });
+    cancelReply();
+    scheduleStatusProgression(match);
+    scheduleAutoReply(match);
 }
 
 // --- Location ---
@@ -1267,27 +1258,16 @@ function bindEvents() {
     // Input umschalten: voice ↔ senden
     $("#chatInput").addEventListener("input", toggleSendButton);
 
-    // Emoji-Picker
-    buildEmojiGrid();
-    buildPhotoGrid();
-    $("#emojiBtn").addEventListener("click", () => {
-        const ep = $("#emojiPicker");
-        ep.classList.toggle("hidden");
-        $("#attachMenu").classList.add("hidden");
-        $("#photoPicker").classList.add("hidden");
-    });
     // Anhang-Menü
     $("#attachBtn").addEventListener("click", () => {
         $("#attachMenu").classList.toggle("hidden");
-        $("#emojiPicker").classList.add("hidden");
-        $("#photoPicker").classList.add("hidden");
     });
     $$("#attachMenu button").forEach(btn => {
         btn.addEventListener("click", () => {
             const kind = btn.dataset.attach;
             $("#attachMenu").classList.add("hidden");
             if (kind === "photo") {
-                $("#photoPicker").classList.remove("hidden");
+                pickPhoto();
             } else if (kind === "location") {
                 sendLocation();
             } else if (kind === "meet") {
@@ -1296,16 +1276,18 @@ function bindEvents() {
             }
         });
     });
+    // Echter Foto-Upload
+    $("#photoInput").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) handlePhotoFile(file);
+        e.target.value = ""; // reset, damit dieselbe Datei nochmal geschickt werden kann
+    });
     // Voice
     $("#voiceBtn").addEventListener("click", startVoiceRecording);
     $("#voiceCancelBtn").addEventListener("click", () => stopVoiceRecording(false));
     $("#voiceSendBtn").addEventListener("click", () => stopVoiceRecording(true));
     // Reply cancel
     $("#cancelReplyBtn").addEventListener("click", cancelReply);
-    // Call button (Demo)
-    $("#chatCallBtn").addEventListener("click", () => {
-        flashToast("📞 Anruf gestartet (Demo)");
-    });
     // Chat-Menü
     $("#chatMenuBtn").addEventListener("click", () => $("#chatMenuModal").classList.remove("hidden"));
     $("#closeChatMenuBtn").addEventListener("click", () => $("#chatMenuModal").classList.add("hidden"));

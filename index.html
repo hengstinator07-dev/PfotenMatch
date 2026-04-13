@@ -178,7 +178,6 @@
                     <span id="chatName">Rex</span>
                     <small id="chatStatus" class="chat-status">online</small>
                 </div>
-                <button id="chatCallBtn" class="chat-icon-btn" title="Anruf (Demo)">📞</button>
                 <button id="chatMenuBtn" class="chat-icon-btn" title="Menü">⋮</button>
             </header>
 
@@ -209,22 +208,14 @@
                 <button data-attach="meet"><span>📅</span>Treffen</button>
             </div>
 
-            <!-- Emoji picker -->
-            <div id="emojiPicker" class="emoji-picker hidden">
-                <div class="emoji-grid" id="emojiGrid"></div>
-            </div>
-
-            <!-- Photo picker -->
-            <div id="photoPicker" class="emoji-picker hidden">
-                <div class="emoji-grid" id="photoGrid"></div>
-            </div>
+            <!-- Hidden file input für echten Foto-Upload -->
+            <input type="file" id="photoInput" accept="image/*" hidden />
 
             <form id="chatForm" class="chat-input">
-                <button type="button" id="emojiBtn" class="chat-icon-btn" title="Emoji">😊</button>
-                <input type="text" id="chatInput" placeholder="Nachricht schreiben…" autocomplete="off" />
                 <button type="button" id="attachBtn" class="chat-icon-btn" title="Anhang">📎</button>
-                <button type="button" id="voiceBtn" class="chat-icon-btn voice" title="Sprachnachricht aufnehmen">🎤</button>
+                <input type="text" id="chatInput" placeholder="Nachricht schreiben…" autocomplete="off" />
                 <button type="submit" id="sendBtn" class="chat-send hidden">➤</button>
+                <button type="button" id="voiceBtn" class="chat-icon-btn voice" title="Sprachnachricht aufnehmen">🎤</button>
             </form>
 
             <!-- Voice recording overlay -->
