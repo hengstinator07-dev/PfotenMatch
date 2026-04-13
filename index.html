@@ -62,18 +62,25 @@
 
             <!-- ============ MAP VIEW ============ -->
             <section id="view-map" class="view">
-                <h2 class="view-title">Hundefreundliche Treffpunkte</h2>
+                <h2 class="view-title">Gassi-Karte</h2>
                 <div id="mapWrap" class="map-wrap">
                     <div id="mapCanvas" class="map-canvas"></div>
                     <div id="mapLegend" class="map-legend">
                         <div><span class="dot park"></span> Hundewiese</div>
                         <div><span class="dot fenced"></span> Eingezäunte Fläche</div>
                         <div><span class="dot cafe"></span> Hundecafé</div>
+                        <div><span class="dot danger"></span> Gefahr</div>
                         <div><span class="dot me"></span> Du</div>
                     </div>
                     <button id="locateBtn" class="locate-btn" title="Meinen Standort verwenden">🎯</button>
                 </div>
+                <div class="map-actions">
+                    <button id="reportDangerBtn" class="btn-danger">☠ Gefahr melden</button>
+                </div>
+                <h3 class="sub-title">Treffpunkte &amp; Live-Check-Ins</h3>
                 <div id="spotList" class="spot-list"></div>
+                <h3 class="sub-title">⚠ Gefahren-Radar</h3>
+                <div id="dangerList" class="danger-list"></div>
             </section>
 
             <!-- ============ PROFILE VIEW ============ -->
@@ -234,6 +241,25 @@
                 <button class="btn-primary" id="buyPremiumBtn">Premium aktivieren</button>
             </div>
             <button class="btn-ghost" id="closePremiumBtn">Später</button>
+        </div>
+    </div>
+
+    <!-- Danger report modal -->
+    <div id="dangerModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>☠ Gefahr melden</h2>
+            <p class="muted">Hilf anderen Hundebesitzern, indem du eine Gefahr in deiner Nähe meldest.</p>
+            <label>Art der Gefahr
+                <select id="dangerType"></select>
+            </label>
+            <label>Beschreibung (optional)
+                <input type="text" id="dangerDesc" placeholder="z. B. am Parkeingang Richtung Nord" />
+            </label>
+            <p class="muted">Position: dein aktueller Standort auf der Karte.</p>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="cancelDangerBtn">Abbrechen</button>
+                <button class="btn-primary" id="saveDangerBtn">Melden</button>
+            </div>
         </div>
     </div>
 

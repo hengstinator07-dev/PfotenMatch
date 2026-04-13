@@ -197,6 +197,28 @@ const ADS = [
     "🏖️ Hundestrand am See jetzt geöffnet – mit Mitgliedskarte 2-für-1 Eintritt."
 ];
 
+// Gefahren-Typen fürs Giftköder-/Gefahren-Radar
+const DANGER_TYPES = [
+    { id: "poison",  label: "Giftköder",               icon: "☠️" },
+    { id: "glass",   label: "Scherben",                icon: "🔪" },
+    { id: "cattle",  label: "Freilaufende Weidetiere", icon: "🐄" },
+    { id: "traffic", label: "Verkehrsgefahr",          icon: "🚗" },
+    { id: "other",   label: "Sonstige Gefahr",         icon: "⚠" }
+];
+
+// Anfangs-Gefahrenmeldungen (Community-Beispiele)
+const DEMO_DANGERS = [
+    { id: "d1", type: "poison", lat: 52.5165, lng: 13.3850, desc: "Mehrere Wurststücke am Waldrand gesehen", ts: Date.now() - 3600e3, reporter: "Sabine" },
+    { id: "d2", type: "glass",  lat: 52.5250, lng: 13.4000, desc: "Scherben auf dem Fußweg",                ts: Date.now() - 7200e3, reporter: "Max" }
+];
+
+// Simulierte Live-Check-Ins anderer Nutzer (andere Hunde gerade im Park)
+const DEMO_CHECKINS = [
+    { spotId: 1, dogName: "Rex",  until: Date.now() + 90 * 60e3 },
+    { spotId: 1, dogName: "Luna", until: Date.now() + 45 * 60e3 },
+    { spotId: 4, dogName: "Paula", until: Date.now() + 30 * 60e3 }
+];
+
 // Automatische Chat-Antworten
 const AUTO_REPLIES = [
     "Wuff! 🐾 Klingt super!",

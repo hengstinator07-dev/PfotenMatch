@@ -19,7 +19,11 @@ const state = {
         tags: "", bio: "Liebt Stöckchen und Matschpfützen!",
         emoji: "🐕"
     },
-    activeChatId: null
+    activeChatId: null,
+    // Live-Check-Ins: [{spotId, dogName, until (ts)}]  (eigener Check-in hat dogName === myProfile.name)
+    checkIns: [],
+    // Gefahren-Radar: [{id, type, lat, lng, desc, ts, reporter}]
+    dangers: []
 };
 
 // ---------- Utility ----------
@@ -32,7 +36,9 @@ function saveState() {
             matches: state.matches.map(m => ({ id: m.profile.id, messages: m.messages })),
             premium: state.premium,
             myProfile: state.myProfile,
-            userLocation: state.userLocation
+            userLocation: state.userLocation,
+            checkIns: state.checkIns,
+            dangers: state.dangers
         }));
     } catch (e) { /* ignore */ }
 }
@@ -45,6 +51,8 @@ function loadState() {
         if (data.premium) state.premium = true;
         if (data.myProfile) Object.assign(state.myProfile, data.myProfile);
         if (data.userLocation) state.userLocation = data.userLocation;
+        if (Array.isArray(data.checkIns)) state.checkIns = data.checkIns;
+        if (Array.isArray(data.dangers)) state.dangers = data.dangers;
         if (Array.isArray(data.matches)) {
             state.matches = data.matches
                 .map(m => {
@@ -296,9 +304,97 @@ function sendMessage(text) {
     }, 900 + Math.random() * 800);
 }
 
+// ---------- Check-Ins ----------
+function pruneCheckIns() {
+    const now = Date.now();
+    state.checkIns = state.checkIns.filter(c => c.until > now);
+}
+function pruneDangers() {
+    // Gefahren verfallen nach 24 h
+    const cutoff = Date.now() - 24 * 3600e3;
+    state.dangers = state.dangers.filter(d => d.ts > cutoff);
+}
+function myCheckInFor(spotId) {
+    pruneCheckIns();
+    return state.checkIns.find(c =>
+        c.spotId === spotId && c.dogName === state.myProfile.name
+    );
+}
+function countCheckIns(spotId) {
+    pruneCheckIns();
+    return state.checkIns.filter(c => c.spotId === spotId).length;
+}
+function toggleCheckIn(spotId) {
+    const spot = MEETING_SPOTS.find(s => s.id === spotId);
+    if (!spot) return;
+    const existing = myCheckInFor(spotId);
+    if (existing) {
+        state.checkIns = state.checkIns.filter(c => c !== existing);
+        flashToast(`Check-out: ${spot.name}`);
+    } else {
+        if (!confirm(`Bei „${spot.name}" einchecken?\nAndere Nutzer sehen dich dort 2 Stunden lang.`)) return;
+        state.checkIns.push({
+            spotId,
+            dogName: state.myProfile.name,
+            until: Date.now() + 2 * 3600e3
+        });
+        flashToast(`Eingecheckt: ${spot.icon} ${spot.name}`);
+    }
+    saveState();
+    renderMap();
+}
+
+// ---------- Gefahren-Radar ----------
+function openDangerReport() {
+    const sel = $("#dangerType");
+    sel.innerHTML = "";
+    DANGER_TYPES.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = `${t.icon} ${t.label}`;
+        sel.appendChild(opt);
+    });
+    $("#dangerDesc").value = "";
+    $("#dangerModal").classList.remove("hidden");
+}
+
+function saveDangerReport() {
+    const typeId = $("#dangerType").value;
+    const desc = $("#dangerDesc").value.trim();
+    state.dangers.push({
+        id: "d" + Date.now(),
+        type: typeId,
+        lat: state.userLocation.lat,
+        lng: state.userLocation.lng,
+        desc: desc,
+        ts: Date.now(),
+        reporter: state.myProfile.name
+    });
+    saveState();
+    $("#dangerModal").classList.add("hidden");
+    flashToast("⚠ Gefahr gemeldet – danke!");
+    renderMap();
+}
+
+function removeDanger(id) {
+    if (!confirm("Diese Meldung als erledigt markieren?")) return;
+    state.dangers = state.dangers.filter(d => d.id !== id);
+    saveState();
+    renderMap();
+}
+
+function formatAgo(ts) {
+    const mins = Math.floor((Date.now() - ts) / 60e3);
+    if (mins < 1) return "gerade eben";
+    if (mins < 60) return `vor ${mins} Min`;
+    const h = Math.floor(mins / 60);
+    if (h < 24) return `vor ${h} Std`;
+    return `vor ${Math.floor(h / 24)} Tagen`;
+}
+
 // ---------- Map (Leaflet + OpenStreetMap) ----------
 let leafletMap = null;
-let mapLayers = { spots: [], dogs: [], me: null };
+let mapLayers = { spots: [], dogs: [], me: null, dangers: [] };
 
 function buildEmojiIcon(emoji, size = 32) {
     return L.divIcon({
@@ -331,12 +427,18 @@ function renderMap() {
         }).addTo(leafletMap);
     }
 
+    // Abgelaufene Einträge bereinigen
+    pruneCheckIns();
+    pruneDangers();
+
     // Alte Marker entfernen
     mapLayers.spots.forEach(m => leafletMap.removeLayer(m));
     mapLayers.dogs.forEach(m => leafletMap.removeLayer(m));
+    mapLayers.dangers.forEach(m => leafletMap.removeLayer(m));
     if (mapLayers.me) leafletMap.removeLayer(mapLayers.me);
     mapLayers.spots = [];
     mapLayers.dogs = [];
+    mapLayers.dangers = [];
 
     // Eigener Standort
     mapLayers.me = L.marker([state.userLocation.lat, state.userLocation.lng], {
@@ -356,12 +458,31 @@ function renderMap() {
 
     // Treffpunkte
     MEETING_SPOTS.forEach(s => {
+        const count = countCheckIns(s.id);
         const marker = L.marker([s.lat, s.lng], {
             icon: buildEmojiIcon(s.icon, 32),
             title: s.name
         }).addTo(leafletMap);
-        marker.bindPopup(`<strong>${s.icon} ${s.name}</strong><br>${s.desc}`);
+        const checkInLine = count > 0
+            ? `<br><span style="color:#4ecdc4;font-weight:700">🐾 ${count} Hund${count > 1 ? "e" : ""} gerade hier</span>`
+            : "";
+        marker.bindPopup(`<strong>${s.icon} ${s.name}</strong><br>${s.desc}${checkInLine}`);
         mapLayers.spots.push(marker);
+    });
+
+    // Gefahren-Marker
+    state.dangers.forEach(d => {
+        const type = DANGER_TYPES.find(t => t.id === d.type) || DANGER_TYPES[DANGER_TYPES.length - 1];
+        const marker = L.marker([d.lat, d.lng], {
+            icon: buildEmojiIcon(type.icon, 30),
+            title: type.label
+        }).addTo(leafletMap);
+        marker.bindPopup(
+            `<strong>⚠ ${type.label}</strong><br>` +
+            (d.desc ? d.desc + "<br>" : "") +
+            `<small>Gemeldet ${formatAgo(d.ts)} von ${d.reporter}</small>`
+        );
+        mapLayers.dangers.push(marker);
     });
 
     // Hunde im Umkreis
@@ -378,25 +499,71 @@ function renderMap() {
     // Map muss nach Sichtbarkeitswechsel neu berechnet werden
     setTimeout(() => leafletMap.invalidateSize(), 50);
 
-    // Spot-Liste unterhalb
+    // Spot-Liste unterhalb (mit Check-In)
     const list = $("#spotList");
     list.innerHTML = "";
     MEETING_SPOTS.forEach(s => {
+        const count = countCheckIns(s.id);
+        const checkedIn = !!myCheckInFor(s.id);
         const el = document.createElement("div");
-        el.className = "spot-item";
+        el.className = "spot-item" + (checkedIn ? " checked-in" : "");
         el.innerHTML = `
             <div class="icon">${s.icon}</div>
             <div class="info">
                 <h4>${s.name}</h4>
                 <p>${s.desc}</p>
             </div>
+            ${count > 0 ? `<span class="checkin-badge">🐾 ${count}</span>` : ""}
+            <button class="checkin-btn${checkedIn ? " leave" : ""}" data-spot="${s.id}">
+                ${checkedIn ? "Check-out" : "Einchecken"}
+            </button>
         `;
-        el.addEventListener("click", () => {
+        // Klick auf die Kachel (nicht den Button) -> zoomt zur Karte
+        el.addEventListener("click", (e) => {
+            if (e.target.closest("button")) return;
             leafletMap.setView([s.lat, s.lng], 15);
             mapLayers.spots.find(m => m.getLatLng().lat === s.lat)?.openPopup();
         });
+        el.querySelector("button").addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggleCheckIn(s.id);
+        });
         list.appendChild(el);
     });
+
+    // Gefahren-Liste
+    const dList = $("#dangerList");
+    dList.innerHTML = "";
+    if (state.dangers.length === 0) {
+        dList.innerHTML = `<p class="empty-mini">Keine aktuellen Gefahren gemeldet. 🙏</p>`;
+    } else {
+        [...state.dangers].sort((a, b) => b.ts - a.ts).forEach(d => {
+            const type = DANGER_TYPES.find(t => t.id === d.type) || DANGER_TYPES[DANGER_TYPES.length - 1];
+            const el = document.createElement("div");
+            el.className = "danger-item";
+            el.innerHTML = `
+                <div class="icon">${type.icon}</div>
+                <div class="info">
+                    <strong>${type.label}</strong>
+                    ${d.desc ? `<div>${d.desc}</div>` : ""}
+                    <small>${formatAgo(d.ts)} · gemeldet von ${d.reporter}</small>
+                </div>
+                <button title="Als erledigt markieren" data-remove="${d.id}">✓</button>
+            `;
+            el.addEventListener("click", (e) => {
+                if (e.target.dataset.remove) {
+                    e.stopPropagation();
+                    removeDanger(d.id);
+                    return;
+                }
+                leafletMap.setView([d.lat, d.lng], 16);
+                mapLayers.dangers
+                    .find(m => m.getLatLng().lat === d.lat && m.getLatLng().lng === d.lng)
+                    ?.openPopup();
+            });
+            dList.appendChild(el);
+        });
+    }
 }
 
 function locateUser() {
@@ -583,6 +750,10 @@ function bindEvents() {
     $("#closePremiumBtn").addEventListener("click", () => $("#premiumModal").classList.add("hidden"));
     // Meet
     $("#cancelMeetBtn").addEventListener("click", () => $("#meetModal").classList.add("hidden"));
+    // Gefahren-Radar
+    $("#reportDangerBtn")?.addEventListener("click", openDangerReport);
+    $("#cancelDangerBtn")?.addEventListener("click", () => $("#dangerModal").classList.add("hidden"));
+    $("#saveDangerBtn")?.addEventListener("click", saveDangerReport);
     // Ad close
     $("#adClose").addEventListener("click", () => $("#adBanner").classList.add("hidden"));
     // Close modals on backdrop click
@@ -596,6 +767,13 @@ function bindEvents() {
 // ---------- Init ----------
 function init() {
     loadState();
+    // Demo-Daten befüllen, wenn Gefahren/Check-Ins leer sind
+    if (state.dangers.length === 0 && typeof DEMO_DANGERS !== "undefined") {
+        state.dangers = DEMO_DANGERS.map(d => ({ ...d }));
+    }
+    if (state.checkIns.length === 0 && typeof DEMO_CHECKINS !== "undefined") {
+        state.checkIns = DEMO_CHECKINS.map(c => ({ ...c }));
+    }
     bindEvents();
     bindProfileForm();
     if (state.premium) $("#premiumBadge").classList.add("active");

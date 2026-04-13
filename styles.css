@@ -717,6 +717,93 @@ button { font-family: inherit; }
     vertical-align: middle;
 }
 
+/* ---------- Sub title + danger/check-in ---------- */
+.sub-title {
+    margin: 18px 0 8px;
+    font-size: 16px;
+    color: var(--text);
+}
+.muted { color: var(--muted); font-size: 13px; }
+
+.map-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.btn-danger {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 3px 10px rgba(231, 76, 60, 0.3);
+}
+.btn-danger:hover { filter: brightness(0.95); }
+
+/* Check-in on spot items */
+.spot-item.checked-in {
+    border-left: 4px solid var(--accent);
+}
+.spot-item .checkin-badge {
+    background: var(--accent);
+    color: white;
+    padding: 3px 9px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.spot-item .checkin-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.spot-item .checkin-btn.leave {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+}
+
+/* Danger list */
+.danger-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.danger-item {
+    background: #fff5f5;
+    border-left: 4px solid var(--danger);
+    padding: 10px 14px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+}
+.danger-item .icon { font-size: 24px; }
+.danger-item .info { flex: 1; min-width: 0; }
+.danger-item .info strong { display: block; font-size: 14px; }
+.danger-item .info small { color: var(--muted); font-size: 11px; }
+.danger-item button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+}
+.dot.danger { background: var(--danger); }
+.empty-mini { color: var(--muted); font-size: 12px; padding: 8px 0; }
+
 /* ---------- Ad banner ---------- */
 .ad-banner {
     position: fixed;
