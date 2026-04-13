@@ -17,7 +17,14 @@ const state = {
         size: "Mittel", neutered: "Nein",
         energy: "Ausgeglichen", playStyle: "Rennend",
         tags: "", bio: "Liebt Stöckchen und Matschpfützen!",
-        emoji: "🐕"
+        emoji: "🐕",
+        avatarImage: null,   // data URL, falls gesetzt statt emoji
+        photos: []           // [{ id, src, ts }]
+    },
+    settings: {
+        push: true, chatNotif: true, matchNotif: true, dangerNotif: true,
+        invisible: false, locShare: true, readReceipts: true,
+        dark: false, lang: "de", unit: "km"
     },
     activeChatId: null,
     // Live-Check-Ins: [{spotId, dogName, until (ts)}]  (eigener Check-in hat dogName === myProfile.name)
@@ -38,7 +45,8 @@ function saveState() {
             myProfile: state.myProfile,
             userLocation: state.userLocation,
             checkIns: state.checkIns,
-            dangers: state.dangers
+            dangers: state.dangers,
+            settings: state.settings
         }));
     } catch (e) { /* ignore */ }
 }
@@ -50,6 +58,8 @@ function loadState() {
         const data = JSON.parse(raw);
         if (data.premium) state.premium = true;
         if (data.myProfile) Object.assign(state.myProfile, data.myProfile);
+        if (!Array.isArray(state.myProfile.photos)) state.myProfile.photos = [];
+        if (data.settings) Object.assign(state.settings, data.settings);
         if (data.userLocation) state.userLocation = data.userLocation;
         if (Array.isArray(data.checkIns)) state.checkIns = data.checkIns;
         if (Array.isArray(data.dangers)) state.dangers = data.dangers;
@@ -71,6 +81,7 @@ function switchView(name) {
     $$(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === name));
     if (name === "matches") renderMatches();
     if (name === "map") renderMap();
+    if (name === "profile") renderProfile();
 }
 
 // ---------- Profile filtering ----------
@@ -1139,15 +1150,169 @@ function activatePremium() {
     alert("🎉 Willkommen bei PfotenMatch Premium!\n\nDu kannst jetzt sehen, wer dich gelikt hat, nach Rassen filtern und Super-Likes einsetzen.");
 }
 
-// ---------- Profile form ----------
+// ---------- Profile page (Instagram-Style) ----------
+function renderProfile() {
+    const p = state.myProfile;
+    // Avatar
+    const avEl = $("#profileAvatar");
+    if (p.avatarImage) {
+        avEl.innerHTML = `<img src="${p.avatarImage}" alt="Profilbild" />`;
+    } else {
+        avEl.textContent = p.emoji || "🐕";
+    }
+    // Identity
+    $("#profileName").textContent = p.name;
+    const handle = "@" + (p.name || "hund").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    $("#profileHandle").textContent = `${handle} · ${p.breed || "Mischling"} · ${p.age || 0} J.`;
+    $("#profileBio").textContent = p.bio || "";
+    // Chips
+    const chipsEl = $("#profileChips");
+    chipsEl.innerHTML = "";
+    const chipList = [];
+    if (p.size)      chipList.push({ text: "📏 " + p.size });
+    if (p.energy)    chipList.push({ text: "⚡ " + p.energy });
+    if (p.playStyle) chipList.push({ text: "🎾 " + p.playStyle });
+    if (p.neutered === "Ja") chipList.push({ text: "✂ kastriert" });
+    (p.tags || "").split(",").map(t => t.trim()).filter(Boolean)
+        .forEach(t => chipList.push({ text: "⚠ " + t, warn: true }));
+    chipList.forEach(c => {
+        const s = document.createElement("span");
+        s.className = "chip" + (c.warn ? " warn" : "");
+        s.textContent = c.text;
+        chipsEl.appendChild(s);
+    });
+    // Stats
+    $("#statPhotos").textContent = (p.photos || []).length;
+    $("#statMatches").textContent = state.matches.length;
+    const myCheckins = state.checkIns.filter(c => c.dogName === p.name).length;
+    $("#statCheckins").textContent = myCheckins;
+    // Info-Panel
+    $("#infoBreed").textContent    = p.breed || "—";
+    $("#infoAge").textContent      = (p.age || 0) + " Jahre";
+    $("#infoSize").textContent     = p.size || "—";
+    $("#infoNeutered").textContent = p.neutered || "—";
+    $("#infoEnergy").textContent   = p.energy || "—";
+    $("#infoPlay").textContent     = p.playStyle || "—";
+    // Photo grid
+    renderProfilePhotos();
+}
+
+function renderProfilePhotos() {
+    const grid = $("#profilePhotos");
+    // Add-Button behalten, Rest neu bauen
+    grid.querySelectorAll(".photo-cell:not(.add)").forEach(el => el.remove());
+    const addBtn = $("#addPhotoBtn");
+    (state.myProfile.photos || []).slice().reverse().forEach(photo => {
+        const cell = document.createElement("button");
+        cell.className = "photo-cell";
+        cell.innerHTML = `<img src="${photo.src}" alt="Foto" />`;
+        cell.addEventListener("click", () => openPhotoViewer(photo.id));
+        grid.insertBefore(cell, addBtn);
+    });
+}
+
+function switchProfileTab(name) {
+    $$(".profile-tab").forEach(b => b.classList.toggle("active", b.dataset.ptab === name));
+    $("#profilePhotos").classList.toggle("hidden", name !== "photos");
+    $("#profileInfo").classList.toggle("hidden", name !== "info");
+}
+
+// --- Photo gallery ---
+function downscaleImage(file, maxW, quality, cb) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+            const scale = Math.min(1, maxW / img.width);
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+            cb(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = () => cb(ev.target.result);
+        img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function handleGalleryFile(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    downscaleImage(file, 800, 0.78, (dataUrl) => {
+        state.myProfile.photos.push({ id: "p" + Date.now(), src: dataUrl, ts: Date.now() });
+        saveState();
+        renderProfile();
+        flashToast("📷 Foto hinzugefügt");
+    });
+}
+
+function handleAvatarFile(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    downscaleImage(file, 400, 0.82, (dataUrl) => {
+        state.myProfile.avatarImage = dataUrl;
+        saveState();
+        renderProfile();
+        flashToast("✨ Profilbild aktualisiert");
+    });
+}
+
+let currentViewerPhotoId = null;
+function openPhotoViewer(photoId) {
+    const photo = state.myProfile.photos.find(p => p.id === photoId);
+    if (!photo) return;
+    currentViewerPhotoId = photoId;
+    $("#photoViewerImg").src = photo.src;
+    $("#photoViewerModal").classList.remove("hidden");
+}
+function deleteCurrentPhoto() {
+    if (!currentViewerPhotoId) return;
+    if (!confirm("Foto wirklich löschen?")) return;
+    state.myProfile.photos = state.myProfile.photos.filter(p => p.id !== currentViewerPhotoId);
+    currentViewerPhotoId = null;
+    saveState();
+    $("#photoViewerModal").classList.add("hidden");
+    renderProfile();
+}
+
+// --- Edit profile modal ---
+function setSelectByPrefix(sel, prefix) {
+    const el = $(sel);
+    if (!el || !prefix) return;
+    for (const opt of el.options) {
+        if (opt.text.startsWith(prefix)) { el.value = opt.value; return; }
+    }
+}
+function openEditProfile() {
+    const p = state.myProfile;
+    $("#pfName").value = p.name;
+    $("#pfBreed").value = p.breed;
+    $("#pfAge").value = p.age;
+    $("#pfBio").value = p.bio;
+    $("#pfTags").value = p.tags || "";
+    setSelectByPrefix("#pfSize", p.size);
+    $("#pfNeutered").value = p.neutered || "Nein";
+    setSelectByPrefix("#pfEnergy", p.energy);
+    setSelectByPrefix("#pfPlay", p.playStyle);
+    if (p.avatarImage) {
+        $("#avatarPreview").innerHTML = `<img src="${p.avatarImage}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`;
+    } else {
+        $("#avatarPreview").textContent = p.emoji || "🐕";
+    }
+    $$(".avatar-options button").forEach(b => {
+        b.classList.toggle("selected", b.dataset.emoji === p.emoji);
+    });
+    $("#editProfileModal").classList.remove("hidden");
+}
+
 function bindProfileForm() {
     const f = $("#myProfileForm");
-    // Avatar-Picker
+    // Avatar-Emoji-Picker
     $$(".avatar-options button").forEach(b => {
         b.addEventListener("click", () => {
             $$(".avatar-options button").forEach(x => x.classList.remove("selected"));
             b.classList.add("selected");
             state.myProfile.emoji = b.dataset.emoji;
+            state.myProfile.avatarImage = null; // Emoji überschreibt Bild
             $("#avatarPreview").textContent = b.dataset.emoji;
         });
     });
@@ -1157,7 +1322,7 @@ function bindProfileForm() {
             ...state.myProfile,
             name: $("#pfName").value,
             breed: $("#pfBreed").value,
-            age: parseInt($("#pfAge").value),
+            age: parseInt($("#pfAge").value) || 0,
             size: $("#pfSize").value,
             neutered: $("#pfNeutered").value,
             energy: $("#pfEnergy").value,
@@ -1166,14 +1331,64 @@ function bindProfileForm() {
             bio: $("#pfBio").value
         };
         saveState();
+        $("#editProfileModal").classList.add("hidden");
+        renderProfile();
         flashToast("Profil gespeichert! 🐾");
     });
-    // Initial aus State befüllen
-    $("#pfName").value = state.myProfile.name;
-    $("#pfBreed").value = state.myProfile.breed;
-    $("#pfAge").value = state.myProfile.age;
-    $("#pfBio").value = state.myProfile.bio;
-    $("#avatarPreview").textContent = state.myProfile.emoji;
+}
+
+// --- Settings ---
+function openSettings() {
+    const s = state.settings;
+    $("#setPush").checked = s.push;
+    $("#setChatNotif").checked = s.chatNotif;
+    $("#setMatchNotif").checked = s.matchNotif;
+    $("#setDangerNotif").checked = s.dangerNotif;
+    $("#setInvisible").checked = s.invisible;
+    $("#setLocShare").checked = s.locShare;
+    $("#setReadReceipts").checked = s.readReceipts;
+    $("#setDark").checked = s.dark;
+    $("#setLang").value = s.lang;
+    $("#setUnit").value = s.unit;
+    $("#settingsModal").classList.remove("hidden");
+}
+function saveSettings() {
+    state.settings = {
+        push:          $("#setPush").checked,
+        chatNotif:     $("#setChatNotif").checked,
+        matchNotif:    $("#setMatchNotif").checked,
+        dangerNotif:   $("#setDangerNotif").checked,
+        invisible:     $("#setInvisible").checked && state.premium,
+        locShare:      $("#setLocShare").checked,
+        readReceipts:  $("#setReadReceipts").checked,
+        dark:          $("#setDark").checked,
+        lang:          $("#setLang").value,
+        unit:          $("#setUnit").value
+    };
+    document.documentElement.classList.toggle("dark", state.settings.dark);
+    saveState();
+    $("#settingsModal").classList.add("hidden");
+    flashToast("⚙ Einstellungen gespeichert");
+}
+
+function exportData() {
+    const blob = new Blob([JSON.stringify({
+        profile: state.myProfile,
+        matches: state.matches.map(m => ({ id: m.profile.id, messages: m.messages })),
+        settings: state.settings
+    }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "pfotenmatch-export.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    flashToast("📦 Daten exportiert");
+}
+function resetAllData() {
+    if (!confirm("Wirklich ALLE lokalen Daten löschen? Dies kann nicht rückgängig gemacht werden.")) return;
+    localStorage.removeItem("pfotenMatch");
+    location.reload();
 }
 
 function flashToast(text) {
@@ -1341,6 +1556,74 @@ function bindEvents() {
     $("#reportDangerBtn")?.addEventListener("click", openDangerReport);
     $("#cancelDangerBtn")?.addEventListener("click", () => $("#dangerModal").classList.add("hidden"));
     $("#saveDangerBtn")?.addEventListener("click", saveDangerReport);
+    // --- Profile page ---
+    $("#profileAvatarBtn").addEventListener("click", () => {
+        $("#profileMenuModal").classList.remove("hidden");
+    });
+    $("#closeProfileMenuBtn").addEventListener("click", () => {
+        $("#profileMenuModal").classList.add("hidden");
+    });
+    $$("#profileMenuModal .sheet-item").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const kind = btn.dataset.menu;
+            $("#profileMenuModal").classList.add("hidden");
+            if (kind === "edit")      openEditProfile();
+            if (kind === "avatar")    $("#avatarInput").click();
+            if (kind === "addPhoto")  $("#galleryInput").click();
+            if (kind === "settings")  openSettings();
+            if (kind === "premium")   openPremium();
+            if (kind === "help")      flashToast("💌 Feedback an hallo@pfotenmatch.app");
+            if (kind === "logout") {
+                if (confirm("Wirklich abmelden? Deine lokalen Daten bleiben erhalten.")) {
+                    flashToast("👋 Abgemeldet (Demo)");
+                }
+            }
+        });
+    });
+    $("#editProfileBtn").addEventListener("click", openEditProfile);
+    $("#shareProfileBtn").addEventListener("click", () => {
+        const p = state.myProfile;
+        const txt = `Schau dir ${p.name} auf PfotenMatch an! 🐾`;
+        if (navigator.share) {
+            navigator.share({ title: "PfotenMatch", text: txt }).catch(() => {});
+        } else {
+            if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {});
+            flashToast("🔗 In Zwischenablage kopiert");
+        }
+    });
+    $("#cancelEditProfileBtn").addEventListener("click", () => {
+        $("#editProfileModal").classList.add("hidden");
+    });
+    // Profile-Tabs
+    $$(".profile-tab").forEach(b => {
+        b.addEventListener("click", () => switchProfileTab(b.dataset.ptab));
+    });
+    // Foto-Upload (Galerie)
+    $("#addPhotoBtn").addEventListener("click", () => $("#galleryInput").click());
+    $("#galleryInput").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) handleGalleryFile(file);
+        e.target.value = "";
+    });
+    // Profilbild-Upload
+    $("#avatarInput").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) handleAvatarFile(file);
+        e.target.value = "";
+    });
+    // Photo viewer
+    $("#photoViewerClose").addEventListener("click", () => $("#photoViewerModal").classList.add("hidden"));
+    $("#photoViewerDelete").addEventListener("click", deleteCurrentPhoto);
+    // Settings
+    $("#closeSettingsBtn").addEventListener("click", saveSettings);
+    $("#exportDataBtn").addEventListener("click", exportData);
+    $("#resetDataBtn").addEventListener("click", resetAllData);
+    $("#deleteAccountBtn").addEventListener("click", () => {
+        if (confirm("Account wirklich löschen? Alle Daten gehen verloren.")) {
+            localStorage.removeItem("pfotenMatch");
+            location.reload();
+        }
+    });
     // Ad close
     $("#adClose").addEventListener("click", () => $("#adBanner").classList.add("hidden"));
     // Close modals on backdrop click
@@ -1364,8 +1647,10 @@ function init() {
     bindEvents();
     bindProfileForm();
     if (state.premium) $("#premiumBadge").classList.add("active");
+    document.documentElement.classList.toggle("dark", state.settings.dark);
     applyFilters();
     renderMatches();
+    renderProfile();
 }
 
 document.addEventListener("DOMContentLoaded", init);

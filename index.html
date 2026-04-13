@@ -83,59 +83,66 @@
                 <div id="dangerList" class="danger-list"></div>
             </section>
 
-            <!-- ============ PROFILE VIEW ============ -->
+            <!-- ============ PROFILE VIEW (Instagram-Style) ============ -->
             <section id="view-profile" class="view">
-                <h2 class="view-title">Mein Hund</h2>
-                <form id="myProfileForm" class="profile-form">
-                    <div class="avatar-picker">
-                        <div class="avatar-preview" id="avatarPreview">🐕</div>
-                        <div class="avatar-options">
-                            <button type="button" data-emoji="🐕">🐕</button>
-                            <button type="button" data-emoji="🐶">🐶</button>
-                            <button type="button" data-emoji="🦮">🦮</button>
-                            <button type="button" data-emoji="🐩">🐩</button>
-                            <button type="button" data-emoji="🐕‍🦺">🐕‍🦺</button>
+                <div class="profile-page">
+                    <!-- Header -->
+                    <div class="profile-header">
+                        <button id="profileAvatarBtn" class="profile-avatar-btn" title="Menü öffnen">
+                            <div id="profileAvatar" class="profile-avatar">🐕</div>
+                            <span class="avatar-ring"></span>
+                            <span class="avatar-edit-dot">⚙</span>
+                        </button>
+                        <div class="profile-stats">
+                            <div class="stat"><strong id="statPhotos">0</strong><span>Fotos</span></div>
+                            <div class="stat"><strong id="statMatches">0</strong><span>Matches</span></div>
+                            <div class="stat"><strong id="statCheckins">0</strong><span>Check-Ins</span></div>
                         </div>
                     </div>
-                    <label>Name<input type="text" id="pfName" value="Bello" required /></label>
-                    <label>Rasse<input type="text" id="pfBreed" value="Labrador-Mix" /></label>
-                    <label>Alter (Jahre)<input type="number" id="pfAge" value="3" min="0" max="25" /></label>
-                    <label>Größe
-                        <select id="pfSize">
-                            <option>Klein (&lt;10kg)</option>
-                            <option selected>Mittel (10–25kg)</option>
-                            <option>Groß (25–40kg)</option>
-                            <option>Sehr groß (&gt;40kg)</option>
-                        </select>
-                    </label>
-                    <label>Kastriert
-                        <select id="pfNeutered">
-                            <option>Ja</option>
-                            <option selected>Nein</option>
-                        </select>
-                    </label>
-                    <label>Energielevel
-                        <select id="pfEnergy">
-                            <option>Couch-Potato 🛋️</option>
-                            <option selected>Ausgeglichen 🐾</option>
-                            <option>Duracell-Häschen ⚡</option>
-                        </select>
-                    </label>
-                    <label>Spielstil
-                        <select id="pfPlay">
-                            <option>Zurückhaltend 🤗</option>
-                            <option selected>Rennend 🏃</option>
-                            <option>Grob / Körperlich 🤼</option>
-                        </select>
-                    </label>
-                    <label>Warn-Tags (Kommas)
-                        <input type="text" id="pfTags" placeholder="z. B. Leinenaggressiv, Ängstlich bei großen Hunden" />
-                    </label>
-                    <label>Bio
-                        <textarea id="pfBio" rows="3" placeholder="Erzähl was über deinen Hund…">Liebt Stöckchen und Matschpfützen!</textarea>
-                    </label>
-                    <button type="submit" class="btn-primary">Profil speichern</button>
-                </form>
+
+                    <!-- Identity -->
+                    <div class="profile-identity">
+                        <h2 id="profileName">Bello</h2>
+                        <p class="handle" id="profileHandle">@bello · Labrador-Mix · 3 J.</p>
+                        <p class="bio" id="profileBio">Liebt Stöckchen und Matschpfützen!</p>
+                        <div class="profile-chips" id="profileChips"></div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="profile-actions">
+                        <button class="btn-primary full" id="editProfileBtn">✏ Profil bearbeiten</button>
+                        <button class="btn-ghost full" id="shareProfileBtn">🔗 Profil teilen</button>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="profile-tabs" role="tablist">
+                        <button class="profile-tab active" data-ptab="photos">🏞️ Fotos</button>
+                        <button class="profile-tab" data-ptab="info">ℹ Info</button>
+                    </div>
+
+                    <!-- Photos grid -->
+                    <div id="profilePhotos" class="profile-photos">
+                        <button class="photo-cell add" id="addPhotoBtn" title="Foto hinzufügen">
+                            <span>➕</span>
+                            <small>Hinzufügen</small>
+                        </button>
+                    </div>
+
+                    <!-- Info panel -->
+                    <div id="profileInfo" class="profile-info hidden">
+                        <div class="info-row"><span>🐾 Rasse</span><strong id="infoBreed">—</strong></div>
+                        <div class="info-row"><span>🎂 Alter</span><strong id="infoAge">—</strong></div>
+                        <div class="info-row"><span>📏 Größe</span><strong id="infoSize">—</strong></div>
+                        <div class="info-row"><span>✂ Kastriert</span><strong id="infoNeutered">—</strong></div>
+                        <div class="info-row"><span>⚡ Energie</span><strong id="infoEnergy">—</strong></div>
+                        <div class="info-row"><span>🎾 Spielstil</span><strong id="infoPlay">—</strong></div>
+                        <div class="info-row"><span>📍 Standort</span><strong id="infoLocation">Basel</strong></div>
+                    </div>
+                </div>
+
+                <!-- Hidden file input für Profil-Fotos -->
+                <input type="file" id="galleryInput" accept="image/*" hidden />
+                <input type="file" id="avatarInput" accept="image/*" hidden />
             </section>
 
         </main>
@@ -273,6 +280,173 @@
             <div class="modal-actions">
                 <button class="btn-ghost" id="closeSearchBtn">Schließen</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Profile menu (bottom sheet) -->
+    <div id="profileMenuModal" class="modal hidden">
+        <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            <h3 class="sheet-title">Mein Profil</h3>
+            <button class="sheet-item" data-menu="edit"><span>✏</span>Profil bearbeiten</button>
+            <button class="sheet-item" data-menu="avatar"><span>📷</span>Profilbild ändern</button>
+            <button class="sheet-item" data-menu="addPhoto"><span>🏞️</span>Foto zur Galerie</button>
+            <button class="sheet-item" data-menu="settings"><span>⚙</span>Einstellungen</button>
+            <button class="sheet-item" data-menu="premium"><span>★</span>Premium</button>
+            <button class="sheet-item" data-menu="help"><span>❓</span>Hilfe &amp; Feedback</button>
+            <button class="sheet-item danger" data-menu="logout"><span>🚪</span>Abmelden</button>
+            <button class="sheet-cancel" id="closeProfileMenuBtn">Abbrechen</button>
+        </div>
+    </div>
+
+    <!-- Edit profile modal -->
+    <div id="editProfileModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Profil bearbeiten</h2>
+            <form id="myProfileForm" class="profile-form">
+                <div class="avatar-picker">
+                    <div class="avatar-preview" id="avatarPreview">🐕</div>
+                    <div class="avatar-options">
+                        <button type="button" data-emoji="🐕">🐕</button>
+                        <button type="button" data-emoji="🐶">🐶</button>
+                        <button type="button" data-emoji="🦮">🦮</button>
+                        <button type="button" data-emoji="🐩">🐩</button>
+                        <button type="button" data-emoji="🐕‍🦺">🐕‍🦺</button>
+                    </div>
+                </div>
+                <label>Name<input type="text" id="pfName" value="Bello" required /></label>
+                <label>Rasse<input type="text" id="pfBreed" value="Labrador-Mix" /></label>
+                <label>Alter (Jahre)<input type="number" id="pfAge" value="3" min="0" max="25" /></label>
+                <label>Größe
+                    <select id="pfSize">
+                        <option>Klein (&lt;10kg)</option>
+                        <option selected>Mittel (10–25kg)</option>
+                        <option>Groß (25–40kg)</option>
+                        <option>Sehr groß (&gt;40kg)</option>
+                    </select>
+                </label>
+                <label>Kastriert
+                    <select id="pfNeutered">
+                        <option>Ja</option>
+                        <option selected>Nein</option>
+                    </select>
+                </label>
+                <label>Energielevel
+                    <select id="pfEnergy">
+                        <option>Couch-Potato 🛋️</option>
+                        <option selected>Ausgeglichen 🐾</option>
+                        <option>Duracell-Häschen ⚡</option>
+                    </select>
+                </label>
+                <label>Spielstil
+                    <select id="pfPlay">
+                        <option>Zurückhaltend 🤗</option>
+                        <option selected>Rennend 🏃</option>
+                        <option>Grob / Körperlich 🤼</option>
+                    </select>
+                </label>
+                <label>Warn-Tags (Kommas)
+                    <input type="text" id="pfTags" placeholder="z. B. Leinenaggressiv, Ängstlich bei großen Hunden" />
+                </label>
+                <label>Bio
+                    <textarea id="pfBio" rows="3" placeholder="Erzähl was über deinen Hund…">Liebt Stöckchen und Matschpfützen!</textarea>
+                </label>
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" id="cancelEditProfileBtn">Abbrechen</button>
+                    <button type="submit" class="btn-primary">Speichern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings modal -->
+    <div id="settingsModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>⚙ Einstellungen</h2>
+
+            <div class="settings-group">
+                <h3>Benachrichtigungen</h3>
+                <label class="setting-row">
+                    <span>🔔 Push-Benachrichtigungen</span>
+                    <input type="checkbox" id="setPush" checked />
+                </label>
+                <label class="setting-row">
+                    <span>💬 Chat-Nachrichten</span>
+                    <input type="checkbox" id="setChatNotif" checked />
+                </label>
+                <label class="setting-row">
+                    <span>🐾 Neue Matches</span>
+                    <input type="checkbox" id="setMatchNotif" checked />
+                </label>
+                <label class="setting-row">
+                    <span>⚠ Gefahren in der Nähe</span>
+                    <input type="checkbox" id="setDangerNotif" checked />
+                </label>
+            </div>
+
+            <div class="settings-group">
+                <h3>Privatsphäre</h3>
+                <label class="setting-row">
+                    <span>🥷 Unsichtbares Swipen <small>(Premium)</small></span>
+                    <input type="checkbox" id="setInvisible" />
+                </label>
+                <label class="setting-row">
+                    <span>📍 Standort teilen</span>
+                    <input type="checkbox" id="setLocShare" checked />
+                </label>
+                <label class="setting-row">
+                    <span>👀 Lesebestätigungen senden</span>
+                    <input type="checkbox" id="setReadReceipts" checked />
+                </label>
+            </div>
+
+            <div class="settings-group">
+                <h3>App</h3>
+                <label class="setting-row">
+                    <span>🌙 Dunkler Modus</span>
+                    <input type="checkbox" id="setDark" />
+                </label>
+                <label class="setting-row">
+                    <span>🗣 Sprache</span>
+                    <select id="setLang">
+                        <option value="de" selected>Deutsch</option>
+                        <option value="en">English</option>
+                        <option value="fr">Français</option>
+                        <option value="it">Italiano</option>
+                    </select>
+                </label>
+                <label class="setting-row">
+                    <span>📏 Entfernungseinheit</span>
+                    <select id="setUnit">
+                        <option value="km" selected>Kilometer</option>
+                        <option value="mi">Meilen</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="settings-group">
+                <h3>Konto</h3>
+                <button class="btn-ghost full" id="exportDataBtn">📦 Daten exportieren</button>
+                <button class="btn-ghost full" id="resetDataBtn">♻ Alle Daten zurücksetzen</button>
+                <button class="btn-danger-outline full" id="deleteAccountBtn">🗑 Account löschen</button>
+            </div>
+
+            <div class="settings-group muted-group">
+                <small>PfotenMatch · v0.1.0 · Made with 🐾 in Basel</small>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-primary full" id="closeSettingsBtn">Fertig</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo viewer (lightbox) -->
+    <div id="photoViewerModal" class="modal hidden">
+        <div class="photo-viewer">
+            <button id="photoViewerClose" class="photo-viewer-close">✕</button>
+            <img id="photoViewerImg" src="" alt="" />
+            <button id="photoViewerDelete" class="btn-danger-outline">🗑 Löschen</button>
         </div>
     </div>
 
