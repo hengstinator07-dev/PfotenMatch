@@ -10,7 +10,7 @@ const state = {
     likedBy: [],        // wer hat MICH gelikt (für Premium)
     premium: false,
     radius: 10,
-    userLocation: { lat: 52.5170, lng: 13.3889 }, // Default: Berlin Mitte
+    userLocation: { lat: 47.5585, lng: 7.5880 }, // Default: Basel Marktplatz
     filters: { size: "", play: "", energy: "", breed: "" },
     myProfile: {
         name: "Bello", breed: "Labrador-Mix", age: 3,
@@ -396,9 +396,9 @@ function formatAgo(ts) {
 let leafletMap = null;
 let mapLayers = { spots: [], dogs: [], me: null, dangers: [] };
 
-function buildEmojiIcon(emoji, size = 32) {
+function buildEmojiIcon(emoji, size = 32, extraClass = "") {
     return L.divIcon({
-        className: "emoji-marker",
+        className: "emoji-marker " + extraClass,
         html: `<div class="emoji-pin" style="font-size:${size}px">${emoji}</div>`,
         iconSize: [size, size],
         iconAnchor: [size / 2, size]
@@ -416,14 +416,17 @@ function renderMap() {
     if (!leafletMap) {
         leafletMap = L.map(canvas, {
             center: [state.userLocation.lat, state.userLocation.lng],
-            zoom: 13,
+            zoom: 14,
             zoomControl: true,
-            attributionControl: true
+            attributionControl: true,
+            zoomSnap: 0.25
         });
-        // OpenStreetMap tiles – ODbL, kommerziell frei mit Attribution
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>-Mitwirkende'
+        // CartoDB Voyager – CC BY 3.0, kommerziell frei mit Attribution.
+        // Sauberer, moderner Look wie bei Apple/Tinder-artigen Apps.
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+            maxZoom: 20,
+            subdomains: "abcd",
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>'
         }).addTo(leafletMap);
     }
 
@@ -440,9 +443,9 @@ function renderMap() {
     mapLayers.dogs = [];
     mapLayers.dangers = [];
 
-    // Eigener Standort
+    // Eigener Standort (pulsierend)
     mapLayers.me = L.marker([state.userLocation.lat, state.userLocation.lng], {
-        icon: buildEmojiIcon("📍", 36),
+        icon: buildEmojiIcon("📍", 38, "me-marker"),
         title: "Dein Standort"
     }).addTo(leafletMap).bindPopup("<strong>Du bist hier</strong>");
 

@@ -2,8 +2,8 @@
    PfotenMatch – Dummy-Daten (Hundeprofile, Treffpunkte, Ads)
    ============================================================ */
 
-// Standard-Standort des Nutzers (Berlin Mitte als Demo)
-const DEFAULT_LOCATION = { lat: 52.5170, lng: 13.3889 };
+// Standard-Standort des Nutzers (Basel Marktplatz)
+const DEFAULT_LOCATION = { lat: 47.5585, lng: 7.5880 };
 
 // Hundeprofile
 const DOG_PROFILES = [
@@ -22,7 +22,7 @@ const DOG_PROFILES = [
         bio: "Ich liebe es, Bällen hinterherzujagen und im See zu schwimmen! Suche ausdauernde Spielkameraden.",
         distance: 1.2,
         owner: "Lisa",
-        lat: 52.5205, lng: 13.3750
+        lat: 47.5675, lng: 7.5950
     },
     {
         id: 2,
@@ -39,7 +39,7 @@ const DOG_PROFILES = [
         bio: "Eine kleine Diva mit Herz. Ich mag sanftes Spielen und gemütliche Schnüffeltouren.",
         distance: 0.8,
         owner: "Thomas",
-        lat: 52.5155, lng: 13.3950
+        lat: 47.5665, lng: 7.5785
     },
     {
         id: 3,
@@ -56,7 +56,7 @@ const DOG_PROFILES = [
         bio: "Ich bin ein sanfter Riese. Nach einer Stunde Spielen bin ich bereit für ein Nickerchen.",
         distance: 3.5,
         owner: "Sabine",
-        lat: 52.4950, lng: 13.3650
+        lat: 47.5430, lng: 7.5900
     },
     {
         id: 4,
@@ -73,7 +73,7 @@ const DOG_PROFILES = [
         bio: "Welpenenergie pur! Ich rangele gerne und brauche geduldige Freunde zum Austoben.",
         distance: 2.1,
         owner: "Max",
-        lat: 52.5280, lng: 13.4100
+        lat: 47.5500, lng: 7.5620
     },
     {
         id: 5,
@@ -90,7 +90,7 @@ const DOG_PROFILES = [
         bio: "Frisbee-Champion auf der Suche nach Trainingspartnern. Ich apportiere alles!",
         distance: 4.7,
         owner: "Julia",
-        lat: 52.5400, lng: 13.3900
+        lat: 47.5640, lng: 7.6015
     },
     {
         id: 6,
@@ -107,7 +107,7 @@ const DOG_PROFILES = [
         bio: "Im Freilauf ein Schmusebär, an der Leine manchmal kompliziert. Suche geduldige Pfoten.",
         distance: 1.9,
         owner: "Michael",
-        lat: 52.5240, lng: 13.3700
+        lat: 47.5610, lng: 7.5620
     },
     {
         id: 7,
@@ -124,7 +124,7 @@ const DOG_PROFILES = [
         bio: "Klein aber oho! Ich kann mit den ganz Großen mithalten – wenn sie sanft spielen.",
         distance: 6.3,
         owner: "Anna",
-        lat: 52.4800, lng: 13.4400
+        lat: 47.5760, lng: 7.6105
     },
     {
         id: 8,
@@ -141,7 +141,7 @@ const DOG_PROFILES = [
         bio: "Schnee, Wald, Berge – ich will sie alle! Suche abenteuerlustige Freunde.",
         distance: 8.1,
         owner: "Stefan",
-        lat: 52.5600, lng: 13.3200
+        lat: 47.5830, lng: 7.6350
     },
     {
         id: 9,
@@ -158,7 +158,7 @@ const DOG_PROFILES = [
         bio: "Die ruhige Omi im besten Alter. Gemütlicher Plausch lieber als wildes Toben.",
         distance: 0.5,
         owner: "Claudia",
-        lat: 52.5180, lng: 13.3920
+        lat: 47.5595, lng: 7.5870
     },
     {
         id: 10,
@@ -175,18 +175,20 @@ const DOG_PROFILES = [
         bio: "Ich liebe Agility und lange Wanderungen. Immer für Abenteuer zu haben.",
         distance: 2.8,
         owner: "Peter",
-        lat: 52.5050, lng: 13.4050
+        lat: 47.5485, lng: 7.5660
     }
 ];
 
-// Hundefreundliche Treffpunkte (Demo-Koordinaten in Berlin)
+// Hundefreundliche Treffpunkte in Basel (Schweiz)
 const MEETING_SPOTS = [
-    { id: 1, name: "Hundewiese am Tiergarten",      type: "park",   icon: "🌳", desc: "Große freie Wiese, beliebt bei mittleren Hunden", lat: 52.5145, lng: 13.3501 },
-    { id: 2, name: "Eingezäunte Auslauffläche Ost", type: "fenced", icon: "🚧", desc: "Komplett eingezäunt, ideal für Welpen",          lat: 52.5220, lng: 13.4150 },
-    { id: 3, name: "Waldlauf Nord",                 type: "park",   icon: "🌲", desc: "Schöner Waldweg, Leinenpflicht",                  lat: 52.5450, lng: 13.3800 },
-    { id: 4, name: "Hundecafé 'Pfote & Tasse'",     type: "cafe",   icon: "☕", desc: "Hundefreundliches Café mit Wassernapf",           lat: 52.5180, lng: 13.3900 },
-    { id: 5, name: "Seeufer Süd",                   type: "park",   icon: "🌊", desc: "Flacher Einstieg zum Planschen",                  lat: 52.4900, lng: 13.3800 },
-    { id: 6, name: "Agility-Platz Verein HSV",      type: "fenced", icon: "🏅", desc: "Trainingsplatz, Mo–Fr ab 17 Uhr offen",           lat: 52.5300, lng: 13.4250 }
+    { id: 1, name: "Kannenfeldpark",            type: "park",   icon: "🌳", desc: "Grösster Park im Westen Basels, weite Wiesen zum Toben",   lat: 47.5617, lng: 7.5700 },
+    { id: 2, name: "Schützenmattpark",          type: "park",   icon: "🌳", desc: "Zentrumsnah mit schattigen Baumgruppen",                   lat: 47.5591, lng: 7.5762 },
+    { id: 3, name: "St. Johanns-Park",          type: "park",   icon: "🌲", desc: "Moderner Park direkt am Rhein, Hunde sehr willkommen",     lat: 47.5678, lng: 7.5795 },
+    { id: 4, name: "Margarethenpark",           type: "park",   icon: "🌳", desc: "Hügelige Wiese im Gundeli mit toller Aussicht",            lat: 47.5478, lng: 7.5820 },
+    { id: 5, name: "Solitude-Park",             type: "park",   icon: "🌊", desc: "Am Rhein beim Tinguely-Museum, Wasserzugang",             lat: 47.5568, lng: 7.6048 },
+    { id: 6, name: "Lange Erlen",               type: "park",   icon: "🌲", desc: "Grosses Naherholungsgebiet mit Tierpark",                  lat: 47.5820, lng: 7.6150 },
+    { id: 7, name: "Eingezäunter Hundeplatz Landhof", type: "fenced", icon: "🚧", desc: "Komplett eingezäunt, ideal für Welpen & sichere Treffen", lat: 47.5688, lng: 7.6020 },
+    { id: 8, name: "Hundecafé 'Waggis & Wuff'", type: "cafe",   icon: "☕", desc: "Hundefreundliches Café mit Wassernapf, nahe Schifflände",  lat: 47.5598, lng: 7.5885 }
 ];
 
 // B2B-Werbung
@@ -206,17 +208,18 @@ const DANGER_TYPES = [
     { id: "other",   label: "Sonstige Gefahr",         icon: "⚠" }
 ];
 
-// Anfangs-Gefahrenmeldungen (Community-Beispiele)
+// Anfangs-Gefahrenmeldungen (Community-Beispiele in Basel)
 const DEMO_DANGERS = [
-    { id: "d1", type: "poison", lat: 52.5165, lng: 13.3850, desc: "Mehrere Wurststücke am Waldrand gesehen", ts: Date.now() - 3600e3, reporter: "Sabine" },
-    { id: "d2", type: "glass",  lat: 52.5250, lng: 13.4000, desc: "Scherben auf dem Fußweg",                ts: Date.now() - 7200e3, reporter: "Max" }
+    { id: "d1", type: "poison", lat: 47.5625, lng: 7.5720, desc: "Wurststücke am Rand des Kannenfeldparks gesehen", ts: Date.now() - 3600e3, reporter: "Sabine" },
+    { id: "d2", type: "glass",  lat: 47.5685, lng: 7.5830, desc: "Scherben auf dem Rheinuferweg",                    ts: Date.now() - 7200e3, reporter: "Max" }
 ];
 
-// Simulierte Live-Check-Ins anderer Nutzer (andere Hunde gerade im Park)
+// Simulierte Live-Check-Ins anderer Nutzer
 const DEMO_CHECKINS = [
-    { spotId: 1, dogName: "Rex",  until: Date.now() + 90 * 60e3 },
-    { spotId: 1, dogName: "Luna", until: Date.now() + 45 * 60e3 },
-    { spotId: 4, dogName: "Paula", until: Date.now() + 30 * 60e3 }
+    { spotId: 1, dogName: "Rex",   until: Date.now() + 90 * 60e3 },
+    { spotId: 1, dogName: "Luna",  until: Date.now() + 45 * 60e3 },
+    { spotId: 3, dogName: "Emma",  until: Date.now() + 60 * 60e3 },
+    { spotId: 8, dogName: "Paula", until: Date.now() + 30 * 60e3 }
 ];
 
 // Automatische Chat-Antworten
