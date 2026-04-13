@@ -241,14 +241,24 @@ function renderMatches() {
     list.innerHTML = "";
     state.matches.forEach(m => {
         const lastMsg = m.messages[m.messages.length - 1];
+        const unread = chatUi.unread[m.profile.id] || 0;
         const item = document.createElement("div");
-        item.className = "match-item";
+        item.className = "match-item" + (unread > 0 ? " has-unread" : "");
+        const preview = lastMsg
+            ? (lastMsg.type === "voice" ? "🎤 Sprachnachricht"
+              : lastMsg.type === "image" ? "🖼️ Foto"
+              : lastMsg.type === "location" ? "📍 Standort"
+              : lastMsg.deleted ? "🚫 Nachricht gelöscht"
+              : lastMsg.text)
+            : "Noch keine Nachricht";
+        const prefix = lastMsg && lastMsg.from === "me" ? "Du: " : "";
         item.innerHTML = `
             <div class="av">${m.profile.emoji}</div>
             <div class="meta">
                 <h4>${m.profile.name} · ${m.profile.breed}</h4>
-                <p>${lastMsg ? lastMsg.text : "Noch keine Nachricht"}</p>
+                <p>${escapeHtml(prefix + preview)}</p>
             </div>
+            ${unread > 0 ? `<span class="unread">${unread}</span>` : ""}
             <button class="meet-btn" data-meet="${m.profile.id}">📍 Treffen</button>
         `;
         item.addEventListener("click", (e) => {
@@ -263,16 +273,171 @@ function renderMatches() {
     });
 }
 
-// ---------- Chat ----------
+// ---------- Chat (WhatsApp-Style) ----------
+const EMOJI_SET = [
+    "😀","😁","😂","🤣","😊","😇","🙂","😉","😍","🥰","😘","😜","🤪","😎","🤩","🥳",
+    "😏","😒","😔","😢","😭","😤","😡","🤯","😱","🤔","🤗","🤭","🤫","🙄","😴","🤤",
+    "❤️","🧡","💛","💚","💙","💜","🖤","🤍","💕","💖","💘","💝","💯","✨","🔥","⭐",
+    "👍","👎","👏","🙌","🙏","👋","🤝","💪","🫶","👀","🎉","🎈","🎁","🎂","🍀","🌈",
+    "🐶","🐕","🐩","🦮","🐕‍🦺","🐾","🦴","🎾","🥎","🧸","🏞️","🌳","🌲","☀️","🌙","💧"
+];
+const PHOTO_SET = ["🐕","🐾","🌳","🎾","🏞️","🦴","🌅","🌊","🦮","🐩","🏖️","🌈","🐶","🎉","🌻","🍖"];
+const ATTACH_LOCATIONS = [
+    { name: "Kannenfeldpark", desc: "47.5617, 7.5700" },
+    { name: "St. Johanns-Park", desc: "47.5678, 7.5795" },
+    { name: "Mein Standort", desc: "Live-Position geteilt" }
+];
+
+// Transient chat UI state (nicht persistiert)
+const chatUi = {
+    typingTimer: null,
+    replyTo: null,
+    voiceTimer: null,
+    voiceSeconds: 0,
+    contextMsgId: null,
+    muted: {},    // {dogId: true}
+    unread: {}    // {dogId: count}
+};
+
+function genMsgId() {
+    return "m" + Date.now() + Math.floor(Math.random() * 1000);
+}
+
+function formatTime(ts) {
+    const d = new Date(ts);
+    return d.getHours().toString().padStart(2, "0") + ":" + d.getMinutes().toString().padStart(2, "0");
+}
+
+function formatDay(ts) {
+    const d = new Date(ts);
+    const today = new Date();
+    const yest = new Date(Date.now() - 86400000);
+    if (d.toDateString() === today.toDateString()) return "Heute";
+    if (d.toDateString() === yest.toDateString()) return "Gestern";
+    return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function dogOnlineStatus(dogId) {
+    // Deterministisch anhand dogId
+    const seed = (dogId * 13 + 7) % 10;
+    if (seed < 4) return "online";
+    if (seed < 7) return "schreibt…";
+    const mins = (seed * 11) % 55 + 3;
+    return `zuletzt online vor ${mins} Min`;
+}
+
+function migrateMessage(m) {
+    // Sorgt dafür, dass ältere Nachrichten die neuen Felder bekommen
+    if (!m.id) m.id = genMsgId();
+    if (!m.type) m.type = "text";
+    if (!m.status) m.status = m.from === "me" ? "read" : "received";
+    if (!m.reactions) m.reactions = [];
+    return m;
+}
+
 function openChat(dogId) {
     const match = state.matches.find(m => m.profile.id === dogId);
     if (!match) return;
     state.activeChatId = dogId;
+    // Migration älterer Nachrichten
+    match.messages = match.messages.map(migrateMessage);
+    // Reply/Attach/Picker zurücksetzen
+    resetChatUi();
+    // Header setzen
     $("#chatAvatar").textContent = match.profile.emoji;
-    $("#chatName").textContent = `${match.profile.name} (von ${match.profile.owner})`;
+    $("#chatName").textContent = `${match.profile.name} · ${match.profile.owner}`;
+    const status = dogOnlineStatus(match.profile.id);
+    const statusEl = $("#chatStatus");
+    statusEl.textContent = status;
+    statusEl.classList.toggle("online", status === "online");
+    // Unread zurücksetzen
+    chatUi.unread[dogId] = 0;
+    // Alle ungelesenen Them-Nachrichten auf "read" setzen
+    match.messages.forEach(m => { if (m.from === "them") m.status = "read"; });
+    // Meine gesendeten Nachrichten simuliert als "read" markieren (Gegenüber hat geöffnet)
+    match.messages.forEach(m => { if (m.from === "me" && m.status !== "read") m.status = "read"; });
     renderChatMessages();
     $("#chatModal").classList.remove("hidden");
     setTimeout(() => $("#chatInput").focus(), 100);
+    saveState();
+}
+
+function resetChatUi() {
+    chatUi.replyTo = null;
+    $("#replyPreview").classList.add("hidden");
+    $("#emojiPicker").classList.add("hidden");
+    $("#photoPicker").classList.add("hidden");
+    $("#attachMenu").classList.add("hidden");
+    $("#typingIndicator").classList.add("hidden");
+    $("#voiceRecording").classList.add("hidden");
+    $("#sendBtn").classList.add("hidden");
+    $("#voiceBtn").classList.remove("hidden");
+    if (chatUi.typingTimer) { clearTimeout(chatUi.typingTimer); chatUi.typingTimer = null; }
+    if (chatUi.voiceTimer)  { clearInterval(chatUi.voiceTimer); chatUi.voiceTimer = null; }
+}
+
+function escapeHtml(s) {
+    return String(s || "")
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function renderTicks(status) {
+    if (status === "sent")      return `<span class="ticks" title="Gesendet">✓</span>`;
+    if (status === "delivered") return `<span class="ticks" title="Zugestellt">✓✓</span>`;
+    if (status === "read")      return `<span class="ticks read" title="Gelesen">✓✓</span>`;
+    return "";
+}
+
+function renderReactions(msg) {
+    if (!msg.reactions || msg.reactions.length === 0) return "";
+    // gruppiere nach Emoji
+    const counts = {};
+    msg.reactions.forEach(r => { counts[r.emoji] = (counts[r.emoji] || 0) + 1; });
+    const keys = Object.keys(counts);
+    return `<div class="bubble-reactions">${keys.map(e =>
+        `${e}${counts[e] > 1 ? " " + counts[e] : ""}`
+    ).join(" ")}</div>`;
+}
+
+function renderQuotedReply(msg, match) {
+    if (!msg.replyTo) return "";
+    const orig = match.messages.find(m => m.id === msg.replyTo);
+    if (!orig) return "";
+    const whoName = orig.from === "me" ? (state.myProfile.name || "Ich") : match.profile.name;
+    const preview = orig.type === "voice"    ? "🎤 Sprachnachricht"
+                  : orig.type === "image"    ? "🖼️ Foto"
+                  : orig.type === "location" ? "📍 Standort"
+                  : escapeHtml(orig.text || "");
+    return `<div class="quoted-reply"><strong>${escapeHtml(whoName)}</strong><div class="q-text">${preview}</div></div>`;
+}
+
+function renderBubbleBody(msg) {
+    if (msg.deleted) return `<span class="deleted-text">🚫 Nachricht gelöscht</span>`;
+    if (msg.type === "voice") {
+        const bars = Array.from({ length: 24 }, (_, i) => {
+            const h = 6 + ((i * 7 + (msg.id || "").length) % 18);
+            return `<i style="height:${h}px"></i>`;
+        }).join("");
+        return `<div class="voice-msg">
+            <button class="play-btn" type="button">▶</button>
+            <div class="waveform">${bars}</div>
+            <span class="duration">${msg.duration || "0:05"}</span>
+        </div>`;
+    }
+    if (msg.type === "image") {
+        return `<div class="image-msg">${msg.image || "🖼️"}</div>${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}`;
+    }
+    if (msg.type === "location") {
+        return `<div class="location-msg">
+            <div class="icon">📍</div>
+            <div class="info">
+                <strong>${escapeHtml(msg.location?.name || "Standort")}</strong>
+                <small>${escapeHtml(msg.location?.desc || "")}</small>
+            </div>
+        </div>`;
+    }
+    return escapeHtml(msg.text || "");
 }
 
 function renderChatMessages() {
@@ -280,11 +445,61 @@ function renderChatMessages() {
     if (!match) return;
     const box = $("#chatMessages");
     box.innerHTML = "";
-    match.messages.forEach(msg => {
+    let lastDay = "";
+    let lastFrom = null;
+    match.messages.forEach((msg, idx) => {
+        migrateMessage(msg);
+        // Datums-Trenner
+        const day = formatDay(msg.ts || Date.now());
+        if (day !== lastDay) {
+            const sep = document.createElement("div");
+            sep.className = "date-separator";
+            sep.textContent = day;
+            box.appendChild(sep);
+            lastDay = day;
+            lastFrom = null;
+        }
+        // System-Nachricht (Treffen)
+        if (msg.from === "system") {
+            const bubble = document.createElement("div");
+            bubble.className = "chat-bubble system";
+            bubble.textContent = msg.text;
+            box.appendChild(bubble);
+            lastFrom = "system";
+            return;
+        }
         const bubble = document.createElement("div");
-        bubble.className = "chat-bubble " + msg.from;
-        bubble.textContent = msg.text;
+        const next = match.messages[idx + 1];
+        const isLastOfGroup = !next || next.from !== msg.from ||
+                              formatDay(next.ts || Date.now()) !== day;
+        const grouped = lastFrom === msg.from;
+        bubble.className = "chat-bubble " + msg.from +
+                           (isLastOfGroup ? " tail" : "") +
+                           (grouped ? " grouped" : "") +
+                           (msg.deleted ? " deleted" : "");
+        bubble.dataset.msgId = msg.id;
+        const ticks = msg.from === "me" && !msg.deleted ? renderTicks(msg.status) : "";
+        bubble.innerHTML =
+            renderQuotedReply(msg, match) +
+            `<div class="bubble-content">${renderBubbleBody(msg)}</div>` +
+            `<div class="bubble-meta"><span>${formatTime(msg.ts || Date.now())}</span>${ticks}</div>` +
+            renderReactions(msg);
+        // Long-press / right-click / double-click öffnet Kontextmenü
+        const openCtx = (e) => {
+            if (msg.deleted) return;
+            e.preventDefault();
+            openMsgContextMenu(msg.id);
+        };
+        bubble.addEventListener("contextmenu", openCtx);
+        bubble.addEventListener("dblclick", openCtx);
+        let pressTimer = null;
+        bubble.addEventListener("touchstart", () => {
+            pressTimer = setTimeout(() => openMsgContextMenu(msg.id), 500);
+        }, { passive: true });
+        bubble.addEventListener("touchend", () => { if (pressTimer) clearTimeout(pressTimer); });
+        bubble.addEventListener("touchmove", () => { if (pressTimer) clearTimeout(pressTimer); });
         box.appendChild(bubble);
+        lastFrom = msg.from;
     });
     box.scrollTop = box.scrollHeight;
 }
@@ -292,16 +507,312 @@ function renderChatMessages() {
 function sendMessage(text) {
     const match = state.matches.find(m => m.profile.id === state.activeChatId);
     if (!match || !text.trim()) return;
-    match.messages.push({ from: "me", text: text.trim(), ts: Date.now() });
+    pushMessage(match, {
+        id: genMsgId(),
+        from: "me",
+        type: "text",
+        text: text.trim(),
+        ts: Date.now(),
+        status: "sent",
+        reactions: [],
+        replyTo: chatUi.replyTo
+    });
+    cancelReply();
+    // Status-Progression + Auto-Reply
+    scheduleStatusProgression(match);
+    scheduleAutoReply(match);
+}
+
+function pushMessage(match, msg) {
+    match.messages.push(msg);
     renderChatMessages();
     saveState();
-    // Auto-Antwort
+}
+
+function scheduleStatusProgression(match) {
+    const myMsgs = match.messages.filter(m => m.from === "me" && m.status !== "read");
+    // Letzte meiner Nachrichten: sent → delivered (400ms) → read (1200ms)
+    const last = myMsgs[myMsgs.length - 1];
+    if (!last) return;
     setTimeout(() => {
-        const reply = AUTO_REPLIES[Math.floor(Math.random() * AUTO_REPLIES.length)];
-        match.messages.push({ from: "them", text: reply, ts: Date.now() });
+        if (last.status === "sent") { last.status = "delivered"; renderChatMessages(); saveState(); }
+    }, 450);
+    setTimeout(() => {
+        last.status = "read";
         renderChatMessages();
         saveState();
-    }, 900 + Math.random() * 800);
+    }, 1400);
+}
+
+function scheduleAutoReply(match) {
+    // Typing indicator
+    $("#typingName").textContent = match.profile.name + " schreibt…";
+    $("#typingIndicator").classList.remove("hidden");
+    const delay = 1100 + Math.random() * 1200;
+    if (chatUi.typingTimer) clearTimeout(chatUi.typingTimer);
+    chatUi.typingTimer = setTimeout(() => {
+        $("#typingIndicator").classList.add("hidden");
+        const reply = AUTO_REPLIES[Math.floor(Math.random() * AUTO_REPLIES.length)];
+        const active = state.activeChatId === match.profile.id;
+        match.messages.push({
+            id: genMsgId(),
+            from: "them",
+            type: "text",
+            text: reply,
+            ts: Date.now(),
+            status: active ? "read" : "delivered",
+            reactions: []
+        });
+        if (!active) {
+            chatUi.unread[match.profile.id] = (chatUi.unread[match.profile.id] || 0) + 1;
+        }
+        if (active) renderChatMessages();
+        saveState();
+    }, delay);
+}
+
+// --- Reply ---
+function startReplyTo(msgId) {
+    const match = state.matches.find(m => m.profile.id === state.activeChatId);
+    if (!match) return;
+    const msg = match.messages.find(m => m.id === msgId);
+    if (!msg || msg.deleted) return;
+    chatUi.replyTo = msgId;
+    $("#replyName").textContent = msg.from === "me" ? "Du" : match.profile.name;
+    const preview = msg.type === "voice"    ? "🎤 Sprachnachricht"
+                  : msg.type === "image"    ? "🖼️ Foto"
+                  : msg.type === "location" ? "📍 Standort"
+                  : msg.text;
+    $("#replyText").textContent = preview;
+    $("#replyPreview").classList.remove("hidden");
+    $("#chatInput").focus();
+}
+function cancelReply() {
+    chatUi.replyTo = null;
+    $("#replyPreview").classList.add("hidden");
+}
+
+// --- Reaktionen ---
+function addReaction(msgId, emoji) {
+    const match = state.matches.find(m => m.profile.id === state.activeChatId);
+    if (!match) return;
+    const msg = match.messages.find(m => m.id === msgId);
+    if (!msg) return;
+    msg.reactions = msg.reactions || [];
+    // Toggle: wenn ich bereits mit diesem Emoji reagiert habe → entfernen
+    const existing = msg.reactions.findIndex(r => r.by === "me" && r.emoji === emoji);
+    if (existing >= 0) msg.reactions.splice(existing, 1);
+    else {
+        // Nur eine Reaktion pro User: vorhandene eigene entfernen
+        msg.reactions = msg.reactions.filter(r => r.by !== "me");
+        msg.reactions.push({ by: "me", emoji });
+    }
+    renderChatMessages();
+    saveState();
+}
+
+// --- Delete ---
+function deleteMessage(msgId) {
+    const match = state.matches.find(m => m.profile.id === state.activeChatId);
+    if (!match) return;
+    const msg = match.messages.find(m => m.id === msgId);
+    if (!msg) return;
+    msg.deleted = true;
+    msg.text = "";
+    msg.reactions = [];
+    renderChatMessages();
+    saveState();
+}
+
+// --- Copy ---
+function copyMessage(msgId) {
+    const match = state.matches.find(m => m.profile.id === state.activeChatId);
+    const msg = match?.messages.find(m => m.id === msgId);
+    if (!msg || !msg.text) return;
+    if (navigator.clipboard) navigator.clipboard.writeText(msg.text).catch(() => {});
+    flashToast("📋 Kopiert");
+}
+
+// --- Context menu ---
+function openMsgContextMenu(msgId) {
+    chatUi.contextMsgId = msgId;
+    $("#msgContextMenu").classList.remove("hidden");
+}
+function closeMsgContextMenu() {
+    chatUi.contextMsgId = null;
+    $("#msgContextMenu").classList.add("hidden");
+}
+
+// --- Emoji ---
+function buildEmojiGrid() {
+    const grid = $("#emojiGrid");
+    grid.innerHTML = "";
+    EMOJI_SET.forEach(e => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = e;
+        btn.addEventListener("click", () => {
+            const inp = $("#chatInput");
+            inp.value += e;
+            inp.focus();
+            toggleSendButton();
+        });
+        grid.appendChild(btn);
+    });
+}
+function buildPhotoGrid() {
+    const grid = $("#photoGrid");
+    grid.innerHTML = "";
+    PHOTO_SET.forEach(e => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = e;
+        btn.addEventListener("click", () => {
+            $("#photoPicker").classList.add("hidden");
+            const match = state.matches.find(m => m.profile.id === state.activeChatId);
+            if (!match) return;
+            pushMessage(match, {
+                id: genMsgId(),
+                from: "me",
+                type: "image",
+                image: e,
+                ts: Date.now(),
+                status: "sent",
+                reactions: [],
+                replyTo: chatUi.replyTo
+            });
+            cancelReply();
+            scheduleStatusProgression(match);
+            scheduleAutoReply(match);
+        });
+        grid.appendChild(btn);
+    });
+}
+
+// --- Location ---
+function sendLocation() {
+    const match = state.matches.find(m => m.profile.id === state.activeChatId);
+    if (!match) return;
+    const loc = ATTACH_LOCATIONS[Math.floor(Math.random() * ATTACH_LOCATIONS.length)];
+    pushMessage(match, {
+        id: genMsgId(),
+        from: "me",
+        type: "location",
+        location: loc,
+        ts: Date.now(),
+        status: "sent",
+        reactions: [],
+        replyTo: chatUi.replyTo
+    });
+    cancelReply();
+    scheduleStatusProgression(match);
+    scheduleAutoReply(match);
+}
+
+// --- Voice ---
+function startVoiceRecording() {
+    chatUi.voiceSeconds = 0;
+    $("#voiceTimer").textContent = "0:00";
+    $("#voiceRecording").classList.remove("hidden");
+    chatUi.voiceTimer = setInterval(() => {
+        chatUi.voiceSeconds++;
+        const m = Math.floor(chatUi.voiceSeconds / 60);
+        const s = chatUi.voiceSeconds % 60;
+        $("#voiceTimer").textContent = m + ":" + s.toString().padStart(2, "0");
+    }, 1000);
+}
+function stopVoiceRecording(send) {
+    if (chatUi.voiceTimer) { clearInterval(chatUi.voiceTimer); chatUi.voiceTimer = null; }
+    $("#voiceRecording").classList.add("hidden");
+    if (!send) return;
+    const match = state.matches.find(m => m.profile.id === state.activeChatId);
+    if (!match) return;
+    const secs = Math.max(chatUi.voiceSeconds, 1);
+    const duration = Math.floor(secs / 60) + ":" + (secs % 60).toString().padStart(2, "0");
+    pushMessage(match, {
+        id: genMsgId(),
+        from: "me",
+        type: "voice",
+        duration,
+        ts: Date.now(),
+        status: "sent",
+        reactions: [],
+        replyTo: chatUi.replyTo
+    });
+    cancelReply();
+    scheduleStatusProgression(match);
+    scheduleAutoReply(match);
+}
+
+// --- Search ---
+function runChatSearch(query) {
+    const match = state.matches.find(m => m.profile.id === state.activeChatId);
+    const box = $("#chatSearchResults");
+    box.innerHTML = "";
+    if (!match || !query.trim()) return;
+    const q = query.trim().toLowerCase();
+    const hits = match.messages.filter(m => !m.deleted && (m.text || "").toLowerCase().includes(q));
+    if (hits.length === 0) {
+        box.innerHTML = `<p class="empty-mini">Keine Treffer.</p>`;
+        return;
+    }
+    hits.forEach(m => {
+        const el = document.createElement("div");
+        el.className = "search-result";
+        const escText = escapeHtml(m.text || "");
+        const re = new RegExp("(" + q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig");
+        el.innerHTML = escText.replace(re, '<span class="hit">$1</span>') +
+                       `<small>${m.from === "me" ? "Du" : match.profile.name} · ${formatDay(m.ts)} ${formatTime(m.ts)}</small>`;
+        el.addEventListener("click", () => {
+            $("#chatSearchModal").classList.add("hidden");
+            const bubble = document.querySelector(`.chat-bubble[data-msg-id="${m.id}"]`);
+            if (bubble) {
+                bubble.scrollIntoView({ behavior: "smooth", block: "center" });
+                bubble.classList.add("highlight");
+                setTimeout(() => bubble.classList.remove("highlight"), 1500);
+            }
+        });
+        box.appendChild(el);
+    });
+}
+
+// --- Chat menu actions ---
+function clearChatHistory() {
+    const match = state.matches.find(m => m.profile.id === state.activeChatId);
+    if (!match) return;
+    if (!confirm("Gesamten Chatverlauf löschen?")) return;
+    match.messages = [];
+    saveState();
+    renderChatMessages();
+    flashToast("🧹 Verlauf gelöscht");
+}
+function toggleMuteChat() {
+    const id = state.activeChatId;
+    chatUi.muted[id] = !chatUi.muted[id];
+    flashToast(chatUi.muted[id] ? "🔕 Stummgeschaltet" : "🔔 Benachrichtigungen an");
+}
+function blockCurrentChat() {
+    const match = state.matches.find(m => m.profile.id === state.activeChatId);
+    if (!match) return;
+    if (!confirm(`${match.profile.name} wirklich blockieren?\nDas Match wird entfernt.`)) return;
+    state.matches = state.matches.filter(m => m.profile.id !== state.activeChatId);
+    saveState();
+    $("#chatMenuModal").classList.add("hidden");
+    $("#chatModal").classList.add("hidden");
+    renderMatches();
+    flashToast("🚫 Blockiert");
+}
+
+// Toggle send button / voice button abhängig vom Input
+function toggleSendButton() {
+    const val = $("#chatInput").value.trim();
+    if (val) {
+        $("#sendBtn").classList.remove("hidden");
+        $("#voiceBtn").classList.add("hidden");
+    } else {
+        $("#sendBtn").classList.add("hidden");
+        $("#voiceBtn").classList.remove("hidden");
+    }
 }
 
 // ---------- Check-Ins ----------
@@ -740,12 +1251,103 @@ function bindEvents() {
     // Match modal
     $("#keepSwipingBtn").addEventListener("click", () => $("#matchModal").classList.add("hidden"));
     // Chat modal
-    $("#chatBack").addEventListener("click", () => $("#chatModal").classList.add("hidden"));
+    $("#chatBack").addEventListener("click", () => {
+        resetChatUi();
+        $("#chatModal").classList.add("hidden");
+        renderMatches();
+    });
     $("#chatForm").addEventListener("submit", (e) => {
         e.preventDefault();
         const inp = $("#chatInput");
+        if (!inp.value.trim()) return;
         sendMessage(inp.value);
         inp.value = "";
+        toggleSendButton();
+    });
+    // Input umschalten: voice ↔ senden
+    $("#chatInput").addEventListener("input", toggleSendButton);
+
+    // Emoji-Picker
+    buildEmojiGrid();
+    buildPhotoGrid();
+    $("#emojiBtn").addEventListener("click", () => {
+        const ep = $("#emojiPicker");
+        ep.classList.toggle("hidden");
+        $("#attachMenu").classList.add("hidden");
+        $("#photoPicker").classList.add("hidden");
+    });
+    // Anhang-Menü
+    $("#attachBtn").addEventListener("click", () => {
+        $("#attachMenu").classList.toggle("hidden");
+        $("#emojiPicker").classList.add("hidden");
+        $("#photoPicker").classList.add("hidden");
+    });
+    $$("#attachMenu button").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const kind = btn.dataset.attach;
+            $("#attachMenu").classList.add("hidden");
+            if (kind === "photo") {
+                $("#photoPicker").classList.remove("hidden");
+            } else if (kind === "location") {
+                sendLocation();
+            } else if (kind === "meet") {
+                const match = state.matches.find(m => m.profile.id === state.activeChatId);
+                if (match) openMeetPlanner(match.profile);
+            }
+        });
+    });
+    // Voice
+    $("#voiceBtn").addEventListener("click", startVoiceRecording);
+    $("#voiceCancelBtn").addEventListener("click", () => stopVoiceRecording(false));
+    $("#voiceSendBtn").addEventListener("click", () => stopVoiceRecording(true));
+    // Reply cancel
+    $("#cancelReplyBtn").addEventListener("click", cancelReply);
+    // Call button (Demo)
+    $("#chatCallBtn").addEventListener("click", () => {
+        flashToast("📞 Anruf gestartet (Demo)");
+    });
+    // Chat-Menü
+    $("#chatMenuBtn").addEventListener("click", () => $("#chatMenuModal").classList.remove("hidden"));
+    $("#closeChatMenuBtn").addEventListener("click", () => $("#chatMenuModal").classList.add("hidden"));
+    $("#chatSearchBtn").addEventListener("click", () => {
+        $("#chatMenuModal").classList.add("hidden");
+        $("#chatSearchInput").value = "";
+        $("#chatSearchResults").innerHTML = "";
+        $("#chatSearchModal").classList.remove("hidden");
+        setTimeout(() => $("#chatSearchInput").focus(), 100);
+    });
+    $("#chatSearchInput").addEventListener("input", (e) => runChatSearch(e.target.value));
+    $("#closeSearchBtn").addEventListener("click", () => $("#chatSearchModal").classList.add("hidden"));
+    $("#chatMuteBtn").addEventListener("click", toggleMuteChat);
+    $("#chatClearBtn").addEventListener("click", () => {
+        clearChatHistory();
+        $("#chatMenuModal").classList.add("hidden");
+    });
+    $("#chatBlockBtn").addEventListener("click", blockCurrentChat);
+    // Kontextmenü
+    $$("#msgContextMenu button").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const id = chatUi.contextMsgId;
+            closeMsgContextMenu();
+            if (!id) return;
+            const action = btn.dataset.action;
+            if (action === "reply")  startReplyTo(id);
+            if (action === "copy")   copyMessage(id);
+            if (action === "delete") deleteMessage(id);
+            if (action === "react") {
+                chatUi.contextMsgId = id; // für reactionPicker merken
+                $("#reactionPicker").classList.remove("hidden");
+            }
+        });
+    });
+    // Reaction Picker
+    $$("#reactionPicker button").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const id = chatUi.contextMsgId;
+            $("#reactionPicker").classList.add("hidden");
+            if (id) addReaction(id, btn.dataset.react);
+            chatUi.contextMsgId = null;
+        });
     });
     // Premium
     $("#premiumBadge").addEventListener("click", openPremium);

@@ -172,17 +172,116 @@
     <div id="chatModal" class="modal hidden">
         <div class="modal-content chat-modal">
             <header class="chat-header">
-                <button id="chatBack" class="btn-ghost">←</button>
+                <button id="chatBack" class="chat-icon-btn">←</button>
+                <div id="chatAvatar" class="chat-avatar">🐶</div>
                 <div class="chat-title">
-                    <span id="chatAvatar" class="chat-avatar">🐶</span>
                     <span id="chatName">Rex</span>
+                    <small id="chatStatus" class="chat-status">online</small>
                 </div>
+                <button id="chatCallBtn" class="chat-icon-btn" title="Anruf (Demo)">📞</button>
+                <button id="chatMenuBtn" class="chat-icon-btn" title="Menü">⋮</button>
             </header>
+
             <div id="chatMessages" class="chat-messages"></div>
+
+            <!-- Typing indicator -->
+            <div id="typingIndicator" class="typing-indicator hidden">
+                <div class="typing-bubble">
+                    <span></span><span></span><span></span>
+                </div>
+                <span id="typingName" class="typing-name">Rex schreibt…</span>
+            </div>
+
+            <!-- Reply preview (above input) -->
+            <div id="replyPreview" class="reply-preview hidden">
+                <div class="reply-bar"></div>
+                <div class="reply-content">
+                    <strong id="replyName">Rex</strong>
+                    <span id="replyText">Text</span>
+                </div>
+                <button id="cancelReplyBtn" class="chat-icon-btn">✕</button>
+            </div>
+
+            <!-- Attachment menu -->
+            <div id="attachMenu" class="attach-menu hidden">
+                <button data-attach="photo"><span>🖼️</span>Foto</button>
+                <button data-attach="location"><span>📍</span>Standort</button>
+                <button data-attach="meet"><span>📅</span>Treffen</button>
+            </div>
+
+            <!-- Emoji picker -->
+            <div id="emojiPicker" class="emoji-picker hidden">
+                <div class="emoji-grid" id="emojiGrid"></div>
+            </div>
+
+            <!-- Photo picker -->
+            <div id="photoPicker" class="emoji-picker hidden">
+                <div class="emoji-grid" id="photoGrid"></div>
+            </div>
+
             <form id="chatForm" class="chat-input">
+                <button type="button" id="emojiBtn" class="chat-icon-btn" title="Emoji">😊</button>
                 <input type="text" id="chatInput" placeholder="Nachricht schreiben…" autocomplete="off" />
-                <button type="submit">➤</button>
+                <button type="button" id="attachBtn" class="chat-icon-btn" title="Anhang">📎</button>
+                <button type="button" id="voiceBtn" class="chat-icon-btn voice" title="Sprachnachricht aufnehmen">🎤</button>
+                <button type="submit" id="sendBtn" class="chat-send hidden">➤</button>
             </form>
+
+            <!-- Voice recording overlay -->
+            <div id="voiceRecording" class="voice-recording hidden">
+                <div class="rec-dot"></div>
+                <span id="voiceTimer">0:00</span>
+                <button id="voiceCancelBtn" class="btn-ghost">Abbrechen</button>
+                <button id="voiceSendBtn" class="btn-primary">Senden</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message context menu -->
+    <div id="msgContextMenu" class="modal hidden">
+        <div class="context-menu">
+            <button data-action="react">😊 Reagieren</button>
+            <button data-action="reply">↩ Antworten</button>
+            <button data-action="copy">📋 Kopieren</button>
+            <button data-action="delete">🗑 Löschen</button>
+        </div>
+    </div>
+
+    <!-- Reaction picker -->
+    <div id="reactionPicker" class="modal hidden">
+        <div class="reaction-picker-content">
+            <button data-react="❤️">❤️</button>
+            <button data-react="😂">😂</button>
+            <button data-react="😮">😮</button>
+            <button data-react="😢">😢</button>
+            <button data-react="👍">👍</button>
+            <button data-react="🐾">🐾</button>
+        </div>
+    </div>
+
+    <!-- Chat menu (from ⋮) -->
+    <div id="chatMenuModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Chat-Optionen</h2>
+            <button class="btn-ghost full" id="chatSearchBtn">🔍 In Chat suchen</button>
+            <button class="btn-ghost full" id="chatMuteBtn">🔕 Stummschalten</button>
+            <button class="btn-ghost full" id="chatClearBtn">🧹 Verlauf löschen</button>
+            <button class="btn-danger-outline full" id="chatBlockBtn">🚫 Blockieren</button>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="closeChatMenuBtn">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat search overlay -->
+    <div id="chatSearchModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>🔍 Nachrichten suchen</h2>
+            <input type="text" id="chatSearchInput" placeholder="Suchbegriff…" />
+            <div id="chatSearchResults" class="search-results"></div>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="closeSearchBtn">Schließen</button>
+            </div>
         </div>
     </div>
 
