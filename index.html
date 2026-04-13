@@ -373,9 +373,10 @@
                     </div>
                 </div>
 
-                <!-- Hidden file input für Profil-Fotos -->
+                <!-- Hidden file inputs für Profil-Fotos -->
                 <input type="file" id="galleryInput" accept="image/*" hidden />
                 <input type="file" id="avatarInput" accept="image/*" hidden />
+                <input type="file" id="storyInput" accept="image/*" hidden />
             </section>
 
         </main>
@@ -523,6 +524,8 @@
             <h3 class="sheet-title">Mein Profil</h3>
             <button class="sheet-item" data-menu="edit"><span>✏</span>Profil bearbeiten</button>
             <button class="sheet-item" data-menu="avatar"><span>📷</span>Profilbild ändern</button>
+            <button class="sheet-item" data-menu="viewStory" id="viewMyStoryBtn" hidden><span>📺</span>Meine Story ansehen</button>
+            <button class="sheet-item" data-menu="story"><span>📸</span>Story hochladen</button>
             <button class="sheet-item" data-menu="addPhoto"><span>🏞️</span>Foto zur Galerie</button>
             <button class="sheet-item" data-menu="settings"><span>⚙</span>Einstellungen</button>
             <button class="sheet-item" data-menu="premium"><span>★</span>Premium</button>
@@ -670,6 +673,30 @@
 
             <div class="modal-actions">
                 <button class="btn-primary full" id="closeSettingsBtn">Fertig</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Story viewer (fullscreen) -->
+    <div id="storyViewerModal" class="modal hidden story-modal">
+        <div class="story-viewer">
+            <div class="story-progress-row" id="storyProgressRow"></div>
+            <header class="story-header">
+                <div class="story-av" id="storyAv">🐶</div>
+                <div class="story-meta">
+                    <strong id="storyName">Rex</strong>
+                    <small id="storyTime">vor 1 Std</small>
+                </div>
+                <button id="storyClose" class="story-close">✕</button>
+            </header>
+            <div class="story-image-wrap">
+                <img id="storyImage" src="" alt="Story" />
+                <div class="story-tap-left"  id="storyTapLeft"></div>
+                <div class="story-tap-right" id="storyTapRight"></div>
+            </div>
+            <div class="story-footer" id="storyFooter">
+                <span class="story-caption" id="storyCaption"></span>
+                <button id="storyDelete" class="story-delete hidden">🗑 Löschen</button>
             </div>
         </div>
     </div>

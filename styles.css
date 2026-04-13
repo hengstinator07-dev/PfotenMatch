@@ -2524,3 +2524,255 @@ button { font-family: inherit; }
 }
 .onb-nav .btn-ghost:only-child,
 .onb-nav .btn-primary:only-child { flex: none; }
+
+/* ============================================================
+   STORIES
+   ============================================================ */
+
+/* Story ring — Instagram-Style */
+.has-story {
+    position: relative;
+    z-index: 0;
+}
+.has-story::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg,
+        #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5, #feda75);
+    z-index: -1;
+    animation: storyRingSpin 8s linear infinite;
+}
+.has-story::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: white;
+    z-index: -1;
+}
+.has-story.viewed::before {
+    background: conic-gradient(from 0deg, #ccc, #aaa, #ccc);
+    animation: none;
+}
+@keyframes storyRingSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* "+" Badge on own avatar when no story yet */
+.story-add-dot {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 16px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 3;
+    cursor: pointer;
+}
+
+/* Match list avatar: ensure positioning works for ring */
+.match-item .av {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    cursor: pointer;
+    overflow: visible;
+}
+.match-item .av.has-story {
+    background: var(--bg);
+}
+
+/* Chat header avatar ring */
+.chat-avatar.has-story::before { inset: -3px; }
+.chat-avatar.has-story::after  { inset: -1px; }
+
+/* ---------- Story viewer (fullscreen) ---------- */
+.story-modal {
+    background: rgba(0, 0, 0, 0.92) !important;
+    align-items: stretch !important;
+    justify-content: center !important;
+    padding: 0 !important;
+}
+.story-viewer {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #000;
+    position: relative;
+    animation: storyIn 0.25s ease;
+}
+@keyframes storyIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+}
+.story-progress-row {
+    display: flex;
+    gap: 4px;
+    padding: 12px 12px 4px;
+    flex-shrink: 0;
+}
+.story-progress-row .seg {
+    flex: 1;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.story-progress-row .seg .fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: white;
+    border-radius: 2px;
+}
+.story-progress-row .seg.done .fill { width: 100%; }
+.story-progress-row .seg.active .fill {
+    animation: storyFill 5s linear forwards;
+}
+@keyframes storyFill {
+    from { width: 0%; }
+    to   { width: 100%; }
+}
+
+.story-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 14px 12px;
+    color: white;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+}
+.story-av {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+}
+.story-av img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.story-meta {
+    flex: 1;
+    min-width: 0;
+}
+.story-meta strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 800;
+    color: white;
+}
+.story-meta small {
+    display: block;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+}
+.story-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 50%;
+}
+.story-close:hover { background: rgba(255, 255, 255, 0.15); }
+
+.story-image-wrap {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #111;
+}
+.story-image-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+.story-tap-left,
+.story-tap-right {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 35%;
+    cursor: pointer;
+    z-index: 2;
+}
+.story-tap-left  { left: 0; }
+.story-tap-right { right: 0; }
+
+.story-footer {
+    padding: 14px 16px 20px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6));
+}
+.story-caption {
+    flex: 1;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+}
+.story-delete {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ff9f9f;
+    border: 1px solid rgba(255, 159, 159, 0.4);
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.story-delete.hidden { display: none; }
+
+/* Profile avatar button gets story ring */
+.profile-avatar-btn.has-story .profile-avatar {
+    /* override white border with transparent so ring shows through */
+    border-color: transparent;
+}
+.profile-avatar-btn.has-story .avatar-ring {
+    background: conic-gradient(from 0deg,
+        #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5, #feda75);
+    animation: storyRingSpin 8s linear infinite;
+}
+.profile-avatar-btn.has-story.viewed .avatar-ring {
+    background: conic-gradient(from 0deg, #bbb, #888, #bbb);
+    animation: none;
+}

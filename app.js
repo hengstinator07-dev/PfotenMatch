@@ -31,6 +31,8 @@ const state = {
     checkIns: [],
     // Gefahren-Radar: [{id, type, lat, lng, desc, ts, reporter}]
     dangers: [],
+    // Stories: [{id, ownerId: "me"|<dogId>, src, ts, caption, viewed}]
+    stories: [],
     // Onboarding abgeschlossen?
     onboarded: false
 };
@@ -49,6 +51,7 @@ function saveState() {
             userLocation: state.userLocation,
             checkIns: state.checkIns,
             dangers: state.dangers,
+            stories: state.stories.filter(s => s.ownerId === "me"), // nur eigene persistieren
             settings: state.settings
         }));
     } catch (e) { /* ignore */ }
@@ -70,6 +73,7 @@ function loadState() {
         if (data.userLocation) state.userLocation = data.userLocation;
         if (Array.isArray(data.checkIns)) state.checkIns = data.checkIns;
         if (Array.isArray(data.dangers)) state.dangers = data.dangers;
+        if (Array.isArray(data.stories)) state.stories = data.stories;
         if (Array.isArray(data.matches)) {
             state.matches = data.matches
                 .map(m => {
@@ -270,8 +274,12 @@ function renderMatches() {
               : lastMsg.text)
             : "Noch keine Nachricht";
         const prefix = lastMsg && lastMsg.from === "me" ? "Du: " : "";
+        const dogStories = getOwnerStories(m.profile.id);
+        const hasStory = dogStories.length > 0;
+        const allViewed = hasStory && dogStories.every(s => s.viewed);
+        const avCls = "av" + (hasStory ? " has-story" : "") + (allViewed ? " viewed" : "");
         item.innerHTML = `
-            <div class="av">${m.profile.emoji}</div>
+            <div class="${avCls}">${m.profile.emoji}</div>
             <div class="meta">
                 <h4>${m.profile.name} · ${m.profile.breed}</h4>
                 <p>${escapeHtml(prefix + preview)}</p>
@@ -283,9 +291,14 @@ function renderMatches() {
             if (e.target.dataset.meet) {
                 e.stopPropagation();
                 openMeetPlanner(m.profile);
-            } else {
-                openChat(m.profile.id);
+                return;
             }
+            if (hasStory && e.target.closest(".av")) {
+                e.stopPropagation();
+                openStoryViewer(m.profile.id);
+                return;
+            }
+            openChat(m.profile.id);
         });
         list.appendChild(item);
     });
@@ -354,7 +367,15 @@ function openChat(dogId) {
     // Reply/Attach/Picker zurücksetzen
     resetChatUi();
     // Header setzen
-    $("#chatAvatar").textContent = match.profile.emoji;
+    const chatAv = $("#chatAvatar");
+    chatAv.textContent = match.profile.emoji;
+    const dogStories = getOwnerStories(match.profile.id);
+    const dogHasStory = dogStories.length > 0;
+    const allViewed = dogHasStory && dogStories.every(s => s.viewed);
+    chatAv.classList.toggle("has-story", dogHasStory);
+    chatAv.classList.toggle("viewed", allViewed);
+    chatAv.style.cursor = dogHasStory ? "pointer" : "";
+    chatAv.onclick = dogHasStory ? (() => openStoryViewer(match.profile.id)) : null;
     $("#chatName").textContent = `${match.profile.name} · ${match.profile.owner}`;
     const status = dogOnlineStatus(match.profile.id);
     const statusEl = $("#chatStatus");
@@ -1167,6 +1188,16 @@ function renderProfile() {
     } else {
         avEl.textContent = p.emoji || "🐕";
     }
+    // Story ring on own profile
+    const myStories = getOwnerStories("me");
+    const meHas = myStories.length > 0;
+    const meAllViewed = meHas && myStories.every(s => s.viewed);
+    const btn = $("#profileAvatarBtn");
+    btn.classList.toggle("has-story", meHas);
+    btn.classList.toggle("viewed", meAllViewed);
+    // "Story ansehen" im Menü nur zeigen wenn aktive eigene Story vorhanden
+    const viewStoryItem = $("#viewMyStoryBtn");
+    if (viewStoryItem) viewStoryItem.hidden = !meHas;
     // Identity
     $("#profileName").textContent = p.name;
     const handle = "@" + (p.name || "hund").toLowerCase().replace(/[^a-z0-9]+/g, "");
@@ -1260,6 +1291,205 @@ function handleAvatarFile(file) {
         saveState();
         renderProfile();
         flashToast("✨ Profilbild aktualisiert");
+    });
+}
+
+// ---------- Stories (Instagram-Style) ----------
+const STORY_DURATION = 24 * 3600e3; // 24h
+const STORY_PLAY_MS  = 5000;        // 5s pro Bild
+const storyUi = { ownerId: null, idx: 0, timer: null };
+
+function pruneStories() {
+    const cutoff = Date.now() - STORY_DURATION;
+    state.stories = state.stories.filter(s => s.ts > cutoff);
+}
+function hasActiveStory(ownerId) {
+    pruneStories();
+    return state.stories.some(s => s.ownerId === ownerId);
+}
+function getOwnerStories(ownerId) {
+    pruneStories();
+    return state.stories
+        .filter(s => s.ownerId === ownerId)
+        .sort((a, b) => a.ts - b.ts);
+}
+function storyAgeLabel(ts) {
+    const diff = Date.now() - ts;
+    if (diff < 60e3)    return "gerade eben";
+    if (diff < 3600e3)  return `vor ${Math.floor(diff / 60e3)} Min`;
+    return `vor ${Math.floor(diff / 3600e3)} Std`;
+}
+
+function handleStoryFile(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    downscaleImage(file, 900, 0.8, (dataUrl) => {
+        state.stories.push({
+            id: "st" + Date.now(),
+            ownerId: "me",
+            src: dataUrl,
+            ts: Date.now(),
+            caption: "",
+            viewed: false
+        });
+        saveState();
+        renderProfile();
+        renderMatches();
+        flashToast("📸 Story veröffentlicht");
+    });
+}
+
+function openStoryViewer(ownerId) {
+    const stories = getOwnerStories(ownerId);
+    if (!stories.length) return;
+    storyUi.ownerId = ownerId;
+    storyUi.idx = 0;
+
+    // Header
+    let name, avHtml;
+    if (ownerId === "me") {
+        name = (state.myProfile.name || "Ich") + " (du)";
+        if (state.myProfile.avatarImage) {
+            avHtml = `<img src="${state.myProfile.avatarImage}" alt="" />`;
+        } else {
+            avHtml = state.myProfile.emoji || "🐕";
+        }
+    } else {
+        const dog = DOG_PROFILES.find(d => d.id === ownerId);
+        if (!dog) return;
+        name = `${dog.name} · ${dog.breed}`;
+        avHtml = dog.emoji;
+    }
+    $("#storyName").textContent = name;
+    $("#storyAv").innerHTML = avHtml;
+
+    // Build progress segments
+    const row = $("#storyProgressRow");
+    row.innerHTML = "";
+    stories.forEach(() => {
+        const seg = document.createElement("div");
+        seg.className = "seg";
+        seg.innerHTML = `<div class="fill"></div>`;
+        row.appendChild(seg);
+    });
+
+    $("#storyViewerModal").classList.remove("hidden");
+    showStoryFrame();
+}
+
+function showStoryFrame() {
+    const stories = getOwnerStories(storyUi.ownerId);
+    if (storyUi.idx < 0 || storyUi.idx >= stories.length) {
+        closeStoryViewer();
+        return;
+    }
+    const s = stories[storyUi.idx];
+    $("#storyImage").src = s.src;
+    $("#storyCaption").textContent = s.caption || "";
+    $("#storyTime").textContent = storyAgeLabel(s.ts);
+
+    // Segment classes
+    const segs = $("#storyProgressRow").querySelectorAll(".seg");
+    segs.forEach((seg, i) => {
+        seg.classList.remove("done", "active");
+        if (i <  storyUi.idx) seg.classList.add("done");
+        if (i === storyUi.idx) seg.classList.add("active");
+    });
+    // Restart the active segment's fill animation
+    const activeFill = segs[storyUi.idx]?.querySelector(".fill");
+    if (activeFill) {
+        activeFill.style.animation = "none";
+        // force reflow so the restart takes effect
+        void activeFill.offsetWidth;
+        activeFill.style.animation = "";
+    }
+
+    // Own story → delete button visible
+    $("#storyDelete").classList.toggle("hidden", storyUi.ownerId !== "me");
+
+    // Mark as viewed
+    s.viewed = true;
+    if (storyUi.ownerId === "me") saveState();
+
+    // Auto-advance
+    if (storyUi.timer) clearTimeout(storyUi.timer);
+    storyUi.timer = setTimeout(() => advanceStory(1), STORY_PLAY_MS);
+}
+
+function advanceStory(delta) {
+    if (storyUi.timer) { clearTimeout(storyUi.timer); storyUi.timer = null; }
+    storyUi.idx += delta;
+    const stories = getOwnerStories(storyUi.ownerId);
+    if (storyUi.idx < 0)  storyUi.idx = 0;
+    if (storyUi.idx >= stories.length) {
+        closeStoryViewer();
+        return;
+    }
+    showStoryFrame();
+}
+
+function closeStoryViewer() {
+    if (storyUi.timer) { clearTimeout(storyUi.timer); storyUi.timer = null; }
+    $("#storyViewerModal").classList.add("hidden");
+    $("#storyImage").src = "";
+    storyUi.ownerId = null;
+    storyUi.idx = 0;
+    // Refresh rings (viewed state may have changed)
+    renderProfile();
+    renderMatches();
+}
+
+function deleteCurrentStory() {
+    if (storyUi.ownerId !== "me") return;
+    const stories = getOwnerStories("me");
+    const s = stories[storyUi.idx];
+    if (!s) return;
+    if (!confirm("Story wirklich löschen?")) return;
+    state.stories = state.stories.filter(x => x.id !== s.id);
+    saveState();
+    const remaining = getOwnerStories("me");
+    if (!remaining.length) {
+        closeStoryViewer();
+        return;
+    }
+    // Einfach von vorne neu öffnen
+    closeStoryViewer();
+    openStoryViewer("me");
+}
+
+// Demo-Stories seeden (nur für andere Hunde, eigene werden persistiert)
+function seedDemoStoriesIfEmpty() {
+    if (state.stories.some(s => s.ownerId !== "me")) return;
+    const makeStorySvg = (emoji, c1, c2, text) => {
+        const svg =
+            `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="900">` +
+            `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
+            `<stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/>` +
+            `</linearGradient></defs>` +
+            `<rect width="600" height="900" fill="url(#g)"/>` +
+            `<text x="300" y="440" font-size="260" text-anchor="middle" dominant-baseline="middle">${emoji}</text>` +
+            `<text x="300" y="770" font-size="44" text-anchor="middle" fill="white" ` +
+            `font-family="sans-serif" font-weight="700">${text}</text>` +
+            `</svg>`;
+        return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    };
+    const now = Date.now();
+    const seeds = [
+        { ownerId: 1, emoji: "🎾", c1: "#4ecdc4", c2: "#0f7e79", text: "Bällchen gejagt!",   hrs: 2 },
+        { ownerId: 1, emoji: "🌊", c1: "#5ab0ff", c2: "#00437a", text: "Schwimmen im Rhein", hrs: 6 },
+        { ownerId: 2, emoji: "🌸", c1: "#ff6b9d", c2: "#b3246a", text: "Gassi im Park",      hrs: 1 },
+        { ownerId: 3, emoji: "🛋", c1: "#f39c12", c2: "#a85d00", text: "Siesta-Zeit",        hrs: 4 },
+        { ownerId: 4, emoji: "🏞", c1: "#27ae60", c2: "#0f5d2a", text: "Berge erkundet",     hrs: 8 },
+        { ownerId: 5, emoji: "🦴", c1: "#ff6b6b", c2: "#8a1a1a", text: "Leckerli bekommen!", hrs: 3 }
+    ];
+    seeds.forEach((s, i) => {
+        state.stories.push({
+            id: "seed" + i,
+            ownerId: s.ownerId,
+            src: makeStorySvg(s.emoji, s.c1, s.c2, s.text),
+            ts: now - s.hrs * 3600e3,
+            caption: s.text,
+            viewed: false
+        });
     });
 }
 
@@ -1576,6 +1806,8 @@ function bindEvents() {
             $("#profileMenuModal").classList.add("hidden");
             if (kind === "edit")      openEditProfile();
             if (kind === "avatar")    $("#avatarInput").click();
+            if (kind === "story")     $("#storyInput").click();
+            if (kind === "viewStory") openStoryViewer("me");
             if (kind === "addPhoto")  $("#galleryInput").click();
             if (kind === "settings")  openSettings();
             if (kind === "premium")   openPremium();
@@ -1618,6 +1850,17 @@ function bindEvents() {
         if (file) handleAvatarFile(file);
         e.target.value = "";
     });
+    // Story-Upload
+    $("#storyInput").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) handleStoryFile(file);
+        e.target.value = "";
+    });
+    // Story viewer
+    $("#storyClose").addEventListener("click", closeStoryViewer);
+    $("#storyDelete").addEventListener("click", deleteCurrentStory);
+    $("#storyTapLeft").addEventListener("click", () => advanceStory(-1));
+    $("#storyTapRight").addEventListener("click", () => advanceStory(1));
     // Photo viewer
     $("#photoViewerClose").addEventListener("click", () => $("#photoViewerModal").classList.add("hidden"));
     $("#photoViewerDelete").addEventListener("click", deleteCurrentPhoto);
@@ -2034,6 +2277,8 @@ function init() {
     if (state.checkIns.length === 0 && typeof DEMO_CHECKINS !== "undefined") {
         state.checkIns = DEMO_CHECKINS.map(c => ({ ...c }));
     }
+    // Demo-Stories für andere Hunde (nicht persistiert)
+    seedDemoStoriesIfEmpty();
     bindEvents();
     bindProfileForm();
     bindOnboarding();
