@@ -30,7 +30,9 @@ const state = {
     // Live-Check-Ins: [{spotId, dogName, until (ts)}]  (eigener Check-in hat dogName === myProfile.name)
     checkIns: [],
     // Gefahren-Radar: [{id, type, lat, lng, desc, ts, reporter}]
-    dangers: []
+    dangers: [],
+    // Onboarding abgeschlossen?
+    onboarded: false
 };
 
 // ---------- Utility ----------
@@ -42,6 +44,7 @@ function saveState() {
         localStorage.setItem("pfotenMatch", JSON.stringify({
             matches: state.matches.map(m => ({ id: m.profile.id, messages: m.messages })),
             premium: state.premium,
+            onboarded: state.onboarded,
             myProfile: state.myProfile,
             userLocation: state.userLocation,
             checkIns: state.checkIns,
@@ -57,6 +60,10 @@ function loadState() {
         if (!raw) return;
         const data = JSON.parse(raw);
         if (data.premium) state.premium = true;
+        // Explizit oder implizit: Wer schon Daten hatte, muss nicht nochmal onboarden
+        if (data.onboarded || Array.isArray(data.matches) && data.matches.length > 0) {
+            state.onboarded = true;
+        }
         if (data.myProfile) Object.assign(state.myProfile, data.myProfile);
         if (!Array.isArray(state.myProfile.photos)) state.myProfile.photos = [];
         if (data.settings) Object.assign(state.settings, data.settings);
@@ -1634,6 +1641,389 @@ function bindEvents() {
     });
 }
 
+// ============================================================
+// ONBOARDING
+// ============================================================
+const onb = {
+    step: 0,
+    total: 7,
+    authMethod: null,
+    draft: {
+        name: "",
+        breed: "",
+        age: 3,
+        size: "Mittel (10–25kg)",
+        neutered: "Nein",
+        energy: "Ausgeglichen 🐾",
+        playStyle: "Rennend 🏃",
+        bio: "",
+        emoji: "🐕",
+        avatarImage: null,
+        city: "Basel",
+        location: { lat: 47.5585, lng: 7.5880 }
+    }
+};
+
+const CITY_COORDS = {
+    "Basel":    { lat: 47.5585, lng: 7.5880 },
+    "Zürich":   { lat: 47.3769, lng: 8.5417 },
+    "Bern":     { lat: 46.9481, lng: 7.4474 },
+    "Genf":     { lat: 46.2044, lng: 6.1432 },
+    "Lausanne": { lat: 46.5197, lng: 6.6323 },
+    "Luzern":   { lat: 47.0502, lng: 8.3093 }
+};
+
+function showOnboarding() {
+    $("#onboarding").classList.remove("hidden");
+    // App-Header ausblenden während Onboarding
+    document.body.style.overflow = "hidden";
+    onbGoto(0);
+    runTypewriter();
+}
+
+function hideOnboarding() {
+    $("#onboarding").classList.add("hidden");
+    document.body.style.overflow = "";
+}
+
+function onbGoto(step) {
+    onb.step = step;
+    $$(".onb-step").forEach(el => {
+        el.hidden = parseInt(el.dataset.step) !== step;
+    });
+    const pct = Math.round((step / (onb.total)) * 100);
+    $("#onbProgressBar").style.width = pct + "%";
+    // Smooth scroll to top der Stage
+    $("#onboarding").scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function onbNext() {
+    if (!onbValidateStep(onb.step)) return;
+    if (onb.step < onb.total) onbGoto(onb.step + 1);
+    if (onb.step === onb.total) renderDoneSummary();
+}
+function onbPrev() {
+    if (onb.step > 0) onbGoto(onb.step - 1);
+}
+
+function onbValidateStep(step) {
+    if (step === 2) {
+        const name = $("#onbName").value.trim();
+        if (!name) {
+            flashToast("🐶 Bitte gib deinem Hund einen Namen");
+            $("#onbName").focus();
+            return false;
+        }
+        onb.draft.name = name;
+    }
+    if (step === 3) {
+        onb.draft.breed = $("#onbBreed").value.trim() || "Mischling";
+        onb.draft.age = parseInt($("#onbAge").value) || 0;
+    }
+    if (step === 5) {
+        onb.draft.bio = $("#onbBio").value.trim();
+    }
+    return true;
+}
+
+// --- Typewriter on step 0 ---
+const TYPE_LINES = [
+    "Finde den perfekten Spielkameraden für deinen Hund.",
+    "Entdecke Parks, Hundewiesen und Cafés in der Nähe.",
+    "Plane Treffen direkt im Chat — ganz einfach.",
+    "Für glücklichere Hunde. Und Menschen. 🐾"
+];
+let typeTimer = null;
+function runTypewriter() {
+    if (typeTimer) { clearTimeout(typeTimer); typeTimer = null; }
+    const el = $("#typewriter");
+    if (!el) return;
+    let lineIdx = 0, charIdx = 0, deleting = false;
+    function tick() {
+        const line = TYPE_LINES[lineIdx];
+        if (!deleting) {
+            charIdx++;
+            el.textContent = line.slice(0, charIdx);
+            if (charIdx >= line.length) {
+                deleting = true;
+                typeTimer = setTimeout(tick, 1800);
+                return;
+            }
+        } else {
+            charIdx--;
+            el.textContent = line.slice(0, charIdx);
+            if (charIdx <= 0) {
+                deleting = false;
+                lineIdx = (lineIdx + 1) % TYPE_LINES.length;
+            }
+        }
+        typeTimer = setTimeout(tick, deleting ? 25 : 45);
+    }
+    tick();
+}
+
+// --- Auth step ---
+function onbChooseAuth(method) {
+    onb.authMethod = method;
+    if (method === "email") {
+        $("#emailForm").classList.remove("hidden");
+        $("#authEmail").focus();
+        return;
+    }
+    // Google / Apple — Fake-Delay
+    const btn = document.querySelector(`.auth-btn.${method}`);
+    if (btn) {
+        const orig = btn.innerHTML;
+        btn.innerHTML = `<span class="auth-ic">⏳</span><span>Wird verbunden…</span>`;
+        btn.disabled = true;
+        setTimeout(() => {
+            btn.innerHTML = orig;
+            btn.disabled = false;
+            flashToast(`✅ Mit ${method === "google" ? "Google" : "Apple"} verbunden`);
+            onbGoto(2);
+        }, 900);
+    }
+}
+
+function updatePwStrength() {
+    const v = $("#authPass").value;
+    let score = 0;
+    if (v.length >= 6)  score++;
+    if (v.length >= 10) score++;
+    if (/[A-Z]/.test(v)) score++;
+    if (/[0-9]/.test(v)) score++;
+    if (/[^A-Za-z0-9]/.test(v)) score++;
+    const pcts   = ["0%", "20%", "40%", "60%", "80%", "100%"];
+    const colors = ["transparent", "#e74c3c", "#f39c12", "#f1c40f", "#4ecdc4", "#27ae60"];
+    const el = $("#pwStrength");
+    el.style.setProperty("--pw",       pcts[score]);
+    el.style.setProperty("--pw-color", colors[score]);
+}
+
+function onbEmailContinue() {
+    const email = $("#authEmail").value.trim();
+    const pass  = $("#authPass").value;
+    if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
+        flashToast("✉ Bitte eine gültige E-Mail eingeben");
+        return;
+    }
+    if (pass.length < 6) {
+        flashToast("🔒 Passwort mindestens 6 Zeichen");
+        return;
+    }
+    flashToast("✅ Account erstellt");
+    onbGoto(2);
+}
+
+// --- Avatar step ---
+function setOnbAvatarEmoji(emoji) {
+    onb.draft.emoji = emoji;
+    onb.draft.avatarImage = null;
+    $("#onbAvatarCircle").textContent = emoji;
+    $$("#onbEmojiStrip button").forEach(b => {
+        b.classList.toggle("selected", b.dataset.onbEmoji === emoji);
+    });
+}
+
+function handleOnbAvatarFile(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    downscaleImage(file, 400, 0.82, (dataUrl) => {
+        onb.draft.avatarImage = dataUrl;
+        $("#onbAvatarCircle").innerHTML = `<img src="${dataUrl}" alt="" />`;
+    });
+}
+
+// --- Size / personality pickers ---
+function bindPicker(container, key, draftKey) {
+    $$(`${container} button`).forEach(b => {
+        b.addEventListener("click", () => {
+            $$(`${container} button`).forEach(x => x.classList.remove("selected"));
+            b.classList.add("selected");
+            onb.draft[draftKey] = b.dataset[key];
+        });
+    });
+}
+
+// --- Location step ---
+function onbUseGps() {
+    if (!navigator.geolocation) {
+        flashToast("Geolocation nicht verfügbar");
+        return;
+    }
+    const btn = $("#useGpsBtn");
+    const orig = btn.textContent;
+    btn.textContent = "📡 Standort wird ermittelt…";
+    btn.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            onb.draft.location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            onb.draft.city = "Mein Standort";
+            $("#onbCity").value = "";
+            $$(".city-chips button").forEach(b => b.classList.remove("selected"));
+            btn.textContent = "✅ Standort erfasst";
+            setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
+            flashToast("📍 Standort übernommen");
+        },
+        () => {
+            btn.textContent = orig;
+            btn.disabled = false;
+            flashToast("Standort konnte nicht ermittelt werden");
+        }
+    );
+}
+
+function onbChooseCity(city) {
+    onb.draft.city = city;
+    onb.draft.location = CITY_COORDS[city] || CITY_COORDS.Basel;
+    $("#onbCity").value = city;
+    $$(".city-chips button").forEach(b => {
+        b.classList.toggle("selected", b.dataset.city === city);
+    });
+}
+
+// --- Done step ---
+function renderDoneSummary() {
+    const d = onb.draft;
+    $("#doneName").textContent = d.name;
+    const avEl = $("#doneAvatar");
+    if (d.avatarImage) avEl.innerHTML = `<img src="${d.avatarImage}" alt="" />`;
+    else avEl.textContent = d.emoji;
+    const rows = [
+        ["🐕", "Name", d.name],
+        ["🦴", "Rasse", d.breed],
+        ["🎂", "Alter", d.age + " Jahre"],
+        ["📏", "Größe", d.size],
+        ["⚡", "Energie", d.energy],
+        ["🎾", "Spielstil", d.playStyle],
+        ["📍", "Standort", d.city]
+    ];
+    const box = $("#doneSummary");
+    box.innerHTML = rows.map(r =>
+        `<div class="line"><span>${r[0]} ${r[1]}</span><strong>${escapeHtml(r[2])}</strong></div>`
+    ).join("");
+    // Konfetti
+    launchConfetti();
+}
+
+function launchConfetti() {
+    const box = $("#confettiBox");
+    if (!box) return;
+    box.innerHTML = "";
+    const colors = ["#ff6b6b", "#ffd166", "#4ecdc4", "#ff8e8e", "#a8e6cf", "#ffb4a2"];
+    for (let i = 0; i < 50; i++) {
+        const el = document.createElement("i");
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 100 + Math.random() * 180;
+        el.style.setProperty("--cx", Math.cos(angle) * dist + "px");
+        el.style.setProperty("--cy", Math.sin(angle) * dist + "px");
+        el.style.setProperty("--cr", (Math.random() * 720 - 360) + "deg");
+        el.style.background = colors[Math.floor(Math.random() * colors.length)];
+        el.style.animationDelay = (Math.random() * 0.3) + "s";
+        box.appendChild(el);
+    }
+}
+
+function finishOnboarding() {
+    const d = onb.draft;
+    state.myProfile = {
+        ...state.myProfile,
+        name: d.name,
+        breed: d.breed,
+        age: d.age,
+        size: d.size,
+        neutered: d.neutered,
+        energy: d.energy,
+        playStyle: d.playStyle,
+        bio: d.bio,
+        emoji: d.emoji,
+        avatarImage: d.avatarImage,
+        photos: state.myProfile.photos || []
+    };
+    state.userLocation = d.location;
+    state.onboarded = true;
+    try {
+        const raw = localStorage.getItem("pfotenMatch");
+        const existing = raw ? JSON.parse(raw) : {};
+        existing.onboarded = true;
+        localStorage.setItem("pfotenMatch", JSON.stringify(existing));
+    } catch (e) { /* ignore */ }
+    saveState();
+    hideOnboarding();
+    applyFilters();
+    renderMatches();
+    renderProfile();
+    if (leafletMap) {
+        leafletMap.setView([d.location.lat, d.location.lng], 14);
+        renderMap();
+    }
+    flashToast(`🐾 Willkommen, ${d.name}!`);
+}
+
+function bindOnboarding() {
+    // Next / Prev buttons (global)
+    $$("[data-next]").forEach(b => b.addEventListener("click", onbNext));
+    $$("[data-prev]").forEach(b => b.addEventListener("click", onbPrev));
+    // Skip
+    $("#skipOnboardBtn").addEventListener("click", () => {
+        onb.draft.name = "Bello";
+        onb.draft.breed = "Labrador-Mix";
+        finishOnboarding();
+    });
+    // Auth
+    $$("[data-auth]").forEach(b => b.addEventListener("click", () => onbChooseAuth(b.dataset.auth)));
+    $("#authPass").addEventListener("input", updatePwStrength);
+    $("#emailContinueBtn").addEventListener("click", onbEmailContinue);
+    // Name preview
+    $("#onbName").addEventListener("input", (e) => {
+        const v = e.target.value.trim();
+        $("#namePreview").textContent = v ? `Hallo, ${v}! 🐾` : "";
+        if (v) $("#step3Title").textContent = `Erzähl uns von ${v}`;
+    });
+    // Emoji strip
+    $$("#onbEmojiStrip button").forEach(b => {
+        b.addEventListener("click", () => setOnbAvatarEmoji(b.dataset.onbEmoji));
+    });
+    $("#onbEmojiStrip button[data-onb-emoji='🐕']").classList.add("selected");
+    // Avatar upload
+    $("#onbCameraBtn").addEventListener("click", () => $("#onbAvatarInput").click());
+    $("#onbAvatarInput").addEventListener("change", (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (f) handleOnbAvatarFile(f);
+        e.target.value = "";
+    });
+    // Age slider
+    $("#onbAge").addEventListener("input", (e) => {
+        $("#onbAgeLabel").textContent = e.target.value;
+        onb.draft.age = parseInt(e.target.value);
+    });
+    // Pickers
+    bindPicker("#sizePicker",   "size",   "size");
+    bindPicker("#energyPicker", "energy", "energy");
+    bindPicker("#playPicker",   "play",   "playStyle");
+    bindPicker("#neutPicker",   "neut",   "neutered");
+    // Bio
+    $("#onbBio").addEventListener("input", (e) => {
+        $("#bioCount").textContent = e.target.value.length;
+    });
+    $$("#bioSuggestions button").forEach(b => {
+        b.addEventListener("click", () => {
+            $("#onbBio").value = b.dataset.sugg;
+            $("#bioCount").textContent = b.dataset.sugg.length;
+        });
+    });
+    // Location
+    $("#useGpsBtn").addEventListener("click", onbUseGps);
+    $$(".city-chips button").forEach(b => {
+        b.addEventListener("click", () => onbChooseCity(b.dataset.city));
+    });
+    $("#onbCity").addEventListener("input", (e) => {
+        const v = e.target.value.trim();
+        onb.draft.city = v || "Basel";
+    });
+    // Done
+    $("#finishOnboardBtn").addEventListener("click", finishOnboarding);
+}
+
 // ---------- Init ----------
 function init() {
     loadState();
@@ -1646,11 +2036,16 @@ function init() {
     }
     bindEvents();
     bindProfileForm();
+    bindOnboarding();
     if (state.premium) $("#premiumBadge").classList.add("active");
     document.documentElement.classList.toggle("dark", state.settings.dark);
     applyFilters();
     renderMatches();
     renderProfile();
+    // Onboarding zeigen, falls noch nicht abgeschlossen
+    if (!state.onboarded) {
+        showOnboarding();
+    }
 }
 
 document.addEventListener("DOMContentLoaded", init);

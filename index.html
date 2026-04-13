@@ -16,6 +16,239 @@
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
 </head>
 <body>
+    <!-- ============================================================
+         ONBOARDING — Account + Profil + Standort
+         ============================================================ -->
+    <div id="onboarding" class="onboarding hidden">
+        <!-- Floating paw prints background -->
+        <div class="paws-bg" aria-hidden="true"></div>
+
+        <!-- Progress bar -->
+        <div class="onb-progress">
+            <div id="onbProgressBar" class="onb-progress-bar"></div>
+        </div>
+
+        <div class="onb-stage">
+
+            <!-- ===== STEP 0: Welcome splash ===== -->
+            <section class="onb-step" data-step="0">
+                <div class="onb-hero">
+                    <div class="big-paw">🐾</div>
+                    <h1 class="onb-title">PfotenMatch</h1>
+                    <p class="onb-tag" id="typewriter"></p>
+                </div>
+                <div class="onb-bullets">
+                    <div class="onb-bullet"><span>🔥</span>Finde den perfekten Spielkameraden</div>
+                    <div class="onb-bullet"><span>🗺️</span>Entdecke hundefreundliche Orte</div>
+                    <div class="onb-bullet"><span>⚠</span>Warne andere vor Gefahren</div>
+                    <div class="onb-bullet"><span>💬</span>Plane Treffen direkt im Chat</div>
+                </div>
+                <div class="onb-actions">
+                    <button class="btn-primary full" data-next>🐾 Loslegen</button>
+                    <button class="btn-ghost full" id="skipOnboardBtn">Überspringen (Demo-Account)</button>
+                </div>
+            </section>
+
+            <!-- ===== STEP 1: Sign up ===== -->
+            <section class="onb-step" data-step="1" hidden>
+                <div class="onb-head">
+                    <h2>Willkommen im Rudel! 🐕</h2>
+                    <p>Erstelle einen Account — dauert 30 Sekunden.</p>
+                </div>
+                <div class="auth-buttons">
+                    <button class="auth-btn google" data-auth="google">
+                        <span class="auth-ic">G</span>
+                        <span>Mit Google fortfahren</span>
+                    </button>
+                    <button class="auth-btn apple" data-auth="apple">
+                        <span class="auth-ic"></span>
+                        <span>Mit Apple fortfahren</span>
+                    </button>
+                    <div class="auth-divider"><span>oder</span></div>
+                    <button class="auth-btn email" data-auth="email">
+                        <span class="auth-ic">✉</span>
+                        <span>Mit E-Mail fortfahren</span>
+                    </button>
+                </div>
+                <!-- Email form (hidden until email clicked) -->
+                <div id="emailForm" class="email-form hidden">
+                    <label>E-Mail
+                        <input type="email" id="authEmail" placeholder="du@beispiel.com" />
+                    </label>
+                    <label>Passwort
+                        <input type="password" id="authPass" placeholder="Mindestens 6 Zeichen" />
+                    </label>
+                    <div class="pw-strength" id="pwStrength"></div>
+                    <button class="btn-primary full" id="emailContinueBtn">Account erstellen</button>
+                </div>
+                <p class="onb-fineprint">Mit dem Fortfahren akzeptierst du die <a href="#">AGB</a> und <a href="#">Datenschutzerklärung</a>.</p>
+                <div class="onb-nav">
+                    <button class="btn-ghost" data-prev>← Zurück</button>
+                </div>
+            </section>
+
+            <!-- ===== STEP 2: Dog name + avatar ===== -->
+            <section class="onb-step" data-step="2" hidden>
+                <div class="onb-head">
+                    <h2>Wie heißt dein Hund? 🐶</h2>
+                    <p>Wir sagen Hallo zu ihm/ihr im nächsten Schritt.</p>
+                </div>
+                <div class="avatar-big">
+                    <div class="avatar-big-circle" id="onbAvatarCircle">🐕</div>
+                    <button class="avatar-camera" id="onbCameraBtn" type="button">📷</button>
+                    <input type="file" id="onbAvatarInput" accept="image/*" hidden />
+                </div>
+                <div class="emoji-strip" id="onbEmojiStrip">
+                    <button data-onb-emoji="🐕">🐕</button>
+                    <button data-onb-emoji="🐶">🐶</button>
+                    <button data-onb-emoji="🦮">🦮</button>
+                    <button data-onb-emoji="🐩">🐩</button>
+                    <button data-onb-emoji="🐕‍🦺">🐕‍🦺</button>
+                </div>
+                <label class="onb-label">Name deines Hundes
+                    <input type="text" id="onbName" placeholder="z. B. Bello, Luna, Rex" autocomplete="off" maxlength="20" />
+                </label>
+                <p class="name-preview" id="namePreview"></p>
+                <div class="onb-nav">
+                    <button class="btn-ghost" data-prev>← Zurück</button>
+                    <button class="btn-primary" data-next>Weiter →</button>
+                </div>
+            </section>
+
+            <!-- ===== STEP 3: Breed, age, size ===== -->
+            <section class="onb-step" data-step="3" hidden>
+                <div class="onb-head">
+                    <h2 id="step3Title">Erzähl uns von deinem Hund</h2>
+                    <p>Basis-Infos fürs Profil.</p>
+                </div>
+                <label class="onb-label">Rasse
+                    <input type="text" id="onbBreed" placeholder="z. B. Labrador-Mix" list="breedList" />
+                    <datalist id="breedList">
+                        <option>Labrador</option>
+                        <option>Labrador-Mix</option>
+                        <option>Golden Retriever</option>
+                        <option>Border Collie</option>
+                        <option>Australian Shepherd</option>
+                        <option>Dackel</option>
+                        <option>Pudel</option>
+                        <option>Berner Sennenhund</option>
+                        <option>Jack Russell</option>
+                        <option>Mischling</option>
+                    </datalist>
+                </label>
+                <label class="onb-label">Alter: <span id="onbAgeLabel">3</span> Jahre
+                    <input type="range" id="onbAge" min="0" max="20" value="3" />
+                </label>
+                <div class="size-picker" id="sizePicker">
+                    <button type="button" data-size="Klein (&lt;10kg)"><span>🐾</span><small>Klein</small></button>
+                    <button type="button" data-size="Mittel (10–25kg)" class="selected"><span>🐕</span><small>Mittel</small></button>
+                    <button type="button" data-size="Groß (25–40kg)"><span>🐕‍🦺</span><small>Groß</small></button>
+                    <button type="button" data-size="Sehr groß (&gt;40kg)"><span>🦮</span><small>XL</small></button>
+                </div>
+                <div class="onb-nav">
+                    <button class="btn-ghost" data-prev>← Zurück</button>
+                    <button class="btn-primary" data-next>Weiter →</button>
+                </div>
+            </section>
+
+            <!-- ===== STEP 4: Personality ===== -->
+            <section class="onb-step" data-step="4" hidden>
+                <div class="onb-head">
+                    <h2>Persönlichkeit 🎭</h2>
+                    <p>Damit wir passende Spielkameraden finden.</p>
+                </div>
+                <h4 class="group-title">⚡ Energielevel</h4>
+                <div class="choice-grid" id="energyPicker">
+                    <button type="button" data-energy="Couch-Potato 🛋️"><span>🛋️</span><small>Couch-Potato</small></button>
+                    <button type="button" data-energy="Ausgeglichen 🐾" class="selected"><span>🐾</span><small>Ausgeglichen</small></button>
+                    <button type="button" data-energy="Duracell-Häschen ⚡"><span>⚡</span><small>Duracell</small></button>
+                </div>
+                <h4 class="group-title">🎾 Spielstil</h4>
+                <div class="choice-grid" id="playPicker">
+                    <button type="button" data-play="Zurückhaltend 🤗"><span>🤗</span><small>Zurückhaltend</small></button>
+                    <button type="button" data-play="Rennend 🏃" class="selected"><span>🏃</span><small>Rennend</small></button>
+                    <button type="button" data-play="Grob / Körperlich 🤼"><span>🤼</span><small>Grob</small></button>
+                </div>
+                <h4 class="group-title">✂ Kastriert?</h4>
+                <div class="choice-grid two" id="neutPicker">
+                    <button type="button" data-neut="Ja"><span>✅</span><small>Ja</small></button>
+                    <button type="button" data-neut="Nein" class="selected"><span>❌</span><small>Nein</small></button>
+                </div>
+                <div class="onb-nav">
+                    <button class="btn-ghost" data-prev>← Zurück</button>
+                    <button class="btn-primary" data-next>Weiter →</button>
+                </div>
+            </section>
+
+            <!-- ===== STEP 5: Bio ===== -->
+            <section class="onb-step" data-step="5" hidden>
+                <div class="onb-head">
+                    <h2>Steckbrief ✍</h2>
+                    <p>Was macht deinen Hund besonders?</p>
+                </div>
+                <label class="onb-label">Bio (max. 200 Zeichen)
+                    <textarea id="onbBio" rows="4" maxlength="200" placeholder="z. B. Liebt Stöckchen, Matschpfützen und lange Waldspaziergänge!"></textarea>
+                    <small class="counter"><span id="bioCount">0</span> / 200</small>
+                </label>
+                <div class="suggestion-chips" id="bioSuggestions">
+                    <button type="button" data-sugg="Liebt Stöckchen und Matschpfützen!">🌳 Stöckchen-Fan</button>
+                    <button type="button" data-sugg="Apportiert alles, was nicht festgenagelt ist.">🎾 Ball-Experte</button>
+                    <button type="button" data-sugg="Schmusebär auf vier Pfoten.">🤗 Schmusebär</button>
+                    <button type="button" data-sugg="Ausdauernd — perfekt fürs Joggen.">🏃 Sportskanone</button>
+                    <button type="button" data-sugg="Wasserratte & Schwimm-Weltmeister.">🌊 Wasserratte</button>
+                </div>
+                <div class="onb-nav">
+                    <button class="btn-ghost" data-prev>← Zurück</button>
+                    <button class="btn-primary" data-next>Weiter →</button>
+                </div>
+            </section>
+
+            <!-- ===== STEP 6: Location ===== -->
+            <section class="onb-step" data-step="6" hidden>
+                <div class="onb-head">
+                    <h2>Wo seid ihr zuhause? 📍</h2>
+                    <p>Damit wir Hunde in deiner Umgebung finden können.</p>
+                </div>
+                <div class="loc-card">
+                    <div class="loc-map-mock">
+                        <div class="loc-pin">📍</div>
+                        <div class="loc-rings"><span></span><span></span><span></span></div>
+                    </div>
+                    <button class="btn-primary full" id="useGpsBtn">🎯 Meinen Standort verwenden</button>
+                    <div class="auth-divider"><span>oder manuell</span></div>
+                    <div class="city-chips">
+                        <button type="button" data-city="Basel">Basel</button>
+                        <button type="button" data-city="Zürich">Zürich</button>
+                        <button type="button" data-city="Bern">Bern</button>
+                        <button type="button" data-city="Genf">Genf</button>
+                        <button type="button" data-city="Lausanne">Lausanne</button>
+                        <button type="button" data-city="Luzern">Luzern</button>
+                    </div>
+                    <label class="onb-label">Oder Stadt eingeben
+                        <input type="text" id="onbCity" placeholder="Stadt / Ort" />
+                    </label>
+                </div>
+                <div class="onb-nav">
+                    <button class="btn-ghost" data-prev>← Zurück</button>
+                    <button class="btn-primary" data-next>Weiter →</button>
+                </div>
+            </section>
+
+            <!-- ===== STEP 7: Done ===== -->
+            <section class="onb-step" data-step="7" hidden>
+                <div class="done-hero">
+                    <div class="done-avatar" id="doneAvatar">🐕</div>
+                    <div class="confetti" id="confettiBox"></div>
+                    <h1>Willkommen bei PfotenMatch, <span id="doneName">Bello</span>! 🎉</h1>
+                    <p>Dein Rudel wartet schon…</p>
+                </div>
+                <div class="done-summary" id="doneSummary"></div>
+                <button class="btn-primary full big-cta" id="finishOnboardBtn">🔥 Jetzt swipen!</button>
+            </section>
+
+        </div>
+    </div>
+
     <div id="app">
         <!-- Top bar -->
         <header class="topbar">
