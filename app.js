@@ -151,6 +151,7 @@ function renderCardStack() {
             </div>
             <div class="stamp like">LIKE</div>
             <div class="stamp nope">NOPE</div>
+            <div class="stamp super">SUPER</div>
             <div class="info">
                 <h3>${dog.name}, ${dog.age}</h3>
                 <p class="sub">${dog.breed} · ${dog.size} · ${dog.distance} km</p>
@@ -180,24 +181,50 @@ function attachSwipe(card, dog) {
         const pt = e.touches ? e.touches[0] : e;
         currX = pt.clientX - startX;
         currY = pt.clientY - startY;
-        const rot = currX * 0.08;
+        // Wenn deutlich nach oben gezogen wird, Rotation reduzieren (für Super-Like-Geste)
+        const verticalDominant = currY < -40 && Math.abs(currY) > Math.abs(currX);
+        const rot = verticalDominant ? currX * 0.02 : currX * 0.08;
         card.style.transform = `translate(${currX}px, ${currY}px) rotate(${rot}deg)`;
-        const likeStamp = card.querySelector(".stamp.like");
-        const nopeStamp = card.querySelector(".stamp.nope");
-        if (likeStamp && nopeStamp) {
-            likeStamp.style.opacity = Math.max(0, currX / 100);
-            nopeStamp.style.opacity = Math.max(0, -currX / 100);
+        const likeStamp  = card.querySelector(".stamp.like");
+        const nopeStamp  = card.querySelector(".stamp.nope");
+        const superStamp = card.querySelector(".stamp.super");
+        if (likeStamp && nopeStamp && superStamp) {
+            // Super-Stamp dominiert, sobald der Hochzieh-Anteil deutlich ist
+            const superOp = Math.max(0, Math.min(1, (-currY - 30) / 100));
+            if (verticalDominant) {
+                superStamp.style.opacity = superOp;
+                likeStamp.style.opacity = 0;
+                nopeStamp.style.opacity = 0;
+            } else {
+                superStamp.style.opacity = superOp * 0.4;
+                likeStamp.style.opacity = Math.max(0, currX / 100);
+                nopeStamp.style.opacity = Math.max(0, -currX / 100);
+            }
         }
     };
     const onUp = () => {
         if (!dragging) return;
         dragging = false;
         card.classList.remove("dragging");
-        if (currX > 120) return flyAway(card, dog, "like");
+        // Super-Like: deutlich nach oben & weiter als horizontal
+        if (currY < -140 && Math.abs(currY) > Math.abs(currX)) {
+            if (!state.premium) {
+                // Karte zurück, dann Premium-Modal
+                card.style.transform = "";
+                card.querySelector(".stamp.super").style.opacity = 0;
+                currX = 0; currY = 0;
+                openPremium();
+                return;
+            }
+            return flyAway(card, dog, "super");
+        }
+        if (currX >  120) return flyAway(card, dog, "like");
         if (currX < -120) return flyAway(card, dog, "pass");
         card.style.transform = "";
         card.querySelector(".stamp.like").style.opacity = 0;
         card.querySelector(".stamp.nope").style.opacity = 0;
+        const sup = card.querySelector(".stamp.super");
+        if (sup) sup.style.opacity = 0;
         currX = 0; currY = 0;
     };
 
@@ -210,8 +237,12 @@ function attachSwipe(card, dog) {
 }
 
 function flyAway(card, dog, direction) {
-    const x = direction === "like" ? window.innerWidth : -window.innerWidth;
-    card.style.transform = `translate(${x}px, 0) rotate(${direction === "like" ? 30 : -30}deg)`;
+    if (direction === "super") {
+        card.style.transform = `translate(0, -${window.innerHeight}px) rotate(0deg)`;
+    } else {
+        const x = direction === "like" ? window.innerWidth : -window.innerWidth;
+        card.style.transform = `translate(${x}px, 0) rotate(${direction === "like" ? 30 : -30}deg)`;
+    }
     card.style.opacity = 0;
     setTimeout(() => handleDecision(dog, direction), 280);
 }

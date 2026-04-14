@@ -215,6 +215,16 @@ button { font-family: inherit; }
     border-color: var(--danger);
     transform: rotate(15deg);
 }
+.dog-card .stamp.super {
+    left: 50%;
+    top: auto;
+    bottom: 30%;
+    color: #4ecdc4;
+    border-color: #4ecdc4;
+    transform: translateX(-50%) rotate(-8deg);
+    text-shadow: 0 0 14px rgba(78, 205, 196, 0.6);
+    box-shadow: 0 0 20px rgba(78, 205, 196, 0.4);
+}
 .empty-cards {
     display: flex;
     flex-direction: column;
