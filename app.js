@@ -33,6 +33,8 @@ const state = {
     dangers: [],
     // Stories: [{id, ownerId: "me"|<dogId>, src, ts, caption, viewed}]
     stories: [],
+    // Sitter-Buchungen: [{id, sitterId, service, dateFrom, dateTo, hours, notes, total, status, ts}]
+    bookings: [],
     // Onboarding abgeschlossen?
     onboarded: false
 };
@@ -52,6 +54,7 @@ function saveState() {
             checkIns: state.checkIns,
             dangers: state.dangers,
             stories: state.stories.filter(s => s.ownerId === "me"), // nur eigene persistieren
+            bookings: state.bookings,
             settings: state.settings
         }));
     } catch (e) { /* ignore */ }
@@ -74,6 +77,7 @@ function loadState() {
         if (Array.isArray(data.checkIns)) state.checkIns = data.checkIns;
         if (Array.isArray(data.dangers)) state.dangers = data.dangers;
         if (Array.isArray(data.stories)) state.stories = data.stories;
+        if (Array.isArray(data.bookings)) state.bookings = data.bookings;
         if (Array.isArray(data.matches)) {
             state.matches = data.matches
                 .map(m => {
@@ -93,6 +97,7 @@ function switchView(name) {
     if (name === "matches") renderMatches();
     if (name === "map") renderMap();
     if (name === "profile") renderProfile();
+    if (name === "sitter") renderSitterView();
 }
 
 // ---------- Profile filtering ----------
@@ -1641,6 +1646,281 @@ function flashToast(text) {
     setTimeout(() => $("#adBanner").classList.add("hidden"), 2500);
 }
 
+// ============================================================
+// SITTER – Hundesitter finden & buchen
+// ============================================================
+const sitterUi = {
+    mode: "discover",    // "discover" | "bookings"
+    service: "",
+    maxPrice: 25,
+    detailId: null
+};
+
+const SERVICE_ICONS  = { Gassi: "🚶", Tag: "☀", Nacht: "🌙", Urlaub: "✈" };
+const SERVICE_LABELS = { Gassi: "Gassi", Tag: "Tagesbetreuung", Nacht: "Übernachtung", Urlaub: "Urlaubspflege" };
+function serviceIcon(s)  { return SERVICE_ICONS[s]  || "🐾"; }
+function serviceLabel(s) { return SERVICE_LABELS[s] || s; }
+
+function sitterDistance(s) {
+    // Grobe Entfernung in km (Äquirektangulär, reicht für Liste)
+    const a = state.userLocation;
+    const dLat = (s.lat - a.lat) * 111;
+    const dLng = (s.lng - a.lng) * 111 * Math.cos(a.lat * Math.PI / 180);
+    return Math.sqrt(dLat * dLat + dLng * dLng);
+}
+
+function renderSitterView() {
+    renderSitters();
+    renderMyBookings();
+    updateBookingsBadge();
+    switchSitterTab(sitterUi.mode);
+}
+
+function switchSitterTab(mode) {
+    sitterUi.mode = mode;
+    $$(".sitter-tab").forEach(t => t.classList.toggle("active", t.dataset.stab === mode));
+    $("#sitterDiscover").classList.toggle("hidden", mode !== "discover");
+    $("#sitterBookings").classList.toggle("hidden", mode !== "bookings");
+}
+
+function renderSitters() {
+    const list = $("#sitterList");
+    if (!list) return;
+    list.innerHTML = "";
+    const filtered = DOG_SITTERS
+        .filter(s => !sitterUi.service || s.services.includes(sitterUi.service))
+        .filter(s => !s.priceHour || s.priceHour <= sitterUi.maxPrice)
+        .map(s => ({ ...s, distance: sitterDistance(s) }))
+        .sort((a, b) => b.rating - a.rating);
+
+    if (filtered.length === 0) {
+        list.innerHTML = `<p class="empty-state">Keine Sitter mit diesen Filtern gefunden 🐾</p>`;
+        return;
+    }
+
+    filtered.forEach(s => {
+        const card = document.createElement("div");
+        card.className = "sitter-card";
+        const svcChips = s.services
+            .map(svc => `<span class="svc-chip">${serviceIcon(svc)} ${serviceLabel(svc)}</span>`)
+            .join("");
+        let priceDisplay;
+        if (s.priceHour) priceDisplay = `ab CHF ${s.priceHour}/Std`;
+        else if (s.priceDay) priceDisplay = `ab CHF ${s.priceDay}/Tag`;
+        else priceDisplay = `ab CHF ${s.priceNight}/Nacht`;
+        card.innerHTML = `
+            <div class="sc-av">${s.avatar}${s.verified ? '<span class="verified-dot">✓</span>' : ''}</div>
+            <div class="sc-body">
+                <div class="sc-head">
+                    <strong>${escapeHtml(s.name)}</strong>
+                    <span class="sc-rating">⭐ ${s.rating.toFixed(1)}</span>
+                </div>
+                <div class="sc-sub">${escapeHtml(s.neighborhood)} · ${s.distance.toFixed(1)} km · ⏱ ${s.responseTime}</div>
+                <div class="sc-chips">${svcChips}</div>
+                <p class="sc-bio">${escapeHtml(s.bio)}</p>
+                <div class="sc-foot">
+                    <span class="sc-price">${priceDisplay}</span>
+                    <span class="sc-reviews">${s.reviewCount} Bew.</span>
+                </div>
+            </div>
+        `;
+        card.addEventListener("click", () => openSitterDetail(s.id));
+        list.appendChild(card);
+    });
+}
+
+function openSitterDetail(id) {
+    const s = DOG_SITTERS.find(x => x.id === id);
+    if (!s) return;
+    sitterUi.detailId = id;
+    $("#sdAvatar").textContent = s.avatar;
+    $("#sdName").textContent = s.name;
+    const dist = sitterDistance(s).toFixed(1);
+    $("#sdHood").textContent = `${s.neighborhood} · ${dist} km entfernt`;
+    $("#sdRating").textContent = `⭐ ${s.rating.toFixed(1)}`;
+    $("#sdReviews").textContent = `(${s.reviewCount} Bewertungen)`;
+    $("#sdVerified").classList.toggle("hidden", !s.verified);
+    $("#sdBio").textContent = s.bio;
+    $("#sdResponse").textContent = s.responseTime;
+    $("#sdExperience").textContent = s.experience;
+    $("#sdSizes").textContent = s.acceptedSizes.join(", ");
+    $("#sdAvailability").textContent = s.availability;
+
+    const prices = $("#sdPrices");
+    prices.innerHTML = "";
+    const items = [];
+    if (s.services.includes("Gassi")  && s.priceHour)  items.push(["🚶", "Gassi gehen",      `CHF ${s.priceHour}/Std`]);
+    if (s.services.includes("Tag")    && s.priceDay)   items.push(["☀", "Tagesbetreuung",   `CHF ${s.priceDay}/Tag`]);
+    if (s.services.includes("Nacht")  && s.priceNight) items.push(["🌙", "Übernachtung",     `CHF ${s.priceNight}/Nacht`]);
+    if (s.services.includes("Urlaub") && s.priceNight) items.push(["✈", "Urlaubspflege",    `CHF ${s.priceNight}/Nacht`]);
+    items.forEach(([icon, label, p]) => {
+        const row = document.createElement("div");
+        row.className = "price-row";
+        row.innerHTML = `<span>${icon} ${label}</span><strong>${p}</strong>`;
+        prices.appendChild(row);
+    });
+
+    $("#sitterDetailModal").classList.remove("hidden");
+}
+
+function openBookingForm() {
+    const s = DOG_SITTERS.find(x => x.id === sitterUi.detailId);
+    if (!s) return;
+    $("#bookingSitterInfo").innerHTML = `Mit <strong>${escapeHtml(s.name)}</strong> · ${s.neighborhood}`;
+    const sel = $("#bkService");
+    sel.innerHTML = "";
+    s.services.forEach(svc => {
+        const opt = document.createElement("option");
+        opt.value = svc;
+        opt.textContent = `${serviceIcon(svc)} ${serviceLabel(svc)}`;
+        sel.appendChild(opt);
+    });
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+    $("#bkFrom").value = tomorrow;
+    $("#bkTo").value = tomorrow;
+    $("#bkHours").value = 2;
+    $("#bkNotes").value = "";
+    updateBookingFormUi();
+    $("#sitterDetailModal").classList.add("hidden");
+    $("#bookingModal").classList.remove("hidden");
+}
+
+function daysBetween(from, to) {
+    const a = new Date(from);
+    const b = new Date(to);
+    return Math.round((b - a) / 86400000);
+}
+
+function computeBookingTotal(sitter, svc, from, to, hours) {
+    if (svc === "Gassi")  return (parseInt(hours) || 0) * (sitter.priceHour || 0);
+    if (svc === "Tag")    return Math.max(1, daysBetween(from, to) + 1) * (sitter.priceDay   || 0);
+    if (svc === "Nacht" || svc === "Urlaub")
+        return Math.max(1, daysBetween(from, to)) * (sitter.priceNight || 0);
+    return 0;
+}
+
+function updateBookingFormUi() {
+    const s = DOG_SITTERS.find(x => x.id === sitterUi.detailId);
+    if (!s) return;
+    const svc = $("#bkService").value;
+    // Felder passend zum Service zeigen/verstecken
+    const isGassi  = svc === "Gassi";
+    $("#bkHoursLabel").classList.toggle("hidden", !isGassi);
+    $("#bkToLabel").classList.toggle("hidden", isGassi);
+    const total = computeBookingTotal(s, svc, $("#bkFrom").value, $("#bkTo").value, $("#bkHours").value);
+    $("#bkTotal").textContent = `CHF ${total}`;
+}
+
+function submitBooking() {
+    const s = DOG_SITTERS.find(x => x.id === sitterUi.detailId);
+    if (!s) return;
+    const svc = $("#bkService").value;
+    const from = $("#bkFrom").value;
+    const to   = $("#bkTo").value;
+    const hours = parseInt($("#bkHours").value) || 0;
+    const notes = $("#bkNotes").value.trim();
+    if (!from) { flashToast("Bitte Datum wählen"); return; }
+    if (svc === "Gassi" && hours < 1) { flashToast("Bitte Stundenzahl angeben"); return; }
+
+    const total = computeBookingTotal(s, svc, from, to, hours);
+    const booking = {
+        id: "bk" + Date.now(),
+        sitterId: s.id,
+        service: svc,
+        dateFrom: from,
+        dateTo: svc === "Gassi" ? from : to,
+        hours: hours,
+        notes: notes,
+        total: total,
+        status: "pending",
+        ts: Date.now()
+    };
+    state.bookings.unshift(booking);
+    saveState();
+    $("#bookingModal").classList.add("hidden");
+    flashToast(`📨 Anfrage an ${s.name} gesendet`);
+    updateBookingsBadge();
+    if (sitterUi.mode === "bookings") renderMyBookings();
+
+    // Simulierte Sitter-Antwort nach 4–7 Sekunden
+    setTimeout(() => {
+        const b = state.bookings.find(x => x.id === booking.id);
+        if (!b || b.status !== "pending") return;
+        b.status = Math.random() < 0.85 ? "confirmed" : "declined";
+        saveState();
+        if (b.status === "confirmed") {
+            flashToast(`✅ ${s.name} hat deine Anfrage bestätigt!`);
+        } else {
+            flashToast(`😔 ${s.name} ist an dem Termin leider nicht verfügbar`);
+        }
+        if ($("#view-sitter")?.classList.contains("active")) renderMyBookings();
+        updateBookingsBadge();
+    }, 4000 + Math.random() * 3000);
+}
+
+function renderMyBookings() {
+    const list = $("#bookingList");
+    if (!list) return;
+    if (state.bookings.length === 0) {
+        list.innerHTML = `<p class="empty-state">Noch keine Buchungen. Finde einen Sitter und sende deine erste Anfrage! 🐾</p>`;
+        return;
+    }
+    list.innerHTML = "";
+    state.bookings.forEach(b => {
+        const s = DOG_SITTERS.find(x => x.id === b.sitterId);
+        if (!s) return;
+        const statusText = ({
+            pending:   "⏳ Wartet auf Bestätigung",
+            confirmed: "✅ Bestätigt",
+            declined:  "❌ Abgelehnt",
+            completed: "🏁 Abgeschlossen"
+        })[b.status] || b.status;
+        const detail = b.service === "Gassi"
+            ? `${b.hours} Std am ${b.dateFrom}`
+            : (b.dateFrom === b.dateTo ? b.dateFrom : `${b.dateFrom} – ${b.dateTo}`);
+        const card = document.createElement("div");
+        card.className = `booking-card status-${b.status}`;
+        card.innerHTML = `
+            <div class="bc-av">${s.avatar}</div>
+            <div class="bc-body">
+                <div class="bc-head">
+                    <strong>${escapeHtml(s.name)}</strong>
+                    <span class="bc-total">CHF ${b.total}</span>
+                </div>
+                <div class="bc-sub">${serviceIcon(b.service)} ${serviceLabel(b.service)} · ${escapeHtml(detail)}</div>
+                <div class="bc-status">${statusText}</div>
+            </div>
+            <button class="bc-cancel" data-cancel="${b.id}" title="Stornieren">✕</button>
+        `;
+        card.querySelector(".bc-cancel").addEventListener("click", (e) => {
+            e.stopPropagation();
+            cancelBooking(b.id);
+        });
+        list.appendChild(card);
+    });
+}
+
+function updateBookingsBadge() {
+    const pending = state.bookings.filter(b => b.status === "pending" || b.status === "confirmed").length;
+    const badge = $("#bookingsBadge");
+    if (!badge) return;
+    if (pending > 0) {
+        badge.textContent = pending;
+        badge.classList.remove("hidden");
+    } else {
+        badge.classList.add("hidden");
+    }
+}
+
+function cancelBooking(id) {
+    if (!confirm("Buchung wirklich stornieren?")) return;
+    state.bookings = state.bookings.filter(b => b.id !== id);
+    saveState();
+    renderMyBookings();
+    updateBookingsBadge();
+    flashToast("🗑 Buchung storniert");
+}
+
 // ---------- Event bindings ----------
 function bindEvents() {
     // Nav
@@ -1890,6 +2170,34 @@ function bindEvents() {
     });
     // Ad close
     $("#adClose").addEventListener("click", () => $("#adBanner").classList.add("hidden"));
+    // --- Sitter tab ---
+    $$(".sitter-tab").forEach(t => {
+        t.addEventListener("click", () => switchSitterTab(t.dataset.stab));
+    });
+    $$("#serviceChips .chip").forEach(c => {
+        c.addEventListener("click", () => {
+            $$("#serviceChips .chip").forEach(x => x.classList.remove("active"));
+            c.classList.add("active");
+            sitterUi.service = c.dataset.svc || "";
+            renderSitters();
+        });
+    });
+    $("#maxPriceSlider").addEventListener("input", (e) => {
+        sitterUi.maxPrice = parseInt(e.target.value);
+        $("#maxPriceLabel").textContent = `CHF ${sitterUi.maxPrice}`;
+        renderSitters();
+    });
+    $("#sitterDetailClose").addEventListener("click", () =>
+        $("#sitterDetailModal").classList.add("hidden"));
+    $("#sdBookBtn").addEventListener("click", openBookingForm);
+    // Booking form
+    $("#bkService").addEventListener("change", updateBookingFormUi);
+    $("#bkFrom").addEventListener("change", updateBookingFormUi);
+    $("#bkTo").addEventListener("change", updateBookingFormUi);
+    $("#bkHours").addEventListener("input", updateBookingFormUi);
+    $("#bkCancel").addEventListener("click", () =>
+        $("#bookingModal").classList.add("hidden"));
+    $("#bkSubmit").addEventListener("click", submitBooking);
     // Close modals on backdrop click
     $$(".modal").forEach(m => {
         m.addEventListener("click", (e) => {
@@ -2301,6 +2609,7 @@ function init() {
     applyFilters();
     renderMatches();
     renderProfile();
+    updateBookingsBadge();
     // Onboarding zeigen, falls noch nicht abgeschlossen
     if (!state.onboarded) {
         showOnboarding();

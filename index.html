@@ -381,6 +381,42 @@
                 <input type="file" id="storyInput" accept="image/*" hidden />
             </section>
 
+            <!-- ============ SITTER VIEW ============ -->
+            <section id="view-sitter" class="view">
+                <header class="sitter-page-header">
+                    <h2>🏡 Hundesitter finden</h2>
+                    <p class="sub">Verlässliche Betreuung in deiner Nähe</p>
+                </header>
+                <div class="sitter-tabs">
+                    <button class="sitter-tab active" data-stab="discover">🔍 Entdecken</button>
+                    <button class="sitter-tab" data-stab="bookings">
+                        📅 Meine Buchungen
+                        <span id="bookingsBadge" class="bk-badge hidden">0</span>
+                    </button>
+                </div>
+
+                <div id="sitterDiscover">
+                    <div class="sitter-filters">
+                        <div class="chip-row" id="serviceChips">
+                            <button class="chip active" data-svc="">Alle</button>
+                            <button class="chip" data-svc="Gassi">🚶 Gassi</button>
+                            <button class="chip" data-svc="Tag">☀ Tag</button>
+                            <button class="chip" data-svc="Nacht">🌙 Nacht</button>
+                            <button class="chip" data-svc="Urlaub">✈ Urlaub</button>
+                        </div>
+                        <label class="price-filter">
+                            <span>Max. Preis/Std: <strong id="maxPriceLabel">CHF 25</strong></span>
+                            <input type="range" id="maxPriceSlider" min="10" max="25" value="25" />
+                        </label>
+                    </div>
+                    <div id="sitterList" class="sitter-list"></div>
+                </div>
+
+                <div id="sitterBookings" class="hidden">
+                    <div id="bookingList" class="booking-list"></div>
+                </div>
+            </section>
+
         </main>
 
         <!-- Bottom navigation -->
@@ -388,6 +424,7 @@
             <button class="nav-btn active" data-view="swipe"><span>🐾</span>Swipe</button>
             <button class="nav-btn" data-view="matches"><span>💬</span>Matches</button>
             <button class="nav-btn" data-view="map"><span>📍</span>Karte</button>
+            <button class="nav-btn" data-view="sitter"><span>🏡</span>Sitter</button>
             <button class="nav-btn" data-view="profile"><span>🐶</span>Profil</button>
         </nav>
     </div>
@@ -709,6 +746,64 @@
             <button id="photoViewerClose" class="photo-viewer-close">✕</button>
             <img id="photoViewerImg" src="" alt="" />
             <button id="photoViewerDelete" class="btn-danger-outline">🗑 Löschen</button>
+        </div>
+    </div>
+
+    <!-- Sitter detail bottom sheet -->
+    <div id="sitterDetailModal" class="modal hidden">
+        <div class="sitter-sheet">
+            <button class="sheet-close" id="sitterDetailClose" title="Schließen">✕</button>
+            <div class="sitter-hero">
+                <div class="sh-av" id="sdAvatar">👩</div>
+                <h2 id="sdName">Name</h2>
+                <p class="sh-hood" id="sdHood">Kleinbasel · 1.2 km</p>
+                <div class="sh-rating-row">
+                    <span class="sh-rating" id="sdRating">⭐ 4.9</span>
+                    <span id="sdReviews">(47 Bewertungen)</span>
+                    <span id="sdVerified" class="sh-verified hidden">✓ Verifiziert</span>
+                </div>
+            </div>
+            <p id="sdBio" class="sd-bio"></p>
+            <div class="sd-info">
+                <div class="info-row"><span>⏱ Antwortzeit</span><strong id="sdResponse">—</strong></div>
+                <div class="info-row"><span>🎓 Erfahrung</span><strong id="sdExperience">—</strong></div>
+                <div class="info-row"><span>📐 Akzeptiert</span><strong id="sdSizes">—</strong></div>
+                <div class="info-row"><span>📆 Verfügbarkeit</span><strong id="sdAvailability">—</strong></div>
+            </div>
+            <h3 class="sd-section">💰 Preise</h3>
+            <div class="sd-prices" id="sdPrices"></div>
+            <button class="btn-primary full" id="sdBookBtn">🗓 Betreuung anfragen</button>
+        </div>
+    </div>
+
+    <!-- Booking request modal -->
+    <div id="bookingModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>🗓 Betreuungsanfrage</h2>
+            <p id="bookingSitterInfo" class="booking-info"></p>
+            <label>Service
+                <select id="bkService"></select>
+            </label>
+            <label id="bkFromLabel">Von
+                <input type="date" id="bkFrom" />
+            </label>
+            <label id="bkToLabel">Bis
+                <input type="date" id="bkTo" />
+            </label>
+            <label id="bkHoursLabel">Stunden
+                <input type="number" id="bkHours" min="1" max="12" value="2" />
+            </label>
+            <label>Nachricht (optional)
+                <textarea id="bkNotes" rows="3" placeholder="Besonderheiten deines Hundes, bevorzugte Zeiten..."></textarea>
+            </label>
+            <div class="booking-total">
+                <span>Geschätzter Preis</span>
+                <strong id="bkTotal">CHF 0</strong>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="bkCancel">Abbrechen</button>
+                <button class="btn-primary" id="bkSubmit">Anfrage senden</button>
+            </div>
         </div>
     </div>
 

@@ -231,3 +231,103 @@ const AUTO_REPLIES = [
     "Wir waren schon mal dort – sehr schön!",
     "Super, bis dann! 🐶"
 ];
+
+// Hundesitter in Basel & Umgebung
+const DOG_SITTERS = [
+    {
+        id: 101, name: "Sophie Keller", avatar: "👩‍🦰",
+        neighborhood: "Kleinbasel", lat: 47.5650, lng: 7.6050,
+        rating: 4.9, reviewCount: 47,
+        priceHour: 18, priceDay: 85, priceNight: 120,
+        services: ["Gassi", "Tag", "Nacht"],
+        bio: "Hundeliebhaberin mit 10 Jahren Erfahrung. Großer Garten, katzenfrei, keine anderen Hunde im Haushalt. Jeder Hund bekommt meine ungeteilte Aufmerksamkeit.",
+        experience: "10 Jahre", verified: true,
+        acceptedSizes: ["Klein", "Mittel", "Groß"],
+        responseTime: "~1 Std",
+        availability: "Mo–Fr ganztägig, WE nach Absprache"
+    },
+    {
+        id: 102, name: "Marco Rossi", avatar: "🧔",
+        neighborhood: "Gundeldingen", lat: 47.5440, lng: 7.5920,
+        rating: 4.7, reviewCount: 23,
+        priceHour: 15, priceDay: null, priceNight: null,
+        services: ["Gassi"],
+        bio: "Sportlich, laufe gerne lange Strecken durch die Langen Erlen. Perfekt für energiegeladene Hunde, die viel Bewegung brauchen.",
+        experience: "4 Jahre", verified: true,
+        acceptedSizes: ["Mittel", "Groß"],
+        responseTime: "~30 Min",
+        availability: "Täglich 6–9 Uhr und 17–20 Uhr"
+    },
+    {
+        id: 103, name: "Dr. Claudia Weber", avatar: "👵",
+        neighborhood: "St. Johann", lat: 47.5700, lng: 7.5780,
+        rating: 5.0, reviewCount: 89,
+        priceHour: 22, priceDay: 95, priceNight: 140,
+        services: ["Gassi", "Tag", "Nacht", "Urlaub"],
+        bio: "Pensionierte Tierärztin. Spezialisiert auf ältere Hunde und solche mit medizinischen Bedürfnissen. Medikamentengabe kein Problem.",
+        experience: "30+ Jahre", verified: true,
+        acceptedSizes: ["Klein", "Mittel", "Groß"],
+        responseTime: "~2 Std",
+        availability: "Flexibel, am liebsten Tagsüber"
+    },
+    {
+        id: 104, name: "Jonas Schmid", avatar: "👨",
+        neighborhood: "Bruderholz", lat: 47.5370, lng: 7.5830,
+        rating: 4.6, reviewCount: 12,
+        priceHour: 14, priceDay: 75, priceNight: null,
+        services: ["Gassi", "Tag"],
+        bio: "Student mit viel Zeit zwischen Vorlesungen. Wohne direkt am Margarethenpark — ideal für ausgedehnte Gassirunden.",
+        experience: "2 Jahre", verified: false,
+        acceptedSizes: ["Klein", "Mittel"],
+        responseTime: "~2 Std",
+        availability: "Mo, Mi, Fr ganztägig"
+    },
+    {
+        id: 105, name: "Fatima Akyol", avatar: "👩",
+        neighborhood: "Matthäus", lat: 47.5680, lng: 7.5920,
+        rating: 4.8, reviewCount: 34,
+        priceHour: 17, priceDay: 80, priceNight: 125,
+        services: ["Gassi", "Tag", "Nacht", "Urlaub"],
+        bio: "Zwei eigene Golden Retriever (freundlich, gesellig), dein Hund hat sofort Spielkameraden. Großer umzäunter Garten.",
+        experience: "7 Jahre", verified: true,
+        acceptedSizes: ["Klein", "Mittel", "Groß"],
+        responseTime: "~45 Min",
+        availability: "Täglich, auch kurzfristig"
+    },
+    {
+        id: 106, name: "Peter Baumann", avatar: "👴",
+        neighborhood: "Riehen", lat: 47.5800, lng: 7.6500,
+        rating: 4.9, reviewCount: 61,
+        priceHour: 16, priceDay: 90, priceNight: 130,
+        services: ["Tag", "Nacht", "Urlaub"],
+        bio: "Rentner mit viel Zeit und Liebe für Tiere. Hatte selbst bis vor kurzem zwei Berner Sennen. Ruhiges Haus am Dorfrand.",
+        experience: "20 Jahre", verified: true,
+        acceptedSizes: ["Mittel", "Groß"],
+        responseTime: "~3 Std",
+        availability: "Ganztägig, außer Dienstag"
+    },
+    {
+        id: 107, name: "Lea Hofer", avatar: "👱‍♀️",
+        neighborhood: "Iselin", lat: 47.5580, lng: 7.5640,
+        rating: 4.5, reviewCount: 8,
+        priceHour: 12, priceDay: null, priceNight: null,
+        services: ["Gassi"],
+        bio: "Tierpflegerin in Ausbildung. Faires Einstiegsangebot — ich sammle gerade Erfahrung und Bewertungen.",
+        experience: "< 1 Jahr", verified: false,
+        acceptedSizes: ["Klein", "Mittel"],
+        responseTime: "~4 Std",
+        availability: "Wochenenden und Abende"
+    },
+    {
+        id: 108, name: "Tobias Furrer", avatar: "👨‍🦱",
+        neighborhood: "Breite", lat: 47.5520, lng: 7.6100,
+        rating: 4.8, reviewCount: 29,
+        priceHour: 20, priceDay: 88, priceNight: 135,
+        services: ["Gassi", "Tag", "Nacht"],
+        bio: "Zertifizierter Hundetrainer mit eigener Praxis. Verbinde Sitting gerne mit leichtem Training — Grundkommandos, Leinenführigkeit.",
+        experience: "8 Jahre", verified: true,
+        acceptedSizes: ["Klein", "Mittel", "Groß"],
+        responseTime: "~1 Std",
+        availability: "Di–Sa, So auf Anfrage"
+    }
+];
