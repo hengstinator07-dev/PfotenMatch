@@ -573,6 +573,12 @@ button { font-family: inherit; }
     gap: 24px;
     padding: 18px 20px 12px;
 }
+.profile-avatar-wrap {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+}
 .profile-avatar-btn {
     position: relative;
     background: transparent;
@@ -582,6 +588,10 @@ button { font-family: inherit; }
     width: 96px;
     height: 96px;
     flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+.profile-avatar-btn:active {
+    transform: scale(0.94);
 }
 .profile-avatar {
     position: relative;
@@ -2610,6 +2620,11 @@ button { font-family: inherit; }
     align-items: stretch !important;
     justify-content: center !important;
     padding: 0 !important;
+    animation: storyBgIn 0.35s ease;
+}
+@keyframes storyBgIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 .story-viewer {
     width: 100%;
@@ -2620,11 +2635,39 @@ button { font-family: inherit; }
     flex-direction: column;
     background: #000;
     position: relative;
-    animation: storyIn 0.25s ease;
+    transform-origin: center center;
+    animation: storyIn 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.15);
 }
 @keyframes storyIn {
-    from { opacity: 0; transform: scale(0.96); }
-    to   { opacity: 1; transform: scale(1); }
+    0%   { opacity: 0; transform: scale(0.35) translateY(20px); filter: blur(10px); }
+    55%  { opacity: 1; transform: scale(1.03) translateY(0);    filter: blur(0); }
+    100% { opacity: 1; transform: scale(1)    translateY(0);    filter: blur(0); }
+}
+.story-viewer .story-progress-row { animation: storyRowIn    0.5s ease 0.15s backwards; }
+.story-viewer .story-header       { animation: storyHeaderIn 0.5s ease 0.20s backwards; }
+.story-viewer .story-image-wrap   { animation: storyImgIn    0.55s ease 0.10s backwards; }
+.story-viewer .story-footer       { animation: storyHeaderIn 0.5s ease 0.25s backwards; }
+@keyframes storyRowIn {
+    from { transform: translateY(-22px); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes storyHeaderIn {
+    from { transform: translateY(-14px); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+}
+@keyframes storyImgIn {
+    from { transform: scale(1.08); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
+
+/* Press feedback for story-ringed avatars */
+.match-item .av.has-story,
+.chat-avatar.has-story {
+    transition: transform 0.15s ease;
+}
+.match-item .av.has-story:active,
+.chat-avatar.has-story:active {
+    transform: scale(0.92);
 }
 .story-progress-row {
     display: flex;

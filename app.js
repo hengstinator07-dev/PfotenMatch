@@ -1436,6 +1436,13 @@ function closeStoryViewer() {
     // Refresh rings (viewed state may have changed)
     renderProfile();
     renderMatches();
+    // Live-update chat header avatar if a chat is currently open
+    if (state.activeChatId != null) {
+        const chatAv = $("#chatAvatar");
+        const stories = getOwnerStories(state.activeChatId);
+        const allViewed = stories.length > 0 && stories.every(s => s.viewed);
+        chatAv.classList.toggle("viewed", allViewed);
+    }
 }
 
 function deleteCurrentStory() {
@@ -1795,6 +1802,13 @@ function bindEvents() {
     $("#saveDangerBtn")?.addEventListener("click", saveDangerReport);
     // --- Profile page ---
     $("#profileAvatarBtn").addEventListener("click", () => {
+        if (hasActiveStory("me")) {
+            openStoryViewer("me");
+        } else {
+            $("#profileMenuModal").classList.remove("hidden");
+        }
+    });
+    $("#profileMenuOpenBtn").addEventListener("click", () => {
         $("#profileMenuModal").classList.remove("hidden");
     });
     $("#closeProfileMenuBtn").addEventListener("click", () => {
