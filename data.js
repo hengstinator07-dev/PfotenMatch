@@ -191,6 +191,57 @@ const MEETING_SPOTS = [
     { id: 8, name: "Hundecafé 'Waggis & Wuff'", type: "cafe",   icon: "☕", desc: "Hundefreundliches Café mit Wassernapf, nahe Schifflände",  lat: 47.5598, lng: 7.5885 }
 ];
 
+// POI-Kategorien für die Karten-Suche & -Filter
+const POI_CATEGORIES = [
+    { id: "park",     label: "Freilaufzonen", icon: "🌳", color: "#2ecc71" },
+    { id: "fenced",   label: "Eingezäunt",    icon: "🚧", color: "#3498db" },
+    { id: "swim",     label: "Badestellen",   icon: "🏊", color: "#1abc9c" },
+    { id: "shop",     label: "Hundeläden",    icon: "🦴", color: "#e67e22" },
+    { id: "vet",      label: "Tierärzte",     icon: "🏥", color: "#e74c3c" },
+    { id: "groom",    label: "Hundesalons",   icon: "💈", color: "#9b59b6" },
+    { id: "cafe",     label: "Cafés",         icon: "☕", color: "#f39c12" },
+    { id: "school",   label: "Hundeschulen",  icon: "🎓", color: "#34495e" }
+];
+
+// Points of Interest (Basel). Erweitern die MEETING_SPOTS um weitere Kategorien.
+const POIS = [
+    // Freilauf & Parks (Referenz zu MEETING_SPOTS)
+    { id: 201, cat: "park",   name: "Kannenfeldpark",              desc: "Grosse Wiesen, Freilauf erlaubt",                    lat: 47.5617, lng: 7.5700, rating: 4.7, open: "24 h" },
+    { id: 202, cat: "park",   name: "Schützenmattpark",            desc: "Zentrale Hundewiese mit Schatten",                    lat: 47.5591, lng: 7.5762, rating: 4.4, open: "24 h" },
+    { id: 203, cat: "park",   name: "St. Johanns-Park",            desc: "Rheinnah, moderne Anlage",                            lat: 47.5678, lng: 7.5795, rating: 4.6, open: "24 h" },
+    { id: 204, cat: "park",   name: "Margarethenpark",             desc: "Hügelige Wiese mit Aussicht",                         lat: 47.5478, lng: 7.5820, rating: 4.5, open: "24 h" },
+    { id: 205, cat: "park",   name: "Lange Erlen",                 desc: "Weitläufiges Naherholungsgebiet",                     lat: 47.5820, lng: 7.6150, rating: 4.9, open: "24 h" },
+    { id: 206, cat: "fenced", name: "Hundeplatz Landhof",          desc: "Komplett eingezäunt, sicher für Welpen",              lat: 47.5688, lng: 7.6020, rating: 4.3, open: "06–22 Uhr" },
+
+    // Badestellen
+    { id: 210, cat: "swim",  name: "Hundebadi Birs",               desc: "Flache Badestelle an der Birs, Freilauf möglich",     lat: 47.5400, lng: 7.6200, rating: 4.8, open: "24 h" },
+    { id: 211, cat: "swim",  name: "Rheinbadi St. Johann",         desc: "Steg und seichter Einstieg",                           lat: 47.5715, lng: 7.5788, rating: 4.5, open: "24 h" },
+    { id: 212, cat: "swim",  name: "Wiesebadi",                    desc: "Schmaler Fluss, ideal für kleine Hunde",              lat: 47.5805, lng: 7.6020, rating: 4.6, open: "24 h" },
+
+    // Hundeläden
+    { id: 220, cat: "shop",  name: "Fressnapf Basel",              desc: "Grosse Auswahl an Futter & Zubehör",                  lat: 47.5545, lng: 7.5880, rating: 4.2, open: "Mo–Sa 09–19" },
+    { id: 221, cat: "shop",  name: "Qualipet Dreispitz",           desc: "Shop mit Selbstwaschanlage",                           lat: 47.5380, lng: 7.6060, rating: 4.4, open: "Mo–Sa 09–18" },
+    { id: 222, cat: "shop",  name: "Hundeladen 'Schnüffel & Co.'", desc: "Kleiner Bioladen mit Naturkausnacks",                 lat: 47.5670, lng: 7.5810, rating: 4.9, open: "Di–Fr 10–18" },
+
+    // Tierärzte
+    { id: 230, cat: "vet",   name: "Tierarztpraxis Dr. Müller",    desc: "Allgemeinpraxis, Notfalldienst Mo–Fr",                lat: 47.5620, lng: 7.5900, rating: 4.7, open: "Mo–Fr 08–18" },
+    { id: 231, cat: "vet",   name: "Tierklinik Basel",             desc: "24/7 Notfallklinik mit Chirurgie",                     lat: 47.5500, lng: 7.5700, rating: 4.6, open: "24 h" },
+    { id: 232, cat: "vet",   name: "Kleintierpraxis am Rhein",     desc: "Sanfte Behandlung, Akupunktur",                        lat: 47.5695, lng: 7.5900, rating: 4.9, open: "Mo–Fr 09–17" },
+
+    // Hundesalons
+    { id: 240, cat: "groom", name: "Wuffi Salon",                  desc: "Waschen, Schneiden, Krallen kürzen",                  lat: 47.5570, lng: 7.5820, rating: 4.8, open: "Di–Sa 09–18" },
+    { id: 241, cat: "groom", name: "Pfoten-Spa Gundeli",           desc: "Wellness und Fellpflege",                              lat: 47.5450, lng: 7.5890, rating: 4.7, open: "Mi–Sa 10–19" },
+
+    // Cafés
+    { id: 250, cat: "cafe",  name: "Café Waggis & Wuff",           desc: "Hundefreundliches Café mit Wassernapf",               lat: 47.5598, lng: 7.5885, rating: 4.6, open: "Mo–So 08–18" },
+    { id: 251, cat: "cafe",  name: "Rheinbuvette",                 desc: "Terrasse am Rhein, Leckerli am Tresen",               lat: 47.5605, lng: 7.5920, rating: 4.5, open: "Mi–So 10–22" },
+    { id: 252, cat: "cafe",  name: "Kafi Knospe",                  desc: "Kleines Café, Hunde unter dem Tisch willkommen",      lat: 47.5520, lng: 7.5790, rating: 4.4, open: "Mo–Fr 07–17" },
+
+    // Hundeschulen
+    { id: 260, cat: "school", name: "Hundeschule Gute Pfote",      desc: "Welpen- und Erziehungskurse",                          lat: 47.5480, lng: 7.5680, rating: 4.9, open: "Termine n.V." },
+    { id: 261, cat: "school", name: "Dogs Academy Basel",          desc: "Agility & Beschäftigung",                              lat: 47.5700, lng: 7.6200, rating: 4.7, open: "Termine n.V." }
+];
+
 // B2B-Werbung
 const ADS = [
     "🦴 Neu im Futterladen nebenan: Bio-Snacks 20 % günstiger – nur diese Woche!",

@@ -305,17 +305,38 @@
             <!-- ============ MAP VIEW ============ -->
             <section id="view-map" class="view">
                 <h2 class="view-title">Gassi-Karte</h2>
+
+                <!-- Suchleiste -->
+                <div class="map-searchbar">
+                    <span class="map-search-icon">🔍</span>
+                    <input type="text" id="mapSearch" placeholder="Park, Tierarzt, Café, Hund …" autocomplete="off" />
+                    <button id="mapSearchClear" class="map-search-clear hidden" title="Löschen">✕</button>
+                </div>
+                <div id="mapSearchResults" class="map-search-results hidden"></div>
+
+                <!-- Kategorie-Chips -->
+                <div id="mapCatChips" class="map-cat-chips">
+                    <button class="map-chip active" data-cat="all">⭐ Alle</button>
+                </div>
+
                 <div id="mapWrap" class="map-wrap">
                     <div id="mapCanvas" class="map-canvas"></div>
-                    <div id="mapLegend" class="map-legend">
-                        <div><span class="dot park"></span> Hundewiese</div>
-                        <div><span class="dot fenced"></span> Eingezäunte Fläche</div>
-                        <div><span class="dot cafe"></span> Hundecafé</div>
-                        <div><span class="dot danger"></span> Gefahr</div>
-                        <div><span class="dot me"></span> Du</div>
-                    </div>
                     <button id="locateBtn" class="locate-btn" title="Meinen Standort verwenden">🎯</button>
                 </div>
+
+                <!-- Pfoten-Stempel-Sammler -->
+                <div id="pawCollector" class="paw-collector">
+                    <div class="paw-info">
+                        <div class="paw-row">
+                            <strong>🐾 Pfoten-Sammlung</strong>
+                            <span id="pawTotal">0 / 0</span>
+                        </div>
+                        <div class="paw-bar"><div id="pawBarFill" class="paw-bar-fill"></div></div>
+                        <small id="pawChallenge">Wochenchallenge: Besuche 5 neue Spots</small>
+                    </div>
+                    <div class="paw-badges" id="pawBadges"></div>
+                </div>
+
                 <div class="map-actions">
                     <button id="reportDangerBtn" class="btn-danger">☠ Gefahr melden</button>
                 </div>
@@ -705,6 +726,18 @@
                 <label class="setting-row">
                     <span>👀 Lesebestätigungen senden</span>
                     <input type="checkbox" id="setReadReceipts" checked />
+                </label>
+            </div>
+
+            <div class="settings-group">
+                <h3>Karte</h3>
+                <label class="setting-row">
+                    <span>🐾 Mich auf der Karte zeigen</span>
+                    <input type="checkbox" id="setShowOnMap" checked />
+                </label>
+                <label class="setting-row">
+                    <span>🏡 Hundesitter auf der Karte anzeigen</span>
+                    <input type="checkbox" id="setShowSitters" checked />
                 </label>
             </div>
 

@@ -24,7 +24,9 @@ const state = {
     settings: {
         push: true, chatNotif: true, matchNotif: true, dangerNotif: true,
         invisible: false, locShare: true, readReceipts: true,
-        dark: false, lang: "de", unit: "km"
+        dark: false, lang: "de", unit: "km",
+        showOnMap: true,        // Mich auf der Karte zeigen
+        showSittersOnMap: true  // Sitter auf der Karte zeigen
     },
     activeChatId: null,
     // Live-Check-Ins: [{spotId, dogName, until (ts)}]  (eigener Check-in hat dogName === myProfile.name)
@@ -35,6 +37,10 @@ const state = {
     stories: [],
     // Sitter-Buchungen: [{id, sitterId, service, dateFrom, dateTo, hours, notes, total, status, ts}]
     bookings: [],
+    // Pfoten-Stempel pro POI: { [poiId]: ts }
+    paws: {},
+    // Karte: aktuelle Filter & Suche
+    mapFilter: { cats: [], q: "" },
     // Onboarding abgeschlossen?
     onboarded: false
 };
@@ -55,6 +61,7 @@ function saveState() {
             dangers: state.dangers,
             stories: state.stories.filter(s => s.ownerId === "me"), // nur eigene persistieren
             bookings: state.bookings,
+            paws: state.paws,
             settings: state.settings
         }));
     } catch (e) { /* ignore */ }
@@ -78,6 +85,7 @@ function loadState() {
         if (Array.isArray(data.dangers)) state.dangers = data.dangers;
         if (Array.isArray(data.stories)) state.stories = data.stories;
         if (Array.isArray(data.bookings)) state.bookings = data.bookings;
+        if (data.paws && typeof data.paws === "object") state.paws = data.paws;
         if (Array.isArray(data.matches)) {
             state.matches = data.matches
                 .map(m => {
@@ -1213,7 +1221,7 @@ function formatAgo(ts) {
 
 // ---------- Map (Leaflet + OpenStreetMap) ----------
 let leafletMap = null;
-let mapLayers = { spots: [], dogs: [], me: null, dangers: [] };
+let mapLayers = { spots: [], dogs: [], sitters: [], pois: [], clusters: [], me: null, dangers: [] };
 
 function buildEmojiIcon(emoji, size = 32, extraClass = "") {
     return L.divIcon({
@@ -1222,6 +1230,64 @@ function buildEmojiIcon(emoji, size = 32, extraClass = "") {
         iconSize: [size, size],
         iconAnchor: [size / 2, size]
     });
+}
+
+function buildClusterIcon(count) {
+    const size = count >= 10 ? 50 : count >= 5 ? 44 : 38;
+    return L.divIcon({
+        className: "cluster-marker",
+        html: `<div class="cluster-bubble" style="width:${size}px;height:${size}px;line-height:${size}px">${count}</div>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2]
+    });
+}
+
+function getCategoryById(id) {
+    return POI_CATEGORIES.find(c => c.id === id);
+}
+
+// Filter POIs nach aktivem Filter (Kategorie + Suche)
+function filteredPOIs() {
+    const cats = state.mapFilter.cats;
+    const q = (state.mapFilter.q || "").trim().toLowerCase();
+    return POIS.filter(p => {
+        if (cats.length && !cats.includes(p.cat)) return false;
+        if (q) {
+            const hay = (p.name + " " + p.desc + " " + (getCategoryById(p.cat)?.label || "")).toLowerCase();
+            if (!hay.includes(q)) return false;
+        }
+        return true;
+    });
+}
+
+// Greedy Clustering: gruppiert nahe Pins anhand Pixel-Distanz beim aktuellen Zoom
+function clusterPoints(points, pxRadius = 50) {
+    if (!leafletMap || points.length === 0) return [];
+    const remaining = points.map((p, i) => ({ p, i, used: false }));
+    const clusters = [];
+    for (const item of remaining) {
+        if (item.used) continue;
+        item.used = true;
+        const basePx = leafletMap.latLngToLayerPoint([item.p.lat, item.p.lng]);
+        const group = [item.p];
+        let sumLat = item.p.lat, sumLng = item.p.lng;
+        for (const other of remaining) {
+            if (other.used) continue;
+            const px = leafletMap.latLngToLayerPoint([other.p.lat, other.p.lng]);
+            if (basePx.distanceTo(px) <= pxRadius) {
+                other.used = true;
+                group.push(other.p);
+                sumLat += other.p.lat;
+                sumLng += other.p.lng;
+            }
+        }
+        clusters.push({
+            lat: sumLat / group.length,
+            lng: sumLng / group.length,
+            items: group
+        });
+    }
+    return clusters;
 }
 
 function renderMap() {
@@ -1240,85 +1306,20 @@ function renderMap() {
             attributionControl: true,
             zoomSnap: 0.25
         });
-        // CartoDB Voyager – CC BY 3.0, kommerziell frei mit Attribution.
-        // Sauberer, moderner Look wie bei Apple/Tinder-artigen Apps.
         L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
             maxZoom: 20,
             subdomains: "abcd",
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>'
         }).addTo(leafletMap);
+        // Bei Zoom/Move neu clustern
+        leafletMap.on("zoomend moveend", () => renderMapMarkers());
     }
 
-    // Abgelaufene Einträge bereinigen
     pruneCheckIns();
     pruneDangers();
+    renderMapMarkers();
+    renderPawCollector();
 
-    // Alte Marker entfernen
-    mapLayers.spots.forEach(m => leafletMap.removeLayer(m));
-    mapLayers.dogs.forEach(m => leafletMap.removeLayer(m));
-    mapLayers.dangers.forEach(m => leafletMap.removeLayer(m));
-    if (mapLayers.me) leafletMap.removeLayer(mapLayers.me);
-    mapLayers.spots = [];
-    mapLayers.dogs = [];
-    mapLayers.dangers = [];
-
-    // Eigener Standort (pulsierend)
-    mapLayers.me = L.marker([state.userLocation.lat, state.userLocation.lng], {
-        icon: buildEmojiIcon("📍", 38, "me-marker"),
-        title: "Dein Standort"
-    }).addTo(leafletMap).bindPopup("<strong>Du bist hier</strong>");
-
-    // Umkreis-Kreis
-    if (mapLayers.radius) leafletMap.removeLayer(mapLayers.radius);
-    mapLayers.radius = L.circle([state.userLocation.lat, state.userLocation.lng], {
-        radius: state.radius * 1000,
-        color: "#ff6b6b",
-        weight: 2,
-        fillColor: "#ff6b6b",
-        fillOpacity: 0.08
-    }).addTo(leafletMap);
-
-    // Treffpunkte
-    MEETING_SPOTS.forEach(s => {
-        const count = countCheckIns(s.id);
-        const marker = L.marker([s.lat, s.lng], {
-            icon: buildEmojiIcon(s.icon, 32),
-            title: s.name
-        }).addTo(leafletMap);
-        const checkInLine = count > 0
-            ? `<br><span style="color:#4ecdc4;font-weight:700">🐾 ${count} Hund${count > 1 ? "e" : ""} gerade hier</span>`
-            : "";
-        marker.bindPopup(`<strong>${s.icon} ${s.name}</strong><br>${s.desc}${checkInLine}`);
-        mapLayers.spots.push(marker);
-    });
-
-    // Gefahren-Marker
-    state.dangers.forEach(d => {
-        const type = DANGER_TYPES.find(t => t.id === d.type) || DANGER_TYPES[DANGER_TYPES.length - 1];
-        const marker = L.marker([d.lat, d.lng], {
-            icon: buildEmojiIcon(type.icon, 30),
-            title: type.label
-        }).addTo(leafletMap);
-        marker.bindPopup(
-            `<strong>⚠ ${type.label}</strong><br>` +
-            (d.desc ? d.desc + "<br>" : "") +
-            `<small>Gemeldet ${formatAgo(d.ts)} von ${d.reporter}</small>`
-        );
-        mapLayers.dangers.push(marker);
-    });
-
-    // Hunde im Umkreis
-    state.profiles.forEach(d => {
-        if (!d.lat || !d.lng) return;
-        const marker = L.marker([d.lat, d.lng], {
-            icon: buildEmojiIcon(d.emoji, 28),
-            title: d.name
-        }).addTo(leafletMap);
-        marker.bindPopup(`<strong>${d.name}</strong><br>${d.breed} · ${d.distance} km`);
-        mapLayers.dogs.push(marker);
-    });
-
-    // Map muss nach Sichtbarkeitswechsel neu berechnet werden
     setTimeout(() => leafletMap.invalidateSize(), 50);
 
     // Spot-Liste unterhalb (mit Check-In)
@@ -1343,8 +1344,14 @@ function renderMap() {
         // Klick auf die Kachel (nicht den Button) -> zoomt zur Karte
         el.addEventListener("click", (e) => {
             if (e.target.closest("button")) return;
-            leafletMap.setView([s.lat, s.lng], 15);
-            mapLayers.spots.find(m => m.getLatLng().lat === s.lat)?.openPopup();
+            leafletMap.setView([s.lat, s.lng], 16);
+            setTimeout(() => {
+                const found = [...mapLayers.pois, ...mapLayers.spots].find(m => {
+                    const ll = m.getLatLng();
+                    return Math.abs(ll.lat - s.lat) < 0.0005 && Math.abs(ll.lng - s.lng) < 0.0005;
+                });
+                if (found) found.openPopup();
+            }, 250);
         });
         el.querySelector("button").addEventListener("click", (e) => {
             e.stopPropagation();
@@ -1386,6 +1393,371 @@ function renderMap() {
             dList.appendChild(el);
         });
     }
+}
+
+// Zeichnet alle Marker (POIs, Hunde, Sitter, Gefahren, Eigenstandort) inkl. Clustering.
+function renderMapMarkers() {
+    if (!leafletMap) return;
+
+    // Alte Marker entfernen
+    mapLayers.spots.forEach(m => leafletMap.removeLayer(m));
+    mapLayers.dogs.forEach(m => leafletMap.removeLayer(m));
+    mapLayers.sitters.forEach(m => leafletMap.removeLayer(m));
+    mapLayers.pois.forEach(m => leafletMap.removeLayer(m));
+    mapLayers.clusters.forEach(m => leafletMap.removeLayer(m));
+    mapLayers.dangers.forEach(m => leafletMap.removeLayer(m));
+    if (mapLayers.me) leafletMap.removeLayer(mapLayers.me);
+    mapLayers.spots = [];
+    mapLayers.dogs = [];
+    mapLayers.sitters = [];
+    mapLayers.pois = [];
+    mapLayers.clusters = [];
+    mapLayers.dangers = [];
+
+    // Eigener Standort + Umkreis
+    if (state.settings.showOnMap !== false) {
+        mapLayers.me = L.marker([state.userLocation.lat, state.userLocation.lng], {
+            icon: buildEmojiIcon(state.myProfile.emoji || "🐕", 38, "me-marker"),
+            title: "Dein Standort"
+        }).addTo(leafletMap).bindPopup(
+            `<strong>${escapeHtml(state.myProfile.name || "Du")}</strong><br>Du bist hier 🐾`
+        );
+    }
+    if (mapLayers.radius) leafletMap.removeLayer(mapLayers.radius);
+    mapLayers.radius = L.circle([state.userLocation.lat, state.userLocation.lng], {
+        radius: state.radius * 1000,
+        color: "#ff6b6b",
+        weight: 2,
+        fillColor: "#ff6b6b",
+        fillOpacity: 0.08
+    }).addTo(leafletMap);
+
+    // ----- POIs (gefiltert) inkl. Clustering -----
+    const pois = filteredPOIs();
+    const zoom = leafletMap.getZoom();
+    const doCluster = zoom < 14;
+    if (doCluster) {
+        const clusters = clusterPoints(pois, 60);
+        clusters.forEach(c => {
+            if (c.items.length === 1) {
+                const p = c.items[0];
+                addPoiMarker(p);
+            } else {
+                const m = L.marker([c.lat, c.lng], { icon: buildClusterIcon(c.items.length) }).addTo(leafletMap);
+                m.on("click", () => {
+                    leafletMap.setView([c.lat, c.lng], Math.min(18, zoom + 2), { animate: true });
+                });
+                mapLayers.clusters.push(m);
+            }
+        });
+    } else {
+        pois.forEach(p => addPoiMarker(p));
+    }
+
+    // ----- Hundesitter (eigener Layer, optional) -----
+    if (state.settings.showSittersOnMap !== false && typeof DOG_SITTERS !== "undefined") {
+        DOG_SITTERS.forEach(s => {
+            const marker = L.marker([s.lat, s.lng], {
+                icon: buildEmojiIcon("🏡", 30, "sitter-marker"),
+                title: s.name
+            }).addTo(leafletMap);
+            marker.bindPopup(
+                `<strong>🏡 ${escapeHtml(s.name)}</strong><br>` +
+                `${escapeHtml(s.neighborhood)} · ⭐ ${s.rating}<br>` +
+                `<small>ab ${s.priceHour} CHF/Std</small><br>` +
+                `<a href="#" data-sitter="${s.id}" class="popup-link">Profil ansehen →</a>`
+            );
+            marker.on("popupopen", (e) => {
+                const link = e.popup._contentNode.querySelector("[data-sitter]");
+                if (link) link.addEventListener("click", (ev) => {
+                    ev.preventDefault();
+                    switchView("sitter");
+                    setTimeout(() => openSitterDetail(s.id), 100);
+                });
+            });
+            mapLayers.sitters.push(marker);
+        });
+    }
+
+    // ----- Gefahren -----
+    state.dangers.forEach(d => {
+        const type = DANGER_TYPES.find(t => t.id === d.type) || DANGER_TYPES[DANGER_TYPES.length - 1];
+        const marker = L.marker([d.lat, d.lng], {
+            icon: buildEmojiIcon(type.icon, 30, "danger-marker"),
+            title: type.label
+        }).addTo(leafletMap);
+        marker.bindPopup(
+            `<strong>⚠ ${type.label}</strong><br>` +
+            (d.desc ? escapeHtml(d.desc) + "<br>" : "") +
+            `<small>Gemeldet ${formatAgo(d.ts)} von ${escapeHtml(d.reporter)}</small>`
+        );
+        mapLayers.dangers.push(marker);
+    });
+
+    // ----- Live-Hunde im Umkreis (Online-Status) -----
+    state.profiles.forEach(d => {
+        if (!d.lat || !d.lng) return;
+        // 60 % gelten als "online"
+        const online = ((d.id * 13) % 10) < 6;
+        const cls = "dog-marker" + (online ? " online" : "");
+        const marker = L.marker([d.lat, d.lng], {
+            icon: buildEmojiIcon(d.emoji, 30, cls),
+            title: d.name
+        }).addTo(leafletMap);
+        const score = computeCompatibility(state.myProfile, d);
+        const dot = online ? '<span style="color:#2ecc71">● online</span>' : '<span style="color:#aaa">○ offline</span>';
+        marker.bindPopup(
+            `<strong>${escapeHtml(d.name)}</strong> ${dot}<br>` +
+            `${escapeHtml(d.breed)} · ${d.distance} km<br>` +
+            `🎯 <strong>${score}%</strong> Match<br>` +
+            `<a href="#" data-dog="${d.id}" class="popup-link">Profil ansehen →</a>`
+        );
+        marker.on("popupopen", (e) => {
+            const link = e.popup._contentNode.querySelector("[data-dog]");
+            if (link) link.addEventListener("click", (ev) => {
+                ev.preventDefault();
+                const idx = state.profiles.findIndex(x => x.id === d.id);
+                if (idx >= 0) {
+                    state.currentIdx = idx;
+                    switchView("swipe");
+                    renderCardStack();
+                }
+            });
+        });
+        mapLayers.dogs.push(marker);
+    });
+}
+
+// Einzelnen POI-Marker zeichnen (mit Pfoten-Stempel-Logik)
+function addPoiMarker(p) {
+    const cat = getCategoryById(p.cat);
+    const icon = cat ? cat.icon : "📍";
+    const visited = !!state.paws[p.id];
+    const marker = L.marker([p.lat, p.lng], {
+        icon: buildEmojiIcon(icon, 30, "poi-marker " + (visited ? "visited" : "") + " cat-" + p.cat),
+        title: p.name
+    }).addTo(leafletMap);
+    const ratingLine = p.rating ? `⭐ ${p.rating} · ` : "";
+    const openLine = p.open ? `🕒 ${p.open}` : "";
+    const visitedBadge = visited ? '<br><span style="color:#ff6b6b;font-weight:700">🐾 Schon besucht</span>' : '';
+    marker.bindPopup(
+        `<strong>${icon} ${escapeHtml(p.name)}</strong><br>` +
+        `${escapeHtml(p.desc)}<br>` +
+        `<small>${ratingLine}${openLine}</small>` +
+        visitedBadge +
+        `<br><button class="popup-btn" data-paw="${p.id}">${visited ? "Erneut besuchen" : "🐾 Pfote setzen"}</button>`
+    );
+    marker.on("popupopen", (e) => {
+        const btn = e.popup._contentNode.querySelector("[data-paw]");
+        if (btn) btn.addEventListener("click", () => {
+            collectPaw(p.id);
+            marker.closePopup();
+        });
+    });
+    mapLayers.pois.push(marker);
+}
+
+// ---------- Pfoten-Stempel-Sammlung & Wochen-Challenge ----------
+function collectPaw(poiId) {
+    const isNew = !state.paws[poiId];
+    state.paws[poiId] = Date.now();
+    saveState();
+    if (isNew) {
+        flashToast("🐾 Neuer Spot besucht! +1 Pfote");
+        burstPawAnimation();
+    } else {
+        flashToast("🐾 Erneut besucht");
+    }
+    renderMapMarkers();
+    renderPawCollector();
+}
+
+function burstPawAnimation() {
+    // Kleine Pfoten-Animation, die vom Pfoten-Widget aus startet
+    const host = $("#pawCollector");
+    if (!host) return;
+    const wrap = document.createElement("div");
+    wrap.className = "paw-burst";
+    for (let i = 0; i < 6; i++) {
+        const p = document.createElement("span");
+        p.textContent = "🐾";
+        p.style.setProperty("--dx", (Math.random() * 120 - 60) + "px");
+        p.style.setProperty("--dy", (-60 - Math.random() * 80) + "px");
+        p.style.animationDelay = (i * 0.05) + "s";
+        wrap.appendChild(p);
+    }
+    host.appendChild(wrap);
+    setTimeout(() => wrap.remove(), 1400);
+}
+
+// Wieviele POIs wurden in den letzten 7 Tagen NEU besucht?
+function pawsThisWeek() {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return Object.values(state.paws).filter(ts => ts >= cutoff).length;
+}
+
+const PAW_BADGES = [
+    { count: 1,  emoji: "🐾", label: "Erste Pfote" },
+    { count: 5,  emoji: "🥉", label: "Entdecker" },
+    { count: 10, emoji: "🥈", label: "Stadt-Streuner" },
+    { count: 20, emoji: "🥇", label: "Basel-Profi" },
+    { count: 30, emoji: "👑", label: "Pfoten-König" }
+];
+
+function renderPawCollector() {
+    const total = Object.keys(state.paws).length;
+    const totalPois = POIS.length;
+    const elTotal = $("#pawTotal");
+    const fill = $("#pawBarFill");
+    const challenge = $("#pawChallenge");
+    const badges = $("#pawBadges");
+    if (!elTotal || !fill || !badges) return;
+
+    elTotal.textContent = `${total} / ${totalPois}`;
+    fill.style.width = Math.min(100, (total / totalPois) * 100) + "%";
+
+    const week = pawsThisWeek();
+    const goal = 5;
+    if (week >= goal) {
+        challenge.textContent = `🎉 Wochen-Challenge geschafft (${week}/${goal})!`;
+        challenge.classList.add("done");
+    } else {
+        challenge.textContent = `Wochenchallenge: ${week}/${goal} neue Spots besucht`;
+        challenge.classList.remove("done");
+    }
+
+    badges.innerHTML = "";
+    PAW_BADGES.forEach(b => {
+        const unlocked = total >= b.count;
+        const el = document.createElement("div");
+        el.className = "paw-badge" + (unlocked ? " unlocked" : "");
+        el.title = b.label + " (" + b.count + " Spots)";
+        el.innerHTML = `<span>${b.emoji}</span><small>${b.count}</small>`;
+        badges.appendChild(el);
+    });
+}
+
+// ---------- Map-Suche & Kategorie-Filter ----------
+function renderMapCategoryChips() {
+    const wrap = $("#mapCatChips");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    const allBtn = document.createElement("button");
+    allBtn.className = "map-chip" + (state.mapFilter.cats.length === 0 ? " active" : "");
+    allBtn.textContent = "⭐ Alle";
+    allBtn.dataset.cat = "all";
+    allBtn.addEventListener("click", () => {
+        state.mapFilter.cats = [];
+        renderMapCategoryChips();
+        renderMapMarkers();
+    });
+    wrap.appendChild(allBtn);
+    POI_CATEGORIES.forEach(c => {
+        const btn = document.createElement("button");
+        const active = state.mapFilter.cats.includes(c.id);
+        btn.className = "map-chip" + (active ? " active" : "");
+        btn.dataset.cat = c.id;
+        btn.innerHTML = `${c.icon} ${c.label}`;
+        btn.addEventListener("click", () => {
+            const idx = state.mapFilter.cats.indexOf(c.id);
+            if (idx >= 0) state.mapFilter.cats.splice(idx, 1);
+            else state.mapFilter.cats.push(c.id);
+            renderMapCategoryChips();
+            renderMapMarkers();
+        });
+        wrap.appendChild(btn);
+    });
+}
+
+function renderMapSearchResults() {
+    const box = $("#mapSearchResults");
+    const q = (state.mapFilter.q || "").trim().toLowerCase();
+    if (!box) return;
+    if (!q) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+
+    const results = [];
+    // POIs
+    POIS.forEach(p => {
+        const cat = getCategoryById(p.cat);
+        const hay = (p.name + " " + p.desc + " " + (cat?.label || "")).toLowerCase();
+        if (hay.includes(q)) results.push({ kind: "poi", item: p, cat });
+    });
+    // Hunde
+    state.profiles.forEach(d => {
+        const hay = (d.name + " " + d.breed).toLowerCase();
+        if (hay.includes(q)) results.push({ kind: "dog", item: d });
+    });
+    // Sitter
+    if (typeof DOG_SITTERS !== "undefined") {
+        DOG_SITTERS.forEach(s => {
+            const hay = (s.name + " " + s.neighborhood).toLowerCase();
+            if (hay.includes(q)) results.push({ kind: "sitter", item: s });
+        });
+    }
+
+    if (results.length === 0) {
+        box.innerHTML = `<div class="msr-empty">Keine Treffer für "${escapeHtml(q)}"</div>`;
+        box.classList.remove("hidden");
+        return;
+    }
+
+    box.innerHTML = "";
+    results.slice(0, 10).forEach(r => {
+        const el = document.createElement("button");
+        el.className = "msr-item";
+        if (r.kind === "poi") {
+            el.innerHTML = `<span class="msr-icon">${r.cat?.icon || "📍"}</span>
+                <div><strong>${escapeHtml(r.item.name)}</strong><small>${escapeHtml(r.cat?.label || "POI")}</small></div>`;
+            el.addEventListener("click", () => focusOnMap(r.item.lat, r.item.lng));
+        } else if (r.kind === "dog") {
+            el.innerHTML = `<span class="msr-icon">${r.item.emoji}</span>
+                <div><strong>${escapeHtml(r.item.name)}</strong><small>${escapeHtml(r.item.breed)} · Hund</small></div>`;
+            el.addEventListener("click", () => {
+                if (r.item.lat && r.item.lng) focusOnMap(r.item.lat, r.item.lng);
+            });
+        } else if (r.kind === "sitter") {
+            el.innerHTML = `<span class="msr-icon">🏡</span>
+                <div><strong>${escapeHtml(r.item.name)}</strong><small>${escapeHtml(r.item.neighborhood)} · Sitter</small></div>`;
+            el.addEventListener("click", () => focusOnMap(r.item.lat, r.item.lng));
+        }
+        box.appendChild(el);
+    });
+    box.classList.remove("hidden");
+}
+
+function focusOnMap(lat, lng) {
+    if (!leafletMap) return;
+    leafletMap.setView([lat, lng], 17, { animate: true });
+    $("#mapSearchResults")?.classList.add("hidden");
+}
+
+function bindMapControls() {
+    const inp = $("#mapSearch");
+    const clear = $("#mapSearchClear");
+    if (inp) {
+        inp.addEventListener("input", () => {
+            state.mapFilter.q = inp.value;
+            clear.classList.toggle("hidden", !inp.value);
+            renderMapSearchResults();
+        });
+        inp.addEventListener("focus", () => {
+            if (inp.value) renderMapSearchResults();
+        });
+    }
+    if (clear) {
+        clear.addEventListener("click", () => {
+            inp.value = "";
+            state.mapFilter.q = "";
+            clear.classList.add("hidden");
+            renderMapSearchResults();
+            inp.focus();
+        });
+    }
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest(".map-searchbar") && !e.target.closest("#mapSearchResults")) {
+            $("#mapSearchResults")?.classList.add("hidden");
+        }
+    });
 }
 
 function locateUser() {
@@ -1869,6 +2241,8 @@ function openSettings() {
     $("#setInvisible").checked = s.invisible;
     $("#setLocShare").checked = s.locShare;
     $("#setReadReceipts").checked = s.readReceipts;
+    if ($("#setShowOnMap"))     $("#setShowOnMap").checked = s.showOnMap !== false;
+    if ($("#setShowSitters"))   $("#setShowSitters").checked = s.showSittersOnMap !== false;
     $("#setDark").checked = s.dark;
     $("#setLang").value = s.lang;
     $("#setUnit").value = s.unit;
@@ -1876,21 +2250,24 @@ function openSettings() {
 }
 function saveSettings() {
     state.settings = {
-        push:          $("#setPush").checked,
-        chatNotif:     $("#setChatNotif").checked,
-        matchNotif:    $("#setMatchNotif").checked,
-        dangerNotif:   $("#setDangerNotif").checked,
-        invisible:     $("#setInvisible").checked && state.premium,
-        locShare:      $("#setLocShare").checked,
-        readReceipts:  $("#setReadReceipts").checked,
-        dark:          $("#setDark").checked,
-        lang:          $("#setLang").value,
-        unit:          $("#setUnit").value
+        push:             $("#setPush").checked,
+        chatNotif:        $("#setChatNotif").checked,
+        matchNotif:       $("#setMatchNotif").checked,
+        dangerNotif:      $("#setDangerNotif").checked,
+        invisible:        $("#setInvisible").checked && state.premium,
+        locShare:         $("#setLocShare").checked,
+        readReceipts:     $("#setReadReceipts").checked,
+        showOnMap:        $("#setShowOnMap") ? $("#setShowOnMap").checked : true,
+        showSittersOnMap: $("#setShowSitters") ? $("#setShowSitters").checked : true,
+        dark:             $("#setDark").checked,
+        lang:             $("#setLang").value,
+        unit:             $("#setUnit").value
     };
     document.documentElement.classList.toggle("dark", state.settings.dark);
     saveState();
     $("#settingsModal").classList.add("hidden");
     flashToast("⚙ Einstellungen gespeichert");
+    if (leafletMap) renderMap();
 }
 
 function exportData() {
@@ -2883,6 +3260,8 @@ function init() {
     bindProfileForm();
     bindOnboarding();
     bindDailyPickEvents();
+    bindMapControls();
+    renderMapCategoryChips();
     if (state.premium) $("#premiumBadge").classList.add("active");
     document.documentElement.classList.toggle("dark", state.settings.dark);
     applyFilters();
