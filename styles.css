@@ -151,6 +151,62 @@ button { font-family: inherit; }
     inset: 0;
     background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, transparent 55%);
 }
+.compat-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(6px);
+    color: #333;
+    padding: 6px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 3;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    animation: compatPop 0.5s cubic-bezier(0.2, 1.3, 0.5, 1) 0.1s both;
+}
+.compat-badge strong { font-size: 14px; font-weight: 800; }
+.compat-badge.high {
+    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+    color: white;
+}
+.compat-badge.high strong { color: white; }
+.compat-badge.mid {
+    background: linear-gradient(135deg, #ffd166, #ffb84d);
+    color: #4a2c00;
+}
+.compat-badge.low {
+    background: rgba(255, 255, 255, 0.96);
+    color: #555;
+}
+@keyframes compatPop {
+    0%   { transform: scale(0.4) rotate(-15deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.top-pick-badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: linear-gradient(135deg, #ffd166, #ffb84d);
+    color: #3b2500;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    z-index: 3;
+    box-shadow: 0 4px 14px rgba(255, 177, 77, 0.55);
+    animation: topPickPulse 2.2s ease-in-out infinite;
+    text-transform: uppercase;
+}
+@keyframes topPickPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(255, 177, 77, 0.55); }
+    50%      { transform: scale(1.05); box-shadow: 0 6px 22px rgba(255, 177, 77, 0.8); }
+}
 .dog-card .info {
     position: absolute;
     bottom: 0;
@@ -1011,9 +1067,85 @@ button { font-family: inherit; }
     flex-direction: column;
     align-items: center;
     gap: 2px;
+    position: relative;
 }
 .nav-btn span { font-size: 22px; }
 .nav-btn.active { color: var(--brand); }
+.nav-badge {
+    position: absolute;
+    top: 2px;
+    right: 18%;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--brand, #ff6b6b);
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(255, 107, 107, 0.45);
+    animation: badgePop 0.4s cubic-bezier(0.2, 1.4, 0.5, 1);
+}
+.nav-badge.hidden { display: none; }
+@keyframes badgePop {
+    0%   { transform: scale(0); }
+    100% { transform: scale(1); }
+}
+
+/* Daily Top-Pick Banner */
+.daily-pick-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 16px 10px;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, #fff4d6, #ffe3a1);
+    border: 1.5px solid rgba(255, 180, 60, 0.4);
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(255, 180, 60, 0.25);
+    animation: dpbSlideIn 0.5s cubic-bezier(0.2, 1, 0.3, 1.1);
+}
+.daily-pick-banner.hidden { display: none; }
+@keyframes dpbSlideIn {
+    0%   { transform: translateY(-12px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+.dpb-icon {
+    font-size: 26px;
+    animation: topPickPulse 2.2s ease-in-out infinite;
+}
+.dpb-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+.dpb-text strong {
+    color: #7a4a00;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+}
+.dpb-text span {
+    color: #8a5a10;
+    font-size: 12px;
+}
+.dpb-btn {
+    background: #7a4a00;
+    color: white;
+    border: none;
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(122, 74, 0, 0.3);
+}
+.dpb-btn:active { transform: scale(0.96); }
 
 /* ---------- Modals ---------- */
 .modal {
@@ -1069,21 +1201,99 @@ button { font-family: inherit; }
 }
 
 /* Match modal */
-.match-modal { text-align: center; }
+.match-modal {
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: matchModalIn 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+@keyframes matchModalIn {
+    0%   { transform: scale(0.6) translateY(40px); opacity: 0; }
+    60%  { transform: scale(1.03) translateY(-4px); opacity: 1; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.match-confetti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 1;
+}
+.match-confetti i {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    width: 10px;
+    height: 14px;
+    border-radius: 2px;
+    animation: confettiFall 1.8s ease-out forwards;
+}
+.match-sparkles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+.match-sparkles span {
+    position: absolute;
+    font-size: 22px;
+    opacity: 0;
+    animation: sparkleFloat 2.2s ease-out forwards;
+}
+.match-sparkles span:nth-child(1) { top: 18%; left: 12%; animation-delay: 0.1s; }
+.match-sparkles span:nth-child(2) { top: 10%; left: 78%; animation-delay: 0.25s; }
+.match-sparkles span:nth-child(3) { top: 40%; left: 88%; animation-delay: 0.4s; }
+.match-sparkles span:nth-child(4) { top: 65%; left: 8%;  animation-delay: 0.3s; }
+.match-sparkles span:nth-child(5) { top: 72%; left: 82%; animation-delay: 0.55s; }
+@keyframes sparkleFloat {
+    0%   { transform: translateY(10px) scale(0.4); opacity: 0; }
+    40%  { transform: translateY(-6px) scale(1.1); opacity: 1; }
+    100% { transform: translateY(-30px) scale(0.8); opacity: 0; }
+}
+.match-modal > *:not(.match-confetti):not(.match-sparkles) {
+    position: relative;
+    z-index: 2;
+}
 .match-title {
     background: linear-gradient(135deg, var(--brand), var(--accent));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    font-size: 32px;
+    font-size: 34px;
     margin: 0;
+    animation: matchTitlePop 0.9s ease-out;
+}
+@keyframes matchTitlePop {
+    0%   { transform: scale(0.5); opacity: 0; }
+    50%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); }
+}
+.match-score-row {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0 4px;
+}
+.match-score-pill {
+    background: linear-gradient(135deg, #fff1ee, #ffe3db);
+    border: 1.5px solid rgba(255, 107, 107, 0.3);
+    color: var(--brand);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    animation: pillPop 0.6s ease-out 0.3s both;
+}
+.match-score-pill strong { font-size: 15px; }
+@keyframes pillPop {
+    0%   { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 .match-avatars {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 16px;
-    margin: 20px 0;
+    margin: 16px 0;
 }
 .match-avatar {
     width: 100px;
@@ -1095,13 +1305,81 @@ button { font-family: inherit; }
     justify-content: center;
     font-size: 54px;
     border: 4px solid var(--brand);
+    box-shadow: 0 8px 24px rgba(255, 107, 107, 0.25);
 }
+.match-avatar#matchAvatarMine  { animation: avIn 0.7s cubic-bezier(0.2, 1.3, 0.5, 1) 0.15s both; }
+.match-avatar#matchAvatarOther { animation: avIn 0.7s cubic-bezier(0.2, 1.3, 0.5, 1) 0.3s both; }
+@keyframes avIn {
+    0%   { transform: translateX(var(--from, -120px)) scale(0.4) rotate(-20deg); opacity: 0; }
+    100% { transform: translateX(0) scale(1) rotate(0); opacity: 1; }
+}
+.match-avatar#matchAvatarOther { --from: 120px; }
 .match-avatars .heart {
-    font-size: 36px;
+    font-size: 40px;
     color: var(--brand);
-    animation: beat 1s infinite;
+    animation: beat 1s infinite, heartIn 0.5s ease-out 0.55s both;
+    text-shadow: 0 2px 10px rgba(255, 107, 107, 0.4);
+}
+@keyframes heartIn {
+    0%   { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+.match-greeting {
+    background: #f7f8fa;
+    border-radius: 14px;
+    padding: 10px 14px;
+    margin: 6px 0 14px;
+    text-align: left;
+    animation: fadeInUp 0.5s ease-out 0.7s both;
+}
+.match-greeting-label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    margin-bottom: 2px;
+}
+.match-greeting p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text);
+    font-style: italic;
+}
+@keyframes fadeInUp {
+    0%   { transform: translateY(10px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+.match-cta-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    animation: fadeInUp 0.5s ease-out 0.85s both;
+}
+.match-cta {
+    flex: 1;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.match-cta:hover,
+.match-cta:active {
+    transform: translateY(-2px);
+    border-color: var(--brand);
+    background: #fff7f5;
+}
+.match-cta-icon { font-size: 20px; }
 
 /* ============================================================
    Chat modal – WhatsApp-artig

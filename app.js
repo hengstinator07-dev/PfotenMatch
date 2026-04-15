@@ -100,6 +100,148 @@ function switchView(name) {
     if (name === "sitter") renderSitterView();
 }
 
+// ---------- Compatibility scoring ----------
+// Erzeugt einen 0–100 Score, wie gut zwei Hunde zusammenpassen.
+// Basis: Größe (35), Energie (30), Spielstil (25), Tags/Bonus (10)
+function computeCompatibility(me, dog) {
+    if (!me || !dog) return 50;
+    let score = 0;
+
+    // Größe: exakt match = voll, ein Stufe daneben = halb
+    const sizes = ["klein", "mittel", "groß"];
+    const mySize = (me.size || "").toLowerCase();
+    const dSize  = (dog.size || "").toLowerCase();
+    const myIdx  = sizes.findIndex(s => mySize.startsWith(s));
+    const dIdx   = sizes.findIndex(s => dSize.startsWith(s));
+    if (myIdx >= 0 && dIdx >= 0) {
+        const diff = Math.abs(myIdx - dIdx);
+        score += diff === 0 ? 35 : diff === 1 ? 20 : 8;
+    } else {
+        score += 18;
+    }
+
+    // Energie
+    const myEn = (me.energy || "").toLowerCase();
+    const dEn  = (dog.energy || "").toLowerCase();
+    if (myEn && dEn) {
+        if (myEn === dEn) score += 30;
+        else if (
+            (myEn.includes("hoch") && dEn.includes("mittel")) ||
+            (myEn.includes("mittel") && dEn.includes("hoch")) ||
+            (myEn.includes("mittel") && dEn.includes("niedrig")) ||
+            (myEn.includes("niedrig") && dEn.includes("mittel"))
+        ) score += 18;
+        else score += 6;
+    } else score += 15;
+
+    // Spielstil
+    const myPlay = (me.playStyle || "").toLowerCase();
+    const dPlay  = (dog.playStyle || "").toLowerCase();
+    if (myPlay && dPlay) {
+        if (myPlay === dPlay) score += 25;
+        else if (myPlay.split(/\W+/).some(t => t && dPlay.includes(t))) score += 14;
+        else score += 4;
+    } else score += 12;
+
+    // Tag-Overlap Bonus
+    const myTags = (me.tags || []).map(t => t.toLowerCase());
+    const dTags  = (dog.tags || []).map(t => t.toLowerCase());
+    const overlap = myTags.filter(t => dTags.includes(t)).length;
+    score += Math.min(10, overlap * 4);
+
+    // Warnungen ziehen leicht ab
+    if (dog.warns && dog.warns.length) score -= dog.warns.length * 2;
+
+    // Deterministischer kleiner Jitter, damit Werte nicht glatt wirken
+    const jitter = ((dog.id || 0) * 7) % 5;
+    score += jitter - 2;
+
+    return Math.max(35, Math.min(99, Math.round(score)));
+}
+
+function compatibilityLabel(score) {
+    if (score >= 90) return "Perfect Match";
+    if (score >= 78) return "Top Match";
+    if (score >= 65) return "Guter Match";
+    return "Könnte passen";
+}
+
+// ---------- Daily Top-Pick ----------
+function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+}
+
+let _dailyPickCache = null;
+function getDailyTopPickId() {
+    const key = todayKey();
+    if (_dailyPickCache && _dailyPickCache.key === key) return _dailyPickCache.id;
+    try {
+        const raw = localStorage.getItem("pfotenMatch.dailyPick");
+        if (raw) {
+            const data = JSON.parse(raw);
+            if (data.key === key && data.id != null) {
+                _dailyPickCache = data;
+                return data.id;
+            }
+        }
+    } catch (e) { /* ignore */ }
+    // Neu bestimmen: bester Score unter den aktuell sichtbaren Profilen
+    let bestId = null;
+    let bestScore = -1;
+    const pool = (state.profiles && state.profiles.length) ? state.profiles : DOG_PROFILES;
+    pool.forEach(p => {
+        if (state.matches.some(m => m.profile.id === p.id)) return;
+        const s = computeCompatibility(state.myProfile, p);
+        if (s > bestScore) { bestScore = s; bestId = p.id; }
+    });
+    const data = { key, id: bestId, score: bestScore };
+    try { localStorage.setItem("pfotenMatch.dailyPick", JSON.stringify(data)); } catch (e) { /* ignore */ }
+    _dailyPickCache = data;
+    return bestId;
+}
+
+function renderDailyPickBanner() {
+    const banner = $("#dailyPickBanner");
+    if (!banner) return;
+    const pickId = getDailyTopPickId();
+    if (pickId == null) { banner.classList.add("hidden"); return; }
+    const dog = (state.profiles || []).find(p => p.id === pickId) ||
+                DOG_PROFILES.find(p => p.id === pickId);
+    // Wenn der Pick nicht mehr im Swipe-Stack ist (gematcht/raus), Banner verstecken
+    const stillAvailable = state.profiles.some(p => p.id === pickId);
+    if (!dog || !stillAvailable) { banner.classList.add("hidden"); return; }
+    const score = computeCompatibility(state.myProfile, dog);
+    const sub = $("#dailyPickSubtitle");
+    if (sub) sub.textContent = `${dog.name} · ${score}% Match – heute dein Favorit!`;
+    banner.classList.remove("hidden");
+}
+
+function jumpToDailyPick() {
+    const pickId = getDailyTopPickId();
+    if (pickId == null) return;
+    const idx = state.profiles.findIndex(p => p.id === pickId);
+    if (idx >= 0) {
+        state.currentIdx = idx;
+        renderCardStack();
+    }
+}
+
+// ---------- Matches-Tab Unread-Badge ----------
+function updateMatchesNavBadge() {
+    const badge = $("#matchesNavBadge");
+    if (!badge) return;
+    const totalUnread = state.matches.reduce((sum, m) => {
+        return sum + (chatUi.unread[m.profile.id] || 0);
+    }, 0);
+    if (totalUnread > 0) {
+        badge.textContent = totalUnread > 9 ? "9+" : String(totalUnread);
+        badge.classList.remove("hidden");
+    } else {
+        badge.classList.add("hidden");
+    }
+}
+
 // ---------- Profile filtering ----------
 function applyFilters() {
     const { size, play, energy, breed } = state.filters;
@@ -113,6 +255,10 @@ function applyFilters() {
         if (state.matches.some(m => m.profile.id === p.id)) return false;
         return true;
     });
+    // Nach Kompatibilität sortieren, damit die besten oben auf dem Stapel liegen
+    state.profiles.sort((a, b) =>
+        computeCompatibility(state.myProfile, b) - computeCompatibility(state.myProfile, a)
+    );
     state.currentIdx = 0;
     renderCardStack();
 }
@@ -121,6 +267,7 @@ function applyFilters() {
 function renderCardStack() {
     const stack = $("#cardStack");
     stack.innerHTML = "";
+    renderDailyPickBanner();
     const remaining = state.profiles.slice(state.currentIdx, state.currentIdx + 3).reverse();
 
     if (remaining.length === 0) {
@@ -144,10 +291,18 @@ function renderCardStack() {
 
         const warnsHtml = dog.warns.map(w => `<span class="tag warn">⚠ ${w}</span>`).join("");
         const tagsHtml  = dog.tags.map(t => `<span class="tag">${t}</span>`).join("");
+        const score = computeCompatibility(state.myProfile, dog);
+        const scoreClass = score >= 85 ? "high" : score >= 70 ? "mid" : "low";
+        const topPickId = getDailyTopPickId();
+        const isTopPick = dog.id === topPickId;
 
         card.innerHTML = `
             <div class="photo" style="background: linear-gradient(135deg, #ffd5cd, #ffebe0);">
                 <div>${dog.emoji}</div>
+                ${isTopPick ? `<div class="top-pick-badge">⭐ Top-Pick heute</div>` : ""}
+                <div class="compat-badge ${scoreClass}" title="${compatibilityLabel(score)}">
+                    🎯 <strong>${score}%</strong> Match
+                </div>
             </div>
             <div class="stamp like">LIKE</div>
             <div class="stamp nope">NOPE</div>
@@ -274,23 +429,108 @@ function addMatch(dog) {
         profile: dog,
         messages: [{ from: "them", text: `Woof! Ich bin ${dog.name} 🐾`, ts: Date.now() }]
     });
+    // Neuer Match zählt als ungelesen, bis man den Chat öffnet
+    chatUi.unread[dog.id] = (chatUi.unread[dog.id] || 0) + 1;
+    updateMatchesNavBadge();
     saveState();
 }
 
 // ---------- Match modal ----------
+const MATCH_GREETINGS = [
+    "Hey! Wollen wir zusammen Gassi gehen? 🐾",
+    "Huhu! Dein Hund sieht ja toll aus – Lust auf einen Spieltermin im Park? 🎾",
+    "Hallo! Wir wären gerade in der Nähe – vielleicht ein spontaner Meet-Up? 🐶",
+    "Hey, was für ein süßer Vierbeiner! Treffen wir uns mal? 💕",
+    "Servus! Unsere Hunde würden sich bestimmt super verstehen 🐕"
+];
+
+function pickGreeting(dog) {
+    const idx = (dog.id + (state.myProfile.name || "").length) % MATCH_GREETINGS.length;
+    return MATCH_GREETINGS[idx];
+}
+
 function showMatchModal(dog) {
-    $("#matchText").textContent = `${state.myProfile.name} und ${dog.name} wollen sich treffen!`;
-    $("#matchAvatarMine").textContent = state.myProfile.emoji;
-    $("#matchAvatarOther").textContent = dog.emoji;
-    $("#matchModal").classList.remove("hidden");
-    $("#sendMessageBtn").onclick = () => {
-        $("#matchModal").classList.add("hidden");
-        openChat(dog.id);
-    };
+    const modal = $("#matchModal");
+    const score = computeCompatibility(state.myProfile, dog);
+
+    // kurze Spannung vor dem Match
+    setTimeout(() => {
+        $("#matchText").textContent = `${state.myProfile.name} und ${dog.name} wollen sich treffen!`;
+        $("#matchAvatarMine").textContent = state.myProfile.emoji;
+        $("#matchAvatarOther").textContent = dog.emoji;
+
+        const pill = $("#matchScorePill");
+        if (pill) pill.innerHTML = `🎯 <strong>${score}%</strong> Match`;
+
+        const greeting = pickGreeting(dog);
+        $("#matchGreetingText").textContent = greeting;
+
+        modal.classList.remove("hidden");
+
+        // Haptik
+        if (navigator.vibrate) {
+            try { navigator.vibrate([90, 60, 180]); } catch (e) { /* ignore */ }
+        }
+
+        // Konfetti im Match-Overlay
+        launchMatchConfetti();
+
+        // "Nachricht senden" öffnet Chat und fügt vorbefüllten Text ein
+        $("#sendMessageBtn").onclick = () => {
+            modal.classList.add("hidden");
+            openChat(dog.id);
+            const inp = $("#chatInput");
+            if (inp) {
+                inp.value = greeting;
+                if (typeof toggleSendButton === "function") toggleSendButton();
+                inp.focus();
+            }
+        };
+
+        // "Treffen planen"
+        $("#matchPlanBtn").onclick = () => {
+            modal.classList.add("hidden");
+            openMeetPlanner(dog);
+        };
+
+        // "Match teilen"
+        $("#matchShareBtn").onclick = async () => {
+            const text = `${state.myProfile.name} und ${dog.name} sind ein Match auf PfotenMatch! 🐾❤️ ${score}% Kompatibilität`;
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: "PfotenMatch", text });
+                } catch (e) { /* abgebrochen */ }
+            } else if (navigator.clipboard) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showToast && showToast("In Zwischenablage kopiert 📋");
+                } catch (e) { /* ignore */ }
+            }
+        };
+    }, 650);
+}
+
+function launchMatchConfetti() {
+    const box = $("#matchConfettiBox");
+    if (!box) return;
+    box.innerHTML = "";
+    const colors = ["#ff6b6b", "#ffd166", "#4ecdc4", "#ff8e8e", "#a8e6cf", "#ffb4a2", "#ffc3a0"];
+    for (let i = 0; i < 70; i++) {
+        const el = document.createElement("i");
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 120 + Math.random() * 220;
+        el.style.setProperty("--cx", Math.cos(angle) * dist + "px");
+        el.style.setProperty("--cy", Math.sin(angle) * dist + "px");
+        el.style.setProperty("--cr", (Math.random() * 720 - 360) + "deg");
+        el.style.background = colors[Math.floor(Math.random() * colors.length)];
+        el.style.animationDelay = (Math.random() * 0.35) + "s";
+        box.appendChild(el);
+    }
 }
 
 // ---------- Matches list ----------
 function renderMatches() {
+    updateMatchesNavBadge();
     const list = $("#matchesList");
     if (state.matches.length === 0) {
         list.innerHTML = `<p class="empty-state">Noch keine Matches – swipe los! 🐾</p>`;
@@ -419,6 +659,7 @@ function openChat(dogId) {
     statusEl.classList.toggle("online", status === "online");
     // Unread zurücksetzen
     chatUi.unread[dogId] = 0;
+    updateMatchesNavBadge();
     // Alle ungelesenen Them-Nachrichten auf "read" setzen
     match.messages.forEach(m => { if (m.from === "them") m.status = "read"; });
     // Meine gesendeten Nachrichten simuliert als "read" markieren (Gegenüber hat geöffnet)
@@ -633,6 +874,7 @@ function scheduleAutoReply(match) {
         });
         if (!active) {
             chatUi.unread[match.profile.id] = (chatUi.unread[match.profile.id] || 0) + 1;
+            updateMatchesNavBadge();
         }
         if (active) renderChatMessages();
         saveState();
@@ -2621,6 +2863,11 @@ function bindOnboarding() {
 }
 
 // ---------- Init ----------
+function bindDailyPickEvents() {
+    const btn = $("#dailyPickGoBtn");
+    if (btn) btn.addEventListener("click", jumpToDailyPick);
+}
+
 function init() {
     loadState();
     // Demo-Daten befüllen, wenn Gefahren/Check-Ins leer sind
@@ -2635,12 +2882,14 @@ function init() {
     bindEvents();
     bindProfileForm();
     bindOnboarding();
+    bindDailyPickEvents();
     if (state.premium) $("#premiumBadge").classList.add("active");
     document.documentElement.classList.toggle("dark", state.settings.dark);
     applyFilters();
     renderMatches();
     renderProfile();
     updateBookingsBadge();
+    updateMatchesNavBadge();
     // Onboarding zeigen, falls noch nicht abgeschlossen
     if (!state.onboarded) {
         showOnboarding();

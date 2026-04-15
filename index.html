@@ -274,6 +274,15 @@
                     <button id="openFiltersBtn" class="btn-ghost">⚙ Filter</button>
                 </div>
 
+                <div id="dailyPickBanner" class="daily-pick-banner hidden">
+                    <span class="dpb-icon">⭐</span>
+                    <div class="dpb-text">
+                        <strong>Top-Pick heute</strong>
+                        <span id="dailyPickSubtitle">Dein bester Match wartet!</span>
+                    </div>
+                    <button id="dailyPickGoBtn" class="dpb-btn">Ansehen</button>
+                </div>
+
                 <div id="cardStack" class="card-stack">
                     <!-- cards injected here -->
                 </div>
@@ -422,7 +431,10 @@
         <!-- Bottom navigation -->
         <nav class="bottom-nav">
             <button class="nav-btn active" data-view="swipe"><span>🐾</span>Swipe</button>
-            <button class="nav-btn" data-view="matches"><span>💬</span>Matches</button>
+            <button class="nav-btn" data-view="matches">
+                <span>💬</span>Matches
+                <span id="matchesNavBadge" class="nav-badge hidden">0</span>
+            </button>
             <button class="nav-btn" data-view="map"><span>📍</span>Karte</button>
             <button class="nav-btn" data-view="sitter"><span>🏡</span>Sitter</button>
             <button class="nav-btn" data-view="profile"><span>🐶</span>Profil</button>
@@ -434,16 +446,37 @@
     <!-- Match overlay -->
     <div id="matchModal" class="modal hidden">
         <div class="modal-content match-modal">
+            <div class="match-confetti" id="matchConfettiBox"></div>
+            <div class="match-sparkles">
+                <span>✨</span><span>💖</span><span>✨</span><span>🐾</span><span>💕</span>
+            </div>
             <h1 class="match-title">It's a Match! 🎉</h1>
             <p id="matchText"></p>
+            <div class="match-score-row">
+                <div class="match-score-pill" id="matchScorePill">🎯 <strong>92%</strong> Match</div>
+            </div>
             <div class="match-avatars">
                 <div class="match-avatar" id="matchAvatarMine">🐕</div>
                 <div class="heart">♥</div>
                 <div class="match-avatar" id="matchAvatarOther">🐶</div>
             </div>
+            <div class="match-greeting" id="matchGreetingBox">
+                <span class="match-greeting-label">💬 Vorgeschlagene Begrüßung:</span>
+                <p id="matchGreetingText">Hey! Wollen wir uns im Park treffen? 🐾</p>
+            </div>
+            <div class="match-cta-row">
+                <button class="match-cta" id="matchPlanBtn">
+                    <span class="match-cta-icon">📅</span>
+                    <span>Treffen planen</span>
+                </button>
+                <button class="match-cta" id="matchShareBtn">
+                    <span class="match-cta-icon">📤</span>
+                    <span>Match teilen</span>
+                </button>
+            </div>
             <div class="modal-actions">
                 <button class="btn-ghost" id="keepSwipingBtn">Weiter swipen</button>
-                <button class="btn-primary" id="sendMessageBtn">Nachricht senden</button>
+                <button class="btn-primary" id="sendMessageBtn">Nachricht senden 💬</button>
             </div>
         </div>
     </div>
