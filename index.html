@@ -423,6 +423,10 @@
                         📅 Meine Buchungen
                         <span id="bookingsBadge" class="bk-badge hidden">0</span>
                     </button>
+                    <button class="sitter-tab" data-stab="become">
+                        🐾 Sitter werden
+                        <span id="sitterRequestsBadge" class="bk-badge hidden">0</span>
+                    </button>
                 </div>
 
                 <div id="sitterDiscover">
@@ -444,6 +448,167 @@
 
                 <div id="sitterBookings" class="hidden">
                     <div id="bookingList" class="booking-list"></div>
+                </div>
+
+                <div id="sitterBecome" class="hidden">
+                    <!-- Wenn KEIN Profil: Hero + Formular -->
+                    <div id="sitterRegisterWrap">
+                        <div class="sitter-hero">
+                            <div class="sitter-hero-emoji">🏡</div>
+                            <h3>Werde Hundesitter in Basel</h3>
+                            <p>Verdiene Geld mit dem, was du liebst – Hunde betreuen.<br>Bestimme selbst Preise, Verfügbarkeit und welche Hunde du nimmst.</p>
+                            <ul class="sitter-perks">
+                                <li>💰 <strong>Du bestimmst</strong> die Preise</li>
+                                <li>📅 <strong>Volle Flexibilität</strong> bei der Verfügbarkeit</li>
+                                <li>✓ <strong>Verifizierungs-Badge</strong> nach Telefon-Check</li>
+                                <li>🐾 Eigene Pin auf der Karte</li>
+                            </ul>
+                        </div>
+
+                        <form id="sitterForm" class="sitter-form">
+                            <h4>👤 Über dich</h4>
+                            <label>
+                                <span>Name</span>
+                                <input type="text" id="msName" required maxlength="40" placeholder="z. B. Sophie Keller" />
+                            </label>
+                            <label>
+                                <span>Avatar (Emoji)</span>
+                                <div class="avatar-picker" id="msAvatarPicker">
+                                    <button type="button" data-av="👩">👩</button>
+                                    <button type="button" data-av="👨">👨</button>
+                                    <button type="button" data-av="👩‍🦰">👩‍🦰</button>
+                                    <button type="button" data-av="🧔">🧔</button>
+                                    <button type="button" data-av="👵">👵</button>
+                                    <button type="button" data-av="👴">👴</button>
+                                    <button type="button" data-av="👱‍♀️">👱‍♀️</button>
+                                    <button type="button" data-av="👨‍🦱">👨‍🦱</button>
+                                </div>
+                            </label>
+                            <label>
+                                <span>Quartier in Basel</span>
+                                <select id="msHood">
+                                    <option value="Kleinbasel">Kleinbasel</option>
+                                    <option value="Gundeldingen">Gundeldingen</option>
+                                    <option value="St. Johann">St. Johann</option>
+                                    <option value="Bruderholz">Bruderholz</option>
+                                    <option value="Matthäus">Matthäus</option>
+                                    <option value="Iselin">Iselin</option>
+                                    <option value="Breite">Breite</option>
+                                    <option value="Riehen">Riehen</option>
+                                    <option value="Bachletten">Bachletten</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Über dich (Bio)</span>
+                                <textarea id="msBio" rows="3" maxlength="300" placeholder="Erzähl was über deine Erfahrung mit Hunden, deinen Wohnsitz, andere Tiere im Haushalt …"></textarea>
+                            </label>
+
+                            <h4>🐾 Services & Preise</h4>
+                            <p class="form-hint">Welche Dienste bietest du an?</p>
+                            <div class="ms-services">
+                                <label class="ms-svc">
+                                    <input type="checkbox" name="msSvc" value="Gassi" />
+                                    <span>🚶 Gassi gehen</span>
+                                    <input type="number" id="msPriceHour" min="5" max="50" step="1" placeholder="CHF/Std" />
+                                </label>
+                                <label class="ms-svc">
+                                    <input type="checkbox" name="msSvc" value="Tag" />
+                                    <span>☀ Tagesbetreuung</span>
+                                    <input type="number" id="msPriceDay" min="20" max="200" step="5" placeholder="CHF/Tag" />
+                                </label>
+                                <label class="ms-svc">
+                                    <input type="checkbox" name="msSvc" value="Nacht" />
+                                    <span>🌙 Übernachtung</span>
+                                    <input type="number" id="msPriceNight" min="30" max="300" step="5" placeholder="CHF/Nacht" />
+                                </label>
+                                <label class="ms-svc">
+                                    <input type="checkbox" name="msSvc" value="Urlaub" />
+                                    <span>✈ Urlaubspflege</span>
+                                    <span class="ms-svc-hint">(nutzt Nacht-Preis)</span>
+                                </label>
+                            </div>
+
+                            <h4>📋 Details</h4>
+                            <label>
+                                <span>Akzeptierte Hundegrößen</span>
+                                <div class="size-picker" id="msSizes">
+                                    <button type="button" data-size="Klein">Klein</button>
+                                    <button type="button" data-size="Mittel">Mittel</button>
+                                    <button type="button" data-size="Groß">Groß</button>
+                                </div>
+                            </label>
+                            <label>
+                                <span>Erfahrung</span>
+                                <select id="msExperience">
+                                    <option value="< 1 Jahr">Weniger als 1 Jahr</option>
+                                    <option value="1–3 Jahre">1–3 Jahre</option>
+                                    <option value="3–5 Jahre">3–5 Jahre</option>
+                                    <option value="5–10 Jahre">5–10 Jahre</option>
+                                    <option value="10+ Jahre">10+ Jahre</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Antwortzeit</span>
+                                <select id="msResponse">
+                                    <option value="~30 Min">~30 Minuten</option>
+                                    <option value="~1 Std" selected>~1 Stunde</option>
+                                    <option value="~2 Std">~2 Stunden</option>
+                                    <option value="~4 Std">~4 Stunden</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Verfügbarkeit</span>
+                                <input type="text" id="msAvailability" maxlength="60" placeholder="z. B. Mo–Fr ganztägig, WE n. Absprache" />
+                            </label>
+
+                            <div class="ms-verify">
+                                <label class="ms-verify-row">
+                                    <input type="checkbox" id="msPhoneVerify" />
+                                    <span>📱 Telefon-Verifizierung simulieren <small>(für Verifiziert-Badge ✓)</small></span>
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn-primary full" id="msSubmit">🐾 Sitter-Profil veröffentlichen</button>
+                        </form>
+                    </div>
+
+                    <!-- Wenn Profil existiert: Dashboard -->
+                    <div id="sitterDashboardWrap" class="hidden">
+                        <div class="sitter-dash-card">
+                            <div class="sd-head">
+                                <div class="sd-av" id="dashAv">👩</div>
+                                <div class="sd-meta">
+                                    <strong id="dashName">Du</strong>
+                                    <small id="dashHood">Quartier</small>
+                                </div>
+                                <span id="dashVerified" class="verified-tag hidden">✓ Verifiziert</span>
+                            </div>
+                            <div class="sd-stats">
+                                <div class="sd-stat">
+                                    <strong id="dashEarnings">CHF 0</strong>
+                                    <small>Verdienst</small>
+                                </div>
+                                <div class="sd-stat">
+                                    <strong id="dashJobs">0</strong>
+                                    <small>Aufträge</small>
+                                </div>
+                                <div class="sd-stat">
+                                    <strong id="dashRating">5.0</strong>
+                                    <small>Rating</small>
+                                </div>
+                            </div>
+                            <div class="sd-actions">
+                                <button id="dashEditBtn" class="btn-ghost">✎ Bearbeiten</button>
+                                <button id="dashDeleteBtn" class="btn-danger-outline">🗑 Profil löschen</button>
+                            </div>
+                        </div>
+
+                        <h4 class="sub-title">📥 Anfragen</h4>
+                        <div id="sitterRequestsList" class="sitter-requests-list"></div>
+
+                        <h4 class="sub-title">📜 Aufträge</h4>
+                        <div id="sitterJobsList" class="sitter-jobs-list"></div>
+                    </div>
                 </div>
             </section>
 

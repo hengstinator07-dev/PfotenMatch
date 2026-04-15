@@ -37,6 +37,10 @@ const state = {
     stories: [],
     // Sitter-Buchungen: [{id, sitterId, service, dateFrom, dateTo, hours, notes, total, status, ts}]
     bookings: [],
+    // Eigenes Sitter-Profil (null = nicht registriert)
+    mySitterProfile: null,
+    // Eingehende Anfragen an mich als Sitter
+    sitterRequests: [],
     // Pfoten-Stempel pro POI: { [poiId]: ts }
     paws: {},
     // Karte: aktuelle Filter & Suche
@@ -61,6 +65,8 @@ function saveState() {
             dangers: state.dangers,
             stories: state.stories.filter(s => s.ownerId === "me"), // nur eigene persistieren
             bookings: state.bookings,
+            mySitterProfile: state.mySitterProfile,
+            sitterRequests: state.sitterRequests,
             paws: state.paws,
             settings: state.settings
         }));
@@ -85,6 +91,8 @@ function loadState() {
         if (Array.isArray(data.dangers)) state.dangers = data.dangers;
         if (Array.isArray(data.stories)) state.stories = data.stories;
         if (Array.isArray(data.bookings)) state.bookings = data.bookings;
+        if (data.mySitterProfile) state.mySitterProfile = data.mySitterProfile;
+        if (Array.isArray(data.sitterRequests)) state.sitterRequests = data.sitterRequests;
         if (data.paws && typeof data.paws === "object") state.paws = data.paws;
         if (Array.isArray(data.matches)) {
             state.matches = data.matches
@@ -1479,6 +1487,31 @@ function renderMapMarkers() {
         });
     }
 
+    // ----- Eigenes Sitter-Profil als Pin -----
+    if (state.mySitterProfile) {
+        const p = state.mySitterProfile;
+        const marker = L.marker([p.lat, p.lng], {
+            icon: buildEmojiIcon("🏡", 34, "sitter-marker my-sitter"),
+            title: p.name + " (Du)"
+        }).addTo(leafletMap);
+        const pending = state.sitterRequests.filter(r => r.status === "pending").length;
+        marker.bindPopup(
+            `<strong>🏡 ${escapeHtml(p.name)} <span style="color:#ff6b6b">(Du)</span></strong><br>` +
+            `${escapeHtml(p.neighborhood)}<br>` +
+            (pending > 0 ? `<small style="color:#ff6b6b;font-weight:700">📥 ${pending} offene Anfrage${pending > 1 ? "n" : ""}</small><br>` : "") +
+            `<a href="#" data-me-sitter="1" class="popup-link">Zum Dashboard →</a>`
+        );
+        marker.on("popupopen", (e) => {
+            const link = e.popup._contentNode.querySelector("[data-me-sitter]");
+            if (link) link.addEventListener("click", (ev) => {
+                ev.preventDefault();
+                switchView("sitter");
+                setTimeout(() => switchSitterTab("become"), 100);
+            });
+        });
+        mapLayers.sitters.push(marker);
+    }
+
     // ----- Gefahren -----
     state.dangers.forEach(d => {
         const type = DANGER_TYPES.find(t => t.id === d.type) || DANGER_TYPES[DANGER_TYPES.length - 1];
@@ -2322,7 +2355,9 @@ function sitterDistance(s) {
 function renderSitterView() {
     renderSitters();
     renderMyBookings();
+    renderBecomeSitter();
     updateBookingsBadge();
+    updateSitterRequestsBadge();
     switchSitterTab(sitterUi.mode);
 }
 
@@ -2331,17 +2366,40 @@ function switchSitterTab(mode) {
     $$(".sitter-tab").forEach(t => t.classList.toggle("active", t.dataset.stab === mode));
     $("#sitterDiscover").classList.toggle("hidden", mode !== "discover");
     $("#sitterBookings").classList.toggle("hidden", mode !== "bookings");
+    $("#sitterBecome").classList.toggle("hidden", mode !== "become");
 }
+
+// ---------- Koordinaten je Quartier (grob, für Karten-Pin) ----------
+const HOOD_COORDS = {
+    "Kleinbasel":   { lat: 47.5655, lng: 7.6040 },
+    "Gundeldingen": { lat: 47.5440, lng: 7.5920 },
+    "St. Johann":   { lat: 47.5700, lng: 7.5780 },
+    "Bruderholz":   { lat: 47.5370, lng: 7.5830 },
+    "Matthäus":     { lat: 47.5680, lng: 7.5920 },
+    "Iselin":       { lat: 47.5580, lng: 7.5640 },
+    "Breite":       { lat: 47.5520, lng: 7.6100 },
+    "Riehen":       { lat: 47.5800, lng: 7.6500 },
+    "Bachletten":   { lat: 47.5500, lng: 7.5700 }
+};
 
 function renderSitters() {
     const list = $("#sitterList");
     if (!list) return;
     list.innerHTML = "";
-    const filtered = DOG_SITTERS
+    // Alle Sitter inkl. eigenem Profil (falls vorhanden)
+    const all = [...DOG_SITTERS];
+    if (state.mySitterProfile) all.unshift(state.mySitterProfile);
+
+    const filtered = all
         .filter(s => !sitterUi.service || s.services.includes(sitterUi.service))
         .filter(s => !s.priceHour || s.priceHour <= sitterUi.maxPrice)
         .map(s => ({ ...s, distance: sitterDistance(s) }))
-        .sort((a, b) => b.rating - a.rating);
+        .sort((a, b) => {
+            // Eigenes Profil immer oben
+            if (a.id === "me") return -1;
+            if (b.id === "me") return 1;
+            return b.rating - a.rating;
+        });
 
     if (filtered.length === 0) {
         list.innerHTML = `<p class="empty-state">Keine Sitter mit diesen Filtern gefunden 🐾</p>`;
@@ -2349,8 +2407,9 @@ function renderSitters() {
     }
 
     filtered.forEach(s => {
+        const isMe = s.id === "me";
         const card = document.createElement("div");
-        card.className = "sitter-card";
+        card.className = "sitter-card" + (isMe ? " me-sitter" : "");
         const svcChips = s.services
             .map(svc => `<span class="svc-chip">${serviceIcon(svc)} ${serviceLabel(svc)}</span>`)
             .join("");
@@ -2358,11 +2417,12 @@ function renderSitters() {
         if (s.priceHour) priceDisplay = `ab CHF ${s.priceHour}/Std`;
         else if (s.priceDay) priceDisplay = `ab CHF ${s.priceDay}/Tag`;
         else priceDisplay = `ab CHF ${s.priceNight}/Nacht`;
+        const meBadge = isMe ? '<span class="me-badge">Du</span>' : '';
         card.innerHTML = `
             <div class="sc-av">${s.avatar}${s.verified ? '<span class="verified-dot">✓</span>' : ''}</div>
             <div class="sc-body">
                 <div class="sc-head">
-                    <strong>${escapeHtml(s.name)}</strong>
+                    <strong>${escapeHtml(s.name)}${meBadge}</strong>
                     <span class="sc-rating">⭐ ${s.rating.toFixed(1)}</span>
                 </div>
                 <div class="sc-sub">${escapeHtml(s.neighborhood)} · ${s.distance.toFixed(1)} km · ⏱ ${s.responseTime}</div>
@@ -2374,7 +2434,13 @@ function renderSitters() {
                 </div>
             </div>
         `;
-        card.addEventListener("click", () => openSitterDetail(s.id));
+        card.addEventListener("click", () => {
+            if (isMe) {
+                switchSitterTab("become");
+            } else {
+                openSitterDetail(s.id);
+            }
+        });
         list.appendChild(card);
     });
 }
@@ -2569,6 +2635,350 @@ function cancelBooking(id) {
     renderMyBookings();
     updateBookingsBadge();
     flashToast("🗑 Buchung storniert");
+}
+
+// ============================================================
+// "SITTER WERDEN" – Registrierung, Dashboard, Anfragen
+// ============================================================
+
+const sitterForm = { selectedAvatar: "👩", selectedSizes: [] };
+
+function renderBecomeSitter() {
+    const hasProfile = !!state.mySitterProfile;
+    const regWrap = $("#sitterRegisterWrap");
+    const dashWrap = $("#sitterDashboardWrap");
+    if (!regWrap || !dashWrap) return;
+    regWrap.classList.toggle("hidden", hasProfile);
+    dashWrap.classList.toggle("hidden", !hasProfile);
+    if (hasProfile) {
+        renderSitterDashboard();
+    } else {
+        // Formular-Defaults setzen
+        initSitterFormDefaults();
+    }
+}
+
+function initSitterFormDefaults() {
+    // Avatar-Picker aktiv-Markierung
+    const avPicker = $("#msAvatarPicker");
+    if (avPicker) {
+        $$("#msAvatarPicker button").forEach(b => {
+            b.classList.toggle("active", b.dataset.av === sitterForm.selectedAvatar);
+        });
+    }
+    // Size-Picker aktiv
+    $$("#msSizes button").forEach(b => {
+        b.classList.toggle("active", sitterForm.selectedSizes.includes(b.dataset.size));
+    });
+}
+
+function bindSitterRegistration() {
+    // Avatar-Picker
+    $$("#msAvatarPicker button").forEach(b => {
+        b.addEventListener("click", () => {
+            sitterForm.selectedAvatar = b.dataset.av;
+            $$("#msAvatarPicker button").forEach(x => x.classList.toggle("active", x === b));
+        });
+    });
+    // Größen-Picker (Multi-Select)
+    $$("#msSizes button").forEach(b => {
+        b.addEventListener("click", () => {
+            const size = b.dataset.size;
+            const idx = sitterForm.selectedSizes.indexOf(size);
+            if (idx >= 0) sitterForm.selectedSizes.splice(idx, 1);
+            else sitterForm.selectedSizes.push(size);
+            b.classList.toggle("active");
+        });
+    });
+    // Formular-Submit
+    $("#sitterForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        saveMySitterProfile();
+    });
+    // Dashboard
+    $("#dashEditBtn")?.addEventListener("click", editMySitterProfile);
+    $("#dashDeleteBtn")?.addEventListener("click", deleteMySitterProfile);
+}
+
+function saveMySitterProfile() {
+    const name = $("#msName").value.trim();
+    const hood = $("#msHood").value;
+    const bio  = $("#msBio").value.trim();
+    const experience = $("#msExperience").value;
+    const responseTime = $("#msResponse").value;
+    const availability = $("#msAvailability").value.trim() || "Nach Absprache";
+    const phoneVerified = $("#msPhoneVerify").checked;
+
+    const services = [];
+    $$('input[name="msSvc"]:checked').forEach(i => services.push(i.value));
+
+    if (!name)    { flashToast("Bitte Namen eingeben"); return; }
+    if (!bio)     { flashToast("Bitte eine kurze Bio schreiben"); return; }
+    if (services.length === 0) { flashToast("Wähle mindestens einen Service"); return; }
+    if (sitterForm.selectedSizes.length === 0) { flashToast("Wähle mindestens eine Hundegröße"); return; }
+
+    const priceHour  = parseInt($("#msPriceHour").value)  || null;
+    const priceDay   = parseInt($("#msPriceDay").value)   || null;
+    const priceNight = parseInt($("#msPriceNight").value) || null;
+
+    if (services.includes("Gassi") && !priceHour)  { flashToast("Bitte Stundenpreis für Gassi angeben"); return; }
+    if (services.includes("Tag")   && !priceDay)   { flashToast("Bitte Tagespreis angeben"); return; }
+    if ((services.includes("Nacht") || services.includes("Urlaub")) && !priceNight) {
+        flashToast("Bitte Nachtpreis angeben"); return;
+    }
+
+    const coords = HOOD_COORDS[hood] || { lat: state.userLocation.lat, lng: state.userLocation.lng };
+
+    const isNew = !state.mySitterProfile;
+    state.mySitterProfile = {
+        id: "me",
+        name,
+        avatar: sitterForm.selectedAvatar,
+        neighborhood: hood,
+        lat: coords.lat, lng: coords.lng,
+        rating: state.mySitterProfile?.rating || 5.0,
+        reviewCount: state.mySitterProfile?.reviewCount || 0,
+        priceHour, priceDay, priceNight,
+        services,
+        bio,
+        experience,
+        verified: phoneVerified,
+        acceptedSizes: [...sitterForm.selectedSizes],
+        responseTime,
+        availability,
+        createdAt: state.mySitterProfile?.createdAt || Date.now()
+    };
+    saveState();
+
+    if (isNew) {
+        flashToast("🎉 Sitter-Profil veröffentlicht!");
+        // Demo-Anfragen nach kurzer Verzögerung einspielen
+        setTimeout(seedDemoSitterRequests, 1500);
+    } else {
+        flashToast("✓ Profil aktualisiert");
+    }
+
+    renderBecomeSitter();
+    renderSitters();      // eigenes Profil im Entdecken-Tab zeigen
+    updateSitterRequestsBadge();
+    if (leafletMap) renderMapMarkers();
+}
+
+function editMySitterProfile() {
+    const p = state.mySitterProfile;
+    if (!p) return;
+    // Formular mit vorhandenen Werten befüllen
+    $("#msName").value = p.name;
+    $("#msHood").value = p.neighborhood;
+    $("#msBio").value = p.bio;
+    $("#msExperience").value = p.experience;
+    $("#msResponse").value = p.responseTime;
+    $("#msAvailability").value = p.availability;
+    $("#msPhoneVerify").checked = !!p.verified;
+    $("#msPriceHour").value  = p.priceHour  || "";
+    $("#msPriceDay").value   = p.priceDay   || "";
+    $("#msPriceNight").value = p.priceNight || "";
+    $$('input[name="msSvc"]').forEach(i => {
+        i.checked = p.services.includes(i.value);
+    });
+    sitterForm.selectedAvatar = p.avatar;
+    sitterForm.selectedSizes = [...p.acceptedSizes];
+    initSitterFormDefaults();
+
+    // Während Bearbeitung: Dashboard ausblenden, Formular zeigen
+    $("#sitterRegisterWrap").classList.remove("hidden");
+    $("#sitterDashboardWrap").classList.add("hidden");
+    $("#sitterRegisterWrap").scrollIntoView({ behavior: "smooth" });
+}
+
+function deleteMySitterProfile() {
+    if (!confirm("Sitter-Profil wirklich löschen? Alle offenen Anfragen gehen verloren.")) return;
+    state.mySitterProfile = null;
+    state.sitterRequests = [];
+    sitterForm.selectedAvatar = "👩";
+    sitterForm.selectedSizes = [];
+    // Form leeren
+    const form = $("#sitterForm");
+    if (form) form.reset();
+    saveState();
+    renderBecomeSitter();
+    renderSitters();
+    updateSitterRequestsBadge();
+    flashToast("🗑 Profil gelöscht");
+    if (leafletMap) renderMapMarkers();
+}
+
+// ---------- Demo-Anfragen von (simulierten) Kunden ----------
+const DEMO_REQUEST_NAMES = [
+    { name: "Sarah", dog: "Mochi",   emoji: "🐕",    size: "Klein",  note: "Mochi ist sehr anhänglich und braucht viel Kuscheleinheiten." },
+    { name: "David", dog: "Zeus",    emoji: "🦮",    size: "Groß",   note: "Zeus ist trainiert, zieht aber an der Leine. Geht das?" },
+    { name: "Nina",  dog: "Pepper",  emoji: "🐩",    size: "Klein",  note: "Wir gehen diese Woche ins Wochenende." },
+    { name: "Tim",   dog: "Loki",    emoji: "🐕‍🦺", size: "Mittel", note: "Loki ist manchmal ängstlich vor großen Hunden." },
+    { name: "Jana",  dog: "Nala",    emoji: "🐶",    size: "Mittel", note: "Brauche dringend jemanden ab morgen früh." }
+];
+
+function seedDemoSitterRequests() {
+    if (!state.mySitterProfile) return;
+    const count = 2 + Math.floor(Math.random() * 2); // 2–3
+    const picks = [...DEMO_REQUEST_NAMES].sort(() => 0.5 - Math.random()).slice(0, count);
+    picks.forEach((p, i) => {
+        const svc = state.mySitterProfile.services[
+            Math.floor(Math.random() * state.mySitterProfile.services.length)
+        ];
+        const hours = svc === "Gassi" ? 1 + Math.floor(Math.random() * 3) : 0;
+        const from = new Date(Date.now() + (i + 1) * 86400000).toISOString().split("T")[0];
+        const total = computeRequestTotal(state.mySitterProfile, svc, hours);
+        state.sitterRequests.unshift({
+            id: "req" + Date.now() + "_" + i,
+            fromName: p.name,
+            dogName: p.dog,
+            dogEmoji: p.emoji,
+            dogSize: p.size,
+            service: svc,
+            date: from,
+            hours,
+            message: p.note,
+            total,
+            status: "pending",
+            ts: Date.now() - i * 60000
+        });
+    });
+    saveState();
+    renderSitterDashboard();
+    updateSitterRequestsBadge();
+    flashToast(`📥 ${count} neue Anfragen!`);
+}
+
+function computeRequestTotal(sitter, svc, hours) {
+    if (svc === "Gassi")  return (hours || 0) * (sitter.priceHour || 0);
+    if (svc === "Tag")    return sitter.priceDay || 0;
+    if (svc === "Nacht" || svc === "Urlaub") return sitter.priceNight || 0;
+    return 0;
+}
+
+function renderSitterDashboard() {
+    const p = state.mySitterProfile;
+    if (!p) return;
+    $("#dashAv").textContent = p.avatar;
+    $("#dashName").textContent = p.name;
+    $("#dashHood").textContent = `${p.neighborhood} · ${p.services.length} Services`;
+    $("#dashVerified").classList.toggle("hidden", !p.verified);
+    $("#dashRating").textContent = (p.rating || 5.0).toFixed(1);
+
+    // Stats: Verdienst + Aufträge (nur accepted/completed)
+    const done = state.sitterRequests.filter(r => r.status === "accepted" || r.status === "completed");
+    const earnings = done.reduce((sum, r) => sum + (r.total || 0), 0);
+    $("#dashEarnings").textContent = `CHF ${earnings}`;
+    $("#dashJobs").textContent = String(done.length);
+
+    // Anfragen-Liste (pending zuerst)
+    const reqList = $("#sitterRequestsList");
+    const pending = state.sitterRequests.filter(r => r.status === "pending");
+    if (pending.length === 0) {
+        reqList.innerHTML = `<p class="empty-mini">Noch keine offenen Anfragen. 🐾</p>`;
+    } else {
+        reqList.innerHTML = "";
+        pending.forEach(r => {
+            const card = document.createElement("div");
+            card.className = "req-card";
+            const detail = r.service === "Gassi"
+                ? `${r.hours} Std am ${r.date}`
+                : r.date;
+            card.innerHTML = `
+                <div class="req-head">
+                    <span class="req-av">${r.dogEmoji}</span>
+                    <div class="req-meta">
+                        <strong>${escapeHtml(r.fromName)} &amp; ${escapeHtml(r.dogName)}</strong>
+                        <small>${serviceIcon(r.service)} ${serviceLabel(r.service)} · ${r.dogSize} · ${escapeHtml(detail)}</small>
+                    </div>
+                    <span class="req-total">CHF ${r.total}</span>
+                </div>
+                <p class="req-msg">"${escapeHtml(r.message)}"</p>
+                <div class="req-actions">
+                    <button class="btn-ghost" data-decline="${r.id}">Ablehnen</button>
+                    <button class="btn-primary" data-accept="${r.id}">Annehmen ✓</button>
+                </div>
+            `;
+            card.querySelector("[data-accept]").addEventListener("click", () => acceptSitterRequest(r.id));
+            card.querySelector("[data-decline]").addEventListener("click", () => declineSitterRequest(r.id));
+            reqList.appendChild(card);
+        });
+    }
+
+    // Aufträge (accepted + completed + declined)
+    const jobsList = $("#sitterJobsList");
+    const others = state.sitterRequests.filter(r => r.status !== "pending");
+    if (others.length === 0) {
+        jobsList.innerHTML = `<p class="empty-mini">Noch keine bearbeiteten Aufträge.</p>`;
+    } else {
+        jobsList.innerHTML = "";
+        others.forEach(r => {
+            const statusText = ({
+                accepted:  "✅ Angenommen",
+                completed: "🏁 Abgeschlossen",
+                declined:  "❌ Abgelehnt"
+            })[r.status] || r.status;
+            const row = document.createElement("div");
+            row.className = `job-row status-${r.status}`;
+            row.innerHTML = `
+                <span>${r.dogEmoji}</span>
+                <div class="job-meta">
+                    <strong>${escapeHtml(r.fromName)} &amp; ${escapeHtml(r.dogName)}</strong>
+                    <small>${serviceLabel(r.service)} · ${escapeHtml(r.date)} · ${statusText}</small>
+                </div>
+                <strong class="job-total">CHF ${r.total}</strong>
+            `;
+            jobsList.appendChild(row);
+        });
+    }
+}
+
+function acceptSitterRequest(id) {
+    const r = state.sitterRequests.find(x => x.id === id);
+    if (!r) return;
+    r.status = "accepted";
+    saveState();
+    renderSitterDashboard();
+    updateSitterRequestsBadge();
+    flashToast(`✅ ${r.fromName} wurde angenommen`);
+    // Nach 6–10 s automatisch als "completed" markieren (simuliert)
+    setTimeout(() => {
+        const still = state.sitterRequests.find(x => x.id === id);
+        if (still && still.status === "accepted") {
+            still.status = "completed";
+            // Rating leicht anheben (max 5.0)
+            if (state.mySitterProfile) {
+                state.mySitterProfile.reviewCount = (state.mySitterProfile.reviewCount || 0) + 1;
+            }
+            saveState();
+            if ($("#view-sitter")?.classList.contains("active") && sitterUi.mode === "become") {
+                renderSitterDashboard();
+            }
+            flashToast(`⭐ ${r.fromName} hat dich bewertet!`);
+        }
+    }, 6000 + Math.random() * 4000);
+}
+
+function declineSitterRequest(id) {
+    const r = state.sitterRequests.find(x => x.id === id);
+    if (!r) return;
+    r.status = "declined";
+    saveState();
+    renderSitterDashboard();
+    updateSitterRequestsBadge();
+    flashToast(`Anfrage von ${r.fromName} abgelehnt`);
+}
+
+function updateSitterRequestsBadge() {
+    const badge = $("#sitterRequestsBadge");
+    if (!badge) return;
+    const pending = state.sitterRequests.filter(r => r.status === "pending").length;
+    if (pending > 0) {
+        badge.textContent = pending;
+        badge.classList.remove("hidden");
+    } else {
+        badge.classList.add("hidden");
+    }
 }
 
 // ---------- Event bindings ----------
@@ -3261,7 +3671,9 @@ function init() {
     bindOnboarding();
     bindDailyPickEvents();
     bindMapControls();
+    bindSitterRegistration();
     renderMapCategoryChips();
+    updateSitterRequestsBadge();
     if (state.premium) $("#premiumBadge").classList.add("active");
     document.documentElement.classList.toggle("dark", state.settings.dark);
     applyFilters();

@@ -3832,3 +3832,560 @@ button { font-family: inherit; }
     align-self: flex-start;
 }
 .bc-cancel:hover { color: #e74c3c; }
+
+/* ===================================================================
+   SITTER REGISTRATION — Hero, Form, Dashboard, Requests, Jobs
+   =================================================================== */
+
+/* Hero for register screen */
+#sitterRegisterWrap .sitter-hero {
+    background: linear-gradient(135deg, #fff3ef 0%, #ffe3d8 100%);
+    border-radius: 18px;
+    padding: 22px 18px 20px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 14px rgba(255, 107, 107, 0.08);
+}
+.sitter-hero-emoji {
+    font-size: 54px;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+#sitterRegisterWrap .sitter-hero h3 {
+    margin: 0 0 6px;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+}
+#sitterRegisterWrap .sitter-hero p {
+    margin: 0 0 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #666;
+}
+.sitter-perks {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.55);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+.sitter-perks li {
+    font-size: 13px;
+    color: #444;
+}
+
+/* Sitter registration form */
+.sitter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px 2px 24px;
+}
+.sitter-form h4 {
+    margin: 14px 0 2px;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text);
+    padding-bottom: 6px;
+    border-bottom: 2px solid #f3f3f3;
+}
+.sitter-form > label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 13px;
+    color: #555;
+    font-weight: 600;
+}
+.sitter-form > label > span:first-child {
+    font-size: 12px;
+    font-weight: 700;
+    color: #666;
+}
+.sitter-form input[type="text"],
+.sitter-form input[type="number"],
+.sitter-form textarea,
+.sitter-form select {
+    width: 100%;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: white;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+}
+.sitter-form input[type="text"]:focus,
+.sitter-form input[type="number"]:focus,
+.sitter-form textarea:focus,
+.sitter-form select:focus {
+    outline: none;
+    border-color: var(--brand);
+}
+.sitter-form textarea {
+    resize: vertical;
+    min-height: 70px;
+}
+.form-hint {
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: #888;
+}
+
+/* Avatar picker */
+.avatar-picker {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+}
+.avatar-picker button {
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 0;
+    font-size: 28px;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1;
+}
+.avatar-picker button:hover {
+    border-color: #ffcbbf;
+}
+.avatar-picker button.active {
+    border-color: var(--brand);
+    background: #fff0ec;
+    transform: scale(1.08);
+    box-shadow: 0 3px 10px rgba(255, 107, 107, 0.22);
+}
+
+/* Services list */
+.ms-services {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ms-svc {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+    transition: all 0.15s;
+}
+.ms-svc:hover {
+    border-color: #ffcbbf;
+}
+.ms-svc:has(input:checked) {
+    border-color: var(--brand);
+    background: #fff6f3;
+}
+.ms-svc input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--brand);
+    cursor: pointer;
+}
+.ms-svc > span {
+    font-size: 13px;
+}
+.ms-svc input[type="number"] {
+    width: 90px;
+    padding: 7px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    text-align: right;
+}
+.ms-svc-hint {
+    font-size: 11px;
+    color: #999;
+    font-weight: 500;
+    justify-self: end;
+}
+
+/* Size picker in sitter form — override multi-select style */
+#msSizes {
+    grid-template-columns: repeat(3, 1fr);
+}
+#msSizes button {
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+#msSizes button:hover {
+    border-color: #ffcbbf;
+}
+#msSizes button.active {
+    border-color: var(--brand);
+    background: #fff0ec;
+    color: var(--brand);
+    transform: scale(1.04);
+    box-shadow: 0 3px 10px rgba(255, 107, 107, 0.2);
+}
+
+/* Phone verify simulation */
+.ms-verify {
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 4px;
+}
+.ms-verify-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #444;
+    cursor: pointer;
+    font-weight: 600;
+}
+.ms-verify-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #4ecdc4;
+    cursor: pointer;
+}
+.ms-verify-row small {
+    display: block;
+    color: #888;
+    font-weight: 500;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+/* ===== Sitter Dashboard ===== */
+.sitter-dash-card {
+    background: linear-gradient(135deg, #ffffff 0%, #fff6f3 100%);
+    border: 2px solid #ffe0d4;
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 14px rgba(255, 107, 107, 0.08);
+}
+.sd-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.sd-av {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd5cd, #ffebe0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    border: 3px solid white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+}
+.sd-meta {
+    flex: 1;
+    min-width: 0;
+}
+.sd-meta strong {
+    display: block;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text);
+}
+.sd-meta small {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-top: 2px;
+}
+.verified-tag {
+    background: #4ecdc4;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.verified-tag.hidden { display: none; }
+
+.sd-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    padding: 12px 6px;
+}
+.sd-stat {
+    text-align: center;
+    padding: 0 4px;
+    border-right: 1px solid #f0e6e0;
+}
+.sd-stat:last-child { border-right: none; }
+.sd-stat strong {
+    display: block;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--brand);
+    margin-bottom: 2px;
+}
+.sd-stat small {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    font-weight: 600;
+}
+.sd-actions {
+    display: flex;
+    gap: 8px;
+}
+.sd-actions button {
+    flex: 1;
+    padding: 9px 10px;
+    font-size: 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* ===== Sitter Requests Inbox ===== */
+.sitter-requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.sitter-requests-list .empty-state {
+    text-align: center;
+    padding: 20px 10px;
+    color: #999;
+    font-size: 13px;
+    background: #fafafa;
+    border-radius: 12px;
+}
+.req-card {
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: border-color 0.15s;
+}
+.req-card:hover { border-color: #ffcbbf; }
+.req-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.req-av {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffe6de, #fff3ef);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+.req-meta {
+    flex: 1;
+    min-width: 0;
+}
+.req-meta strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text);
+}
+.req-meta small {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    margin-top: 1px;
+}
+.req-total {
+    background: var(--brand);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+.req-msg {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.45;
+    background: #fafafa;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+}
+.req-actions {
+    display: flex;
+    gap: 8px;
+}
+.req-actions button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.1s;
+}
+.req-actions button:active { transform: scale(0.97); }
+.req-accept {
+    background: var(--brand);
+    color: white;
+}
+.req-accept:hover { background: var(--brand-dark); }
+.req-decline {
+    background: #f3f3f3;
+    color: #666;
+}
+.req-decline:hover { background: #e8e8e8; }
+
+/* ===== Sitter Jobs List ===== */
+.sitter-jobs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+.sitter-jobs-list .empty-state {
+    text-align: center;
+    padding: 16px 10px;
+    color: #999;
+    font-size: 12px;
+    background: #fafafa;
+    border-radius: 10px;
+}
+.job-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 12px;
+}
+.job-row .job-av {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #fff3ef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.job-meta {
+    flex: 1;
+    min-width: 0;
+}
+.job-meta strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+}
+.job-meta small {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    margin-top: 1px;
+}
+.job-total {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--brand);
+    flex-shrink: 0;
+}
+.status-accepted,
+.status-completed,
+.status-declined {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 7px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.status-accepted {
+    background: #fff7e6;
+    color: #d48806;
+}
+.status-completed {
+    background: #e8f9f5;
+    color: #1b9b8a;
+}
+.status-declined {
+    background: #f5f5f5;
+    color: #999;
+}
+
+/* ===== "Du" Badge for own profile in sitter discover list ===== */
+.me-badge {
+    display: inline-block;
+    background: var(--brand);
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 8px;
+    margin-left: 6px;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+/* ===== Own sitter card in discover list ===== */
+.sitter-card.me-sitter {
+    border: 2px solid var(--brand);
+    background: linear-gradient(135deg, #ffffff 0%, #fff6f3 100%);
+    box-shadow: 0 4px 14px rgba(255, 107, 107, 0.15);
+}
+
+/* ===== Own sitter pin on map ===== */
+.sitter-marker.my-sitter {
+    filter: drop-shadow(0 0 8px rgba(255, 107, 107, 0.8));
+    animation: meSitterPulse 2.4s ease-in-out infinite;
+    transform-origin: center bottom;
+}
+@keyframes meSitterPulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.14); }
+}
