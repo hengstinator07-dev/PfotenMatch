@@ -11,7 +11,7 @@ const state = {
     premium: false,
     radius: 10,
     userLocation: { lat: 47.5585, lng: 7.5880 }, // Default: Basel Marktplatz
-    filters: { size: "", play: "", energy: "", breed: "" },
+    filters: { size: [], play: [], energy: [], breed: "" },
     myProfile: {
         name: "Bello", breed: "Labrador-Mix", age: 3,
         size: "Mittel", neutered: "Nein",
@@ -263,20 +263,181 @@ function applyFilters() {
     const { size, play, energy, breed } = state.filters;
     state.profiles = DOG_PROFILES.filter(p => {
         if (p.distance > state.radius) return false;
-        if (size && !p.size.startsWith(size)) return false;
-        if (play && !p.playStyle.includes(play)) return false;
-        if (energy && !p.energy.includes(energy)) return false;
+        if (size.length && !size.some(s => p.size.startsWith(s))) return false;
+        if (play.length && !play.some(s => p.playStyle.includes(s))) return false;
+        if (energy.length && !energy.some(s => p.energy.includes(s))) return false;
         if (state.premium && breed && !p.breed.toLowerCase().includes(breed.toLowerCase())) return false;
-        // schon in Matches? weglassen
         if (state.matches.some(m => m.profile.id === p.id)) return false;
         return true;
     });
-    // Nach Kompatibilität sortieren, damit die besten oben auf dem Stapel liegen
     state.profiles.sort((a, b) =>
         computeCompatibility(state.myProfile, b) - computeCompatibility(state.myProfile, a)
     );
     state.currentIdx = 0;
     renderCardStack();
+    updateFilterBadge();
+    renderActiveFilterChips();
+}
+
+// ---------- Filter Bottom-Sheet ----------
+function openFilterSheet() {
+    $("#filterOverlay").classList.remove("hidden");
+    $("#filterSheet").classList.add("open");
+    syncFilterChips();
+}
+function closeFilterSheet() {
+    // Check breed premium gate
+    const breedVal = $("#fBreed").value.trim();
+    if (breedVal && !state.premium) {
+        $("#fBreed").value = "";
+        openPremium();
+    }
+    state.filters.breed = $("#fBreed").value.trim();
+    $("#filterOverlay").classList.add("hidden");
+    $("#filterSheet").classList.remove("open");
+    applyFilters();
+    if (leafletMap) renderMap();
+}
+function bindFilterSheet() {
+    $("#openFiltersBtn").addEventListener("click", openFilterSheet);
+    $("#filterOverlay").addEventListener("click", closeFilterSheet);
+    $("#closeFilterSheet").addEventListener("click", closeFilterSheet);
+    // Radius slider (now inside sheet)
+    $("#radiusSlider").addEventListener("input", (e) => {
+        state.radius = parseInt(e.target.value);
+        $("#radiusLabel").textContent = state.radius;
+        applyFilters();
+        if (leafletMap) renderMap();
+    });
+    // Chip toggles — multi-select with live apply
+    $$(".fs-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+            const key = chip.dataset.filter;   // "size" | "energy" | "play"
+            const val = chip.dataset.val;
+            const arr = state.filters[key];
+            const idx = arr.indexOf(val);
+            if (idx >= 0) { arr.splice(idx, 1); chip.classList.remove("active"); }
+            else          { arr.push(val);       chip.classList.add("active"); }
+            applyFilters();
+            if (leafletMap) renderMap();
+        });
+    });
+    // Breed input — live apply with debounce
+    let breedTimer;
+    $("#fBreed").addEventListener("input", (e) => {
+        clearTimeout(breedTimer);
+        breedTimer = setTimeout(() => {
+            const v = e.target.value.trim();
+            if (v && !state.premium) return;
+            state.filters.breed = v;
+            applyFilters();
+        }, 300);
+    });
+    // Reset
+    $("#resetFilterBtn").addEventListener("click", () => {
+        state.filters = { size: [], play: [], energy: [], breed: "" };
+        state.radius = 10;
+        $("#radiusSlider").value = 10;
+        $("#radiusLabel").textContent = "10";
+        $("#fBreed").value = "";
+        syncFilterChips();
+        applyFilters();
+        if (leafletMap) renderMap();
+    });
+    // Handle drag-down to close
+    const sheet = $("#filterSheet");
+    const handle = sheet.querySelector(".fs-handle");
+    let startY = 0, currentY = 0, dragging = false;
+    handle.addEventListener("touchstart", (e) => {
+        startY = e.touches[0].clientY;
+        dragging = true;
+        sheet.style.transition = "none";
+    });
+    handle.addEventListener("touchmove", (e) => {
+        if (!dragging) return;
+        currentY = e.touches[0].clientY - startY;
+        if (currentY > 0) sheet.style.transform = `translateY(${currentY}px)`;
+    });
+    handle.addEventListener("touchend", () => {
+        dragging = false;
+        sheet.style.transition = "";
+        sheet.style.transform = "";
+        if (currentY > 80) closeFilterSheet();
+        currentY = 0;
+    });
+}
+function syncFilterChips() {
+    $$(".fs-chip").forEach(chip => {
+        const key = chip.dataset.filter;
+        const val = chip.dataset.val;
+        chip.classList.toggle("active", state.filters[key].includes(val));
+    });
+    $("#radiusSlider").value = state.radius;
+    $("#radiusLabel").textContent = state.radius;
+    $("#fBreed").value = state.filters.breed || "";
+}
+function countActiveFilters() {
+    const f = state.filters;
+    let n = f.size.length + f.play.length + f.energy.length;
+    if (f.breed) n++;
+    if (state.radius !== 10) n++;
+    return n;
+}
+function updateFilterBadge() {
+    const n = countActiveFilters();
+    const badge = $("#filterBadge");
+    badge.textContent = n;
+    badge.classList.toggle("hidden", n === 0);
+    const btn = $("#openFiltersBtn");
+    btn.classList.toggle("has-filters", n > 0);
+}
+const FILTER_LABELS = {
+    size: { "Klein": "🐾 Klein", "Mittel": "🐕 Mittel", "Groß": "🐕‍🦺 Groß", "Sehr groß": "🦮 XL" },
+    energy: { "Couch-Potato": "🛋️ Couch", "Ausgeglichen": "🐾 Ausgeglichen", "Duracell": "⚡ Duracell" },
+    play: { "Zurückhaltend": "🤗 Ruhig", "Rennend": "🏃 Rennend", "Grob": "🤼 Grob" }
+};
+function renderActiveFilterChips() {
+    const wrap = $("#activeFilterChips");
+    wrap.innerHTML = "";
+    const f = state.filters;
+    ["size", "energy", "play"].forEach(key => {
+        f[key].forEach(val => {
+            const chip = document.createElement("button");
+            chip.className = "active-chip";
+            chip.innerHTML = `${FILTER_LABELS[key][val] || val} <span class="ac-x">✕</span>`;
+            chip.addEventListener("click", () => {
+                const idx = f[key].indexOf(val);
+                if (idx >= 0) f[key].splice(idx, 1);
+                applyFilters();
+                if (leafletMap) renderMap();
+            });
+            wrap.appendChild(chip);
+        });
+    });
+    if (state.radius !== 10) {
+        const chip = document.createElement("button");
+        chip.className = "active-chip";
+        chip.innerHTML = `📍 ${state.radius} km <span class="ac-x">✕</span>`;
+        chip.addEventListener("click", () => {
+            state.radius = 10;
+            $("#radiusSlider").value = 10;
+            $("#radiusLabel").textContent = "10";
+            applyFilters();
+            if (leafletMap) renderMap();
+        });
+        wrap.appendChild(chip);
+    }
+    if (f.breed) {
+        const chip = document.createElement("button");
+        chip.className = "active-chip premium";
+        chip.innerHTML = `★ ${f.breed} <span class="ac-x">✕</span>`;
+        chip.addEventListener("click", () => {
+            f.breed = "";
+            $("#fBreed").value = "";
+            applyFilters();
+        });
+        wrap.appendChild(chip);
+    }
 }
 
 // ---------- Card stack rendering ----------
@@ -3007,37 +3168,10 @@ function bindEvents() {
         const card = $("#cardStack .dog-card:last-child");
         if (card) flyAway(card, dog, "super");
     });
-    // Radius
-    $("#radiusSlider").addEventListener("input", (e) => {
-        state.radius = parseInt(e.target.value);
-        $("#radiusLabel").textContent = state.radius;
-        applyFilters();
-        if (leafletMap) renderMap();
-    });
     // Locate button
     $("#locateBtn")?.addEventListener("click", locateUser);
-    // Filter modal
-    $("#openFiltersBtn").addEventListener("click", () => $("#filterModal").classList.remove("hidden"));
-    $("#applyFilterBtn").addEventListener("click", () => {
-        state.filters.size = $("#fSize").value;
-        state.filters.play = $("#fPlay").value;
-        state.filters.energy = $("#fEnergy").value;
-        const breedVal = $("#fBreed").value;
-        if (breedVal && !state.premium) {
-            $("#filterModal").classList.add("hidden");
-            openPremium();
-            return;
-        }
-        state.filters.breed = breedVal;
-        $("#filterModal").classList.add("hidden");
-        applyFilters();
-    });
-    $("#resetFilterBtn").addEventListener("click", () => {
-        state.filters = { size: "", play: "", energy: "", breed: "" };
-        $("#fSize").value = ""; $("#fPlay").value = "";
-        $("#fEnergy").value = ""; $("#fBreed").value = "";
-        applyFilters();
-    });
+    // --- Filter Bottom-Sheet ---
+    bindFilterSheet();
     // Match modal
     $("#keepSwipingBtn").addEventListener("click", () => $("#matchModal").classList.add("hidden"));
     // Chat modal

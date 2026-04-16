@@ -2,8 +2,13 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#ff6b6b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PfotenMatch" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>" />
     <title>PfotenMatch – Finde den perfekten Spielkameraden</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -266,12 +271,16 @@
 
             <!-- ============ SWIPE VIEW ============ -->
             <section id="view-swipe" class="view active">
-                <div class="filter-bar">
-                    <label>
-                        Umkreis: <span id="radiusLabel">10</span> km
-                        <input type="range" id="radiusSlider" min="1" max="50" value="10" />
-                    </label>
-                    <button id="openFiltersBtn" class="btn-ghost">⚙ Filter</button>
+                <!-- Compact filter chip row -->
+                <div class="filter-chip-row">
+                    <button id="openFiltersBtn" class="filter-toggle-btn">
+                        <span class="ftb-icon">⚙</span>
+                        <span class="ftb-label">Filter</span>
+                        <span id="filterBadge" class="filter-badge hidden">0</span>
+                    </button>
+                    <div id="activeFilterChips" class="active-filter-chips">
+                        <!-- live-injected chips -->
+                    </div>
                 </div>
 
                 <div id="dailyPickBanner" class="daily-pick-banner hidden">
@@ -1039,41 +1048,50 @@
     </div>
 
     <!-- Filter modal -->
-    <div id="filterModal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Filter</h2>
-            <label>Größe
-                <select id="fSize">
-                    <option value="">Alle</option>
-                    <option>Klein</option><option>Mittel</option><option>Groß</option><option>Sehr groß</option>
-                </select>
-            </label>
-            <label>Spielstil
-                <select id="fPlay">
-                    <option value="">Alle</option>
-                    <option>Zurückhaltend</option>
-                    <option>Rennend</option>
-                    <option>Grob</option>
-                </select>
-            </label>
-            <label>Energielevel
-                <select id="fEnergy">
-                    <option value="">Alle</option>
-                    <option>Couch-Potato</option>
-                    <option>Ausgeglichen</option>
-                    <option>Duracell</option>
-                </select>
-            </label>
-            <label class="premium-only">
-                <span class="premium-tag">Premium</span>
-                Rasse enthält
-                <input type="text" id="fBreed" placeholder="z. B. Labrador" />
-            </label>
-            <div class="modal-actions">
-                <button class="btn-ghost" id="resetFilterBtn">Zurücksetzen</button>
-                <button class="btn-primary" id="applyFilterBtn">Anwenden</button>
+    <!-- Filter Bottom-Sheet -->
+    <div id="filterOverlay" class="filter-overlay hidden"></div>
+    <div id="filterSheet" class="filter-sheet">
+        <div class="fs-handle"><span></span></div>
+        <div class="fs-header">
+            <h3>Filter</h3>
+            <button id="resetFilterBtn" class="fs-reset">Zurücksetzen</button>
+        </div>
+        <div class="fs-body">
+            <div class="fs-group">
+                <label class="fs-label">📍 Umkreis: <strong id="radiusLabel">10</strong> km</label>
+                <input type="range" id="radiusSlider" min="1" max="50" value="10" class="fs-range" />
+            </div>
+            <div class="fs-group">
+                <label class="fs-label">📏 Größe</label>
+                <div class="fs-chips" id="fSizeChips">
+                    <button class="fs-chip" data-filter="size" data-val="Klein">🐾 Klein</button>
+                    <button class="fs-chip" data-filter="size" data-val="Mittel">🐕 Mittel</button>
+                    <button class="fs-chip" data-filter="size" data-val="Groß">🐕‍🦺 Groß</button>
+                    <button class="fs-chip" data-filter="size" data-val="Sehr groß">🦮 XL</button>
+                </div>
+            </div>
+            <div class="fs-group">
+                <label class="fs-label">⚡ Energielevel</label>
+                <div class="fs-chips" id="fEnergyChips">
+                    <button class="fs-chip" data-filter="energy" data-val="Couch-Potato">🛋️ Couch</button>
+                    <button class="fs-chip" data-filter="energy" data-val="Ausgeglichen">🐾 Ausgeglichen</button>
+                    <button class="fs-chip" data-filter="energy" data-val="Duracell">⚡ Duracell</button>
+                </div>
+            </div>
+            <div class="fs-group">
+                <label class="fs-label">🎾 Spielstil</label>
+                <div class="fs-chips" id="fPlayChips">
+                    <button class="fs-chip" data-filter="play" data-val="Zurückhaltend">🤗 Ruhig</button>
+                    <button class="fs-chip" data-filter="play" data-val="Rennend">🏃 Rennend</button>
+                    <button class="fs-chip" data-filter="play" data-val="Grob">🤼 Grob</button>
+                </div>
+            </div>
+            <div class="fs-group premium-filter">
+                <label class="fs-label"><span class="premium-tag">★</span> Rasse enthält</label>
+                <input type="text" id="fBreed" placeholder="z. B. Labrador" class="fs-input" />
             </div>
         </div>
+        <button id="closeFilterSheet" class="btn-primary full fs-done">✓ Fertig</button>
     </div>
 
     <!-- Premium modal -->
@@ -1141,5 +1159,10 @@
 
     <script src="data.js"></script>
     <script src="app.js"></script>
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("/sw.js").catch(() => {});
+        }
+    </script>
 </body>
 </html>
