@@ -41,11 +41,6 @@ const state = {
     sitterRequests: [],
     // Pfoten-Stempel pro POI: { [poiId]: ts }
     paws: {},
-    // Abzeichen & Skins: unlocked IDs und aktiver Skin
-    unlockedBadges: [],
-    unlockedSkins: [],
-    activeSkin: "default",
-    weeklyStreak: 0,
     // Karte: aktuelle Filter & Suche
     mapFilter: { cats: [], q: "" },
     // Onboarding abgeschlossen?
@@ -71,10 +66,6 @@ function saveState() {
             mySitterProfile: state.mySitterProfile,
             sitterRequests: state.sitterRequests,
             paws: state.paws,
-            unlockedBadges: state.unlockedBadges,
-            unlockedSkins: state.unlockedSkins,
-            activeSkin: state.activeSkin,
-            weeklyStreak: state.weeklyStreak,
             settings: state.settings
         }));
     } catch (e) { /* ignore */ }
@@ -101,10 +92,6 @@ function loadState() {
         if (data.mySitterProfile) state.mySitterProfile = data.mySitterProfile;
         if (Array.isArray(data.sitterRequests)) state.sitterRequests = data.sitterRequests;
         if (data.paws && typeof data.paws === "object") state.paws = data.paws;
-        if (Array.isArray(data.unlockedBadges)) state.unlockedBadges = data.unlockedBadges;
-        if (Array.isArray(data.unlockedSkins)) state.unlockedSkins = data.unlockedSkins;
-        if (data.activeSkin) state.activeSkin = data.activeSkin;
-        if (typeof data.weeklyStreak === "number") state.weeklyStreak = data.weeklyStreak;
         if (Array.isArray(data.matches)) {
             state.matches = data.matches
                 .map(m => {
@@ -1714,70 +1701,13 @@ function pawsThisWeek() {
     return Object.values(state.paws).filter(ts => ts >= cutoff).length;
 }
 
-// ---------- Abzeichen-System ----------
-const ACHIEVEMENTS = [
-    { id: "first_paw",    emoji: "🐾", label: "Erste Pfote",      desc: "Besuche deinen ersten Spot",    check: () => Object.keys(state.paws).length >= 1 },
-    { id: "explorer",     emoji: "🥉", label: "Entdecker",        desc: "Besuche 5 Spots",               check: () => Object.keys(state.paws).length >= 5 },
-    { id: "streamer",     emoji: "🥈", label: "Stadt-Streuner",   desc: "Besuche 10 Spots",              check: () => Object.keys(state.paws).length >= 10 },
-    { id: "pro",          emoji: "🥇", label: "Basel-Profi",      desc: "Besuche 20 Spots",              check: () => Object.keys(state.paws).length >= 20 },
-    { id: "king",         emoji: "👑", label: "Pfoten-König",     desc: "Alle Spots besucht",            check: () => Object.keys(state.paws).length >= POIS.length },
-    { id: "week1",        emoji: "🔥", label: "Erste Woche",      desc: "Schließe 1 Wochenchallenge ab", check: () => state.weeklyStreak >= 1 },
-    { id: "streak3",      emoji: "💪", label: "3er-Streak",       desc: "3 Wochenchallenges in Folge",   check: () => state.weeklyStreak >= 3 },
-    { id: "streak5",      emoji: "⚡", label: "5er-Streak",       desc: "5 Wochenchallenges in Folge",   check: () => state.weeklyStreak >= 5 },
-    { id: "social",       emoji: "💬", label: "Sozialer Hund",    desc: "5 Matches gesammelt",           check: () => state.matches.length >= 5 },
-    { id: "popular",      emoji: "🌟", label: "Beliebt",          desc: "10 Matches gesammelt",          check: () => state.matches.length >= 10 },
-    { id: "park_lover",   emoji: "🌳", label: "Park-Liebhaber",   desc: "5 verschiedene Parks besucht",  check: () => countPawsByCat("park") >= 5 },
-    { id: "vet_friend",   emoji: "🏥", label: "Arzt-Vertraut",    desc: "3 Tierärzte besucht",           check: () => countPawsByCat("vet") >= 3 },
+const PAW_BADGES = [
+    { count: 1,  emoji: "🐾", label: "Erste Pfote" },
+    { count: 5,  emoji: "🥉", label: "Entdecker" },
+    { count: 10, emoji: "🥈", label: "Stadt-Streuner" },
+    { count: 20, emoji: "🥇", label: "Basel-Profi" },
+    { count: 30, emoji: "👑", label: "Pfoten-König" }
 ];
-
-const SKINS = [
-    { id: "default",      emoji: "🐾", label: "Standard",         desc: "Das Original",               unlockBadge: null },
-    { id: "golden",       emoji: "✨", label: "Gold-Pfote",       desc: "Goldener Glanz",             unlockBadge: "pro" },
-    { id: "fire",         emoji: "🔥", label: "Feuer-Pfote",      desc: "Für Streak-Champions",       unlockBadge: "streak3" },
-    { id: "crown",        emoji: "👑", label: "Königs-Pfote",     desc: "Für den Pfoten-König",       unlockBadge: "king" },
-    { id: "rainbow",      emoji: "🌈", label: "Regenbogen",       desc: "Für den sozialen Hund",      unlockBadge: "social" },
-    { id: "nature",       emoji: "🌿", label: "Natur-Pfote",      desc: "Für Park-Liebhaber",         unlockBadge: "park_lover" },
-    { id: "lightning",    emoji: "⚡", label: "Blitz-Pfote",      desc: "Für 5er-Streak-Helden",      unlockBadge: "streak5" },
-    { id: "diamond",      emoji: "💎", label: "Diamant-Pfote",    desc: "Für die Beliebtesten",       unlockBadge: "popular" },
-];
-
-const SKIN_GRADIENTS = {
-    default:   "linear-gradient(135deg, #ffd5cd, #ffebe0)",
-    golden:    "linear-gradient(135deg, #ffd700, #ffec80)",
-    fire:      "linear-gradient(135deg, #ff6b6b, #ff9a56)",
-    crown:     "linear-gradient(135deg, #a855f7, #e879f9)",
-    rainbow:   "linear-gradient(135deg, #ff6b6b, #ffd166, #4ecdc4, #a855f7)",
-    nature:    "linear-gradient(135deg, #4ecdc4, #a8e6cf)",
-    lightning: "linear-gradient(135deg, #ffd166, #ff6b6b)",
-    diamond:   "linear-gradient(135deg, #93c5fd, #c4b5fd)",
-};
-
-function countPawsByCat(cat) {
-    return POIS.filter(p => p.cat === cat && state.paws[p.id]).length;
-}
-
-function checkAchievements() {
-    let newUnlocks = [];
-    ACHIEVEMENTS.forEach(a => {
-        if (!state.unlockedBadges.includes(a.id) && a.check()) {
-            state.unlockedBadges.push(a.id);
-            newUnlocks.push(a);
-            // Auto-unlock skins tied to this badge
-            SKINS.forEach(s => {
-                if (s.unlockBadge === a.id && !state.unlockedSkins.includes(s.id)) {
-                    state.unlockedSkins.push(s.id);
-                }
-            });
-        }
-    });
-    if (newUnlocks.length > 0) {
-        saveState();
-        newUnlocks.forEach(a => {
-            flashToast(`🏆 Abzeichen freigeschaltet: ${a.emoji} ${a.label}`);
-        });
-    }
-    return newUnlocks.length > 0;
-}
 
 function renderPawCollector() {
     const total = Object.keys(state.paws).length;
@@ -1794,34 +1724,22 @@ function renderPawCollector() {
     const week = pawsThisWeek();
     const goal = 5;
     if (week >= goal) {
-        if (!state._weekClaimed) {
-            state.weeklyStreak = (state.weeklyStreak || 0) + 1;
-            state._weekClaimed = true;
-            saveState();
-        }
-        challenge.innerHTML = `🎉 Challenge geschafft! <strong>Streak: ${state.weeklyStreak}🔥</strong>`;
+        challenge.textContent = `🎉 Wochen-Challenge geschafft (${week}/${goal})!`;
         challenge.classList.add("done");
     } else {
-        state._weekClaimed = false;
-        challenge.innerHTML = `Wochenchallenge: <strong>${week}/${goal}</strong> neue Spots · Streak: ${state.weeklyStreak || 0}🔥`;
+        challenge.textContent = `Wochenchallenge: ${week}/${goal} neue Spots besucht`;
         challenge.classList.remove("done");
     }
 
-    checkAchievements();
-
     badges.innerHTML = "";
-    ACHIEVEMENTS.forEach(a => {
-        const unlocked = state.unlockedBadges.includes(a.id);
+    PAW_BADGES.forEach(b => {
+        const unlocked = total >= b.count;
         const el = document.createElement("div");
         el.className = "paw-badge" + (unlocked ? " unlocked" : "");
-        el.title = a.label + ": " + a.desc;
-        el.innerHTML = `<span>${a.emoji}</span><small>${a.label}</small>`;
+        el.title = b.label + " (" + b.count + " Spots)";
+        el.innerHTML = `<span>${b.emoji}</span><small>${b.count}</small>`;
         badges.appendChild(el);
     });
-}
-
-function getActiveSkinGradient() {
-    return SKIN_GRADIENTS[state.activeSkin] || SKIN_GRADIENTS.default;
 }
 
 // ---------- Map-Suche & Kategorie-Filter ----------
@@ -2068,76 +1986,10 @@ function renderProfile() {
     $("#infoNeutered").textContent = p.neutered || "—";
     $("#infoEnergy").textContent   = p.energy || "—";
     $("#infoPlay").textContent     = p.playStyle || "—";
-    // Skin-Ring auf Avatar
-    const ring = document.querySelector(".avatar-ring");
-    if (ring) ring.style.background = getActiveSkinGradient();
-    // Earned badges showcase (top 3 on profile)
-    const badgeShowcase = document.createElement("div");
-    badgeShowcase.className = "profile-badge-showcase";
-    const existing = chipsEl.parentElement.querySelector(".profile-badge-showcase");
-    if (existing) existing.remove();
-    const earned = ACHIEVEMENTS.filter(a => state.unlockedBadges.includes(a.id)).slice(-3);
-    if (earned.length > 0) {
-        earned.forEach(a => {
-            const el = document.createElement("span");
-            el.className = "showcase-badge";
-            el.title = a.label;
-            el.textContent = a.emoji;
-            badgeShowcase.appendChild(el);
-        });
-        chipsEl.parentElement.appendChild(badgeShowcase);
-    }
     // Photo grid
     renderProfilePhotos();
 }
 
-function renderProfileBadges() {
-    checkAchievements();
-    const badgeGrid = $("#badgeGrid");
-    const skinGrid = $("#skinGrid");
-    if (!badgeGrid || !skinGrid) return;
-
-    badgeGrid.innerHTML = "";
-    ACHIEVEMENTS.forEach(a => {
-        const unlocked = state.unlockedBadges.includes(a.id);
-        const el = document.createElement("div");
-        el.className = "badge-card" + (unlocked ? " unlocked" : " locked");
-        el.innerHTML = `
-            <span class="bc-emoji">${unlocked ? a.emoji : "🔒"}</span>
-            <strong class="bc-label">${a.label}</strong>
-            <small class="bc-desc">${a.desc}</small>
-        `;
-        badgeGrid.appendChild(el);
-    });
-
-    skinGrid.innerHTML = "";
-    SKINS.forEach(s => {
-        const unlocked = s.id === "default" || state.unlockedSkins.includes(s.id);
-        const active = state.activeSkin === s.id;
-        const el = document.createElement("button");
-        el.className = "skin-card" + (unlocked ? " unlocked" : " locked") + (active ? " active" : "");
-        el.disabled = !unlocked;
-        const gradient = SKIN_GRADIENTS[s.id] || SKIN_GRADIENTS.default;
-        el.innerHTML = `
-            <div class="sc-preview" style="background: ${gradient}">
-                <span>${s.emoji}</span>
-            </div>
-            <strong class="sc-label">${s.label}</strong>
-            <small class="sc-desc">${unlocked ? s.desc : "Braucht: " + (ACHIEVEMENTS.find(a => a.id === s.unlockBadge)?.label || "?")}</small>
-            ${active ? '<span class="sc-active">✓ Aktiv</span>' : ""}
-        `;
-        if (unlocked && !active) {
-            el.addEventListener("click", () => {
-                state.activeSkin = s.id;
-                saveState();
-                renderProfileBadges();
-                renderProfile();
-                flashToast(`🎨 Skin gewechselt: ${s.emoji} ${s.label}`);
-            });
-        }
-        skinGrid.appendChild(el);
-    });
-}
 
 function renderProfilePhotos() {
     const grid = $("#profilePhotos");
@@ -2157,8 +2009,6 @@ function switchProfileTab(name) {
     $$(".profile-tab").forEach(b => b.classList.toggle("active", b.dataset.ptab === name));
     $("#profilePhotos").classList.toggle("hidden", name !== "photos");
     $("#profileInfo").classList.toggle("hidden", name !== "info");
-    $("#profileBadges").classList.toggle("hidden", name !== "badges");
-    if (name === "badges") renderProfileBadges();
 }
 
 // --- Photo gallery ---
