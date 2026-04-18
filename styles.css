@@ -316,13 +316,11 @@ button { font-family: inherit; }
     aspect-ratio: 3 / 4.2;
     max-height: 62vh;
     margin: 0 auto 16px;
-    min-height: 0;
 }
 
 /* Swipe view: cap card height so action buttons always stay visible */
 #view-swipe .card-stack {
-    /* 250px = filter-chip-row + daily-banner + action-bar + bottom-nav + padding + safe-area */
-    max-height: calc(100dvh - 250px);
+    max-height: min(62vh, calc(100dvh - 250px));
 }
 .dog-card {
     position: absolute;
