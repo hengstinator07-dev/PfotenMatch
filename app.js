@@ -459,6 +459,7 @@ function renderCardStack() {
     const remaining = state.profiles.slice(state.currentIdx, state.currentIdx + 3).reverse();
 
     if (remaining.length === 0) {
+        stack.style.aspectRatio = "auto";
         stack.innerHTML = `
             <div class="empty-cards">
                 <div class="big">🐾</div>
@@ -467,6 +468,7 @@ function renderCardStack() {
             </div>`;
         return;
     }
+    stack.style.aspectRatio = "";
 
     remaining.forEach((dog, i) => {
         const card = document.createElement("div");

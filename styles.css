@@ -500,8 +500,8 @@ button { font-family: inherit; }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
     text-align: center;
+    padding: 48px 24px;
     color: var(--muted);
     padding: 24px;
     background: var(--card);
