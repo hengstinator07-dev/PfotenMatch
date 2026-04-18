@@ -319,21 +319,10 @@ button { font-family: inherit; }
     min-height: 0;
 }
 
-/* Swipe view: fill available height so action buttons always stay visible */
-#view-swipe.view.active {
-    display: flex;
-    flex-direction: column;
-    min-height: 100%;
-}
+/* Swipe view: cap card height so action buttons always stay visible */
 #view-swipe .card-stack {
-    flex: 1 1 auto;
-    aspect-ratio: auto;
-    max-height: none;
-    margin: 0 0 14px;
-}
-#view-swipe .action-bar {
-    flex-shrink: 0;
-    margin: 0 0 4px;
+    /* 250px = filter-chip-row + daily-banner + action-bar + bottom-nav + padding + safe-area */
+    max-height: calc(100dvh - 250px);
 }
 .dog-card {
     position: absolute;
