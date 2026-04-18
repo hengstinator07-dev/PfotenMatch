@@ -25,8 +25,6 @@ const state = {
         push: true, chatNotif: true, matchNotif: true, dangerNotif: true,
         invisible: false, locShare: true, readReceipts: true,
         dark: false, lang: "de", unit: "km",
-        showOnMap: true,        // Mich auf der Karte zeigen
-        showSittersOnMap: true  // Sitter auf der Karte zeigen
     },
     activeChatId: null,
     // Live-Check-Ins: [{spotId, dogName, until (ts)}]  (eigener Check-in hat dogName === myProfile.name)
@@ -43,6 +41,11 @@ const state = {
     sitterRequests: [],
     // Pfoten-Stempel pro POI: { [poiId]: ts }
     paws: {},
+    // Abzeichen & Skins: unlocked IDs und aktiver Skin
+    unlockedBadges: [],
+    unlockedSkins: [],
+    activeSkin: "default",
+    weeklyStreak: 0,
     // Karte: aktuelle Filter & Suche
     mapFilter: { cats: [], q: "" },
     // Onboarding abgeschlossen?
@@ -68,6 +71,10 @@ function saveState() {
             mySitterProfile: state.mySitterProfile,
             sitterRequests: state.sitterRequests,
             paws: state.paws,
+            unlockedBadges: state.unlockedBadges,
+            unlockedSkins: state.unlockedSkins,
+            activeSkin: state.activeSkin,
+            weeklyStreak: state.weeklyStreak,
             settings: state.settings
         }));
     } catch (e) { /* ignore */ }
@@ -94,6 +101,10 @@ function loadState() {
         if (data.mySitterProfile) state.mySitterProfile = data.mySitterProfile;
         if (Array.isArray(data.sitterRequests)) state.sitterRequests = data.sitterRequests;
         if (data.paws && typeof data.paws === "object") state.paws = data.paws;
+        if (Array.isArray(data.unlockedBadges)) state.unlockedBadges = data.unlockedBadges;
+        if (Array.isArray(data.unlockedSkins)) state.unlockedSkins = data.unlockedSkins;
+        if (data.activeSkin) state.activeSkin = data.activeSkin;
+        if (typeof data.weeklyStreak === "number") state.weeklyStreak = data.weeklyStreak;
         if (Array.isArray(data.matches)) {
             state.matches = data.matches
                 .map(m => {
@@ -1390,7 +1401,7 @@ function formatAgo(ts) {
 
 // ---------- Map (Leaflet + OpenStreetMap) ----------
 let leafletMap = null;
-let mapLayers = { spots: [], dogs: [], sitters: [], pois: [], clusters: [], me: null, dangers: [] };
+let mapLayers = { spots: [], pois: [], clusters: [], me: null, dangers: [] };
 
 function buildEmojiIcon(emoji, size = 32, extraClass = "") {
     return L.divIcon({
@@ -1570,28 +1581,22 @@ function renderMapMarkers() {
 
     // Alte Marker entfernen
     mapLayers.spots.forEach(m => leafletMap.removeLayer(m));
-    mapLayers.dogs.forEach(m => leafletMap.removeLayer(m));
-    mapLayers.sitters.forEach(m => leafletMap.removeLayer(m));
     mapLayers.pois.forEach(m => leafletMap.removeLayer(m));
     mapLayers.clusters.forEach(m => leafletMap.removeLayer(m));
     mapLayers.dangers.forEach(m => leafletMap.removeLayer(m));
     if (mapLayers.me) leafletMap.removeLayer(mapLayers.me);
     mapLayers.spots = [];
-    mapLayers.dogs = [];
-    mapLayers.sitters = [];
     mapLayers.pois = [];
     mapLayers.clusters = [];
     mapLayers.dangers = [];
 
     // Eigener Standort + Umkreis
-    if (state.settings.showOnMap !== false) {
-        mapLayers.me = L.marker([state.userLocation.lat, state.userLocation.lng], {
-            icon: buildEmojiIcon(state.myProfile.emoji || "🐕", 38, "me-marker"),
-            title: "Dein Standort"
-        }).addTo(leafletMap).bindPopup(
-            `<strong>${escapeHtml(state.myProfile.name || "Du")}</strong><br>Du bist hier 🐾`
-        );
-    }
+    mapLayers.me = L.marker([state.userLocation.lat, state.userLocation.lng], {
+        icon: buildEmojiIcon(state.myProfile.emoji || "🐕", 38, "me-marker"),
+        title: "Dein Standort"
+    }).addTo(leafletMap).bindPopup(
+        `<strong>${escapeHtml(state.myProfile.name || "Du")}</strong><br>Du bist hier 🐾`
+    );
     if (mapLayers.radius) leafletMap.removeLayer(mapLayers.radius);
     mapLayers.radius = L.circle([state.userLocation.lat, state.userLocation.lng], {
         radius: state.radius * 1000,
@@ -1623,56 +1628,6 @@ function renderMapMarkers() {
         pois.forEach(p => addPoiMarker(p));
     }
 
-    // ----- Hundesitter (eigener Layer, optional) -----
-    if (state.settings.showSittersOnMap !== false && typeof DOG_SITTERS !== "undefined") {
-        DOG_SITTERS.forEach(s => {
-            const marker = L.marker([s.lat, s.lng], {
-                icon: buildEmojiIcon("🏡", 30, "sitter-marker"),
-                title: s.name
-            }).addTo(leafletMap);
-            marker.bindPopup(
-                `<strong>🏡 ${escapeHtml(s.name)}</strong><br>` +
-                `${escapeHtml(s.neighborhood)} · ⭐ ${s.rating}<br>` +
-                `<small>ab ${s.priceHour} CHF/Std</small><br>` +
-                `<a href="#" data-sitter="${s.id}" class="popup-link">Profil ansehen →</a>`
-            );
-            marker.on("popupopen", (e) => {
-                const link = e.popup._contentNode.querySelector("[data-sitter]");
-                if (link) link.addEventListener("click", (ev) => {
-                    ev.preventDefault();
-                    switchView("sitter");
-                    setTimeout(() => openSitterDetail(s.id), 100);
-                });
-            });
-            mapLayers.sitters.push(marker);
-        });
-    }
-
-    // ----- Eigenes Sitter-Profil als Pin -----
-    if (state.mySitterProfile) {
-        const p = state.mySitterProfile;
-        const marker = L.marker([p.lat, p.lng], {
-            icon: buildEmojiIcon("🏡", 34, "sitter-marker my-sitter"),
-            title: p.name + " (Du)"
-        }).addTo(leafletMap);
-        const pending = state.sitterRequests.filter(r => r.status === "pending").length;
-        marker.bindPopup(
-            `<strong>🏡 ${escapeHtml(p.name)} <span style="color:#ff6b6b">(Du)</span></strong><br>` +
-            `${escapeHtml(p.neighborhood)}<br>` +
-            (pending > 0 ? `<small style="color:#ff6b6b;font-weight:700">📥 ${pending} offene Anfrage${pending > 1 ? "n" : ""}</small><br>` : "") +
-            `<a href="#" data-me-sitter="1" class="popup-link">Zum Dashboard →</a>`
-        );
-        marker.on("popupopen", (e) => {
-            const link = e.popup._contentNode.querySelector("[data-me-sitter]");
-            if (link) link.addEventListener("click", (ev) => {
-                ev.preventDefault();
-                switchView("sitter");
-                setTimeout(() => switchSitterTab("become"), 100);
-            });
-        });
-        mapLayers.sitters.push(marker);
-    }
-
     // ----- Gefahren -----
     state.dangers.forEach(d => {
         const type = DANGER_TYPES.find(t => t.id === d.type) || DANGER_TYPES[DANGER_TYPES.length - 1];
@@ -1686,39 +1641,6 @@ function renderMapMarkers() {
             `<small>Gemeldet ${formatAgo(d.ts)} von ${escapeHtml(d.reporter)}</small>`
         );
         mapLayers.dangers.push(marker);
-    });
-
-    // ----- Live-Hunde im Umkreis (Online-Status) -----
-    state.profiles.forEach(d => {
-        if (!d.lat || !d.lng) return;
-        // 60 % gelten als "online"
-        const online = ((d.id * 13) % 10) < 6;
-        const cls = "dog-marker" + (online ? " online" : "");
-        const marker = L.marker([d.lat, d.lng], {
-            icon: buildEmojiIcon(d.emoji, 30, cls),
-            title: d.name
-        }).addTo(leafletMap);
-        const score = computeCompatibility(state.myProfile, d);
-        const dot = online ? '<span style="color:#2ecc71">● online</span>' : '<span style="color:#aaa">○ offline</span>';
-        marker.bindPopup(
-            `<strong>${escapeHtml(d.name)}</strong> ${dot}<br>` +
-            `${escapeHtml(d.breed)} · ${d.distance} km<br>` +
-            `🎯 <strong>${score}%</strong> Match<br>` +
-            `<a href="#" data-dog="${d.id}" class="popup-link">Profil ansehen →</a>`
-        );
-        marker.on("popupopen", (e) => {
-            const link = e.popup._contentNode.querySelector("[data-dog]");
-            if (link) link.addEventListener("click", (ev) => {
-                ev.preventDefault();
-                const idx = state.profiles.findIndex(x => x.id === d.id);
-                if (idx >= 0) {
-                    state.currentIdx = idx;
-                    switchView("swipe");
-                    renderCardStack();
-                }
-            });
-        });
-        mapLayers.dogs.push(marker);
     });
 }
 
@@ -1790,13 +1712,70 @@ function pawsThisWeek() {
     return Object.values(state.paws).filter(ts => ts >= cutoff).length;
 }
 
-const PAW_BADGES = [
-    { count: 1,  emoji: "🐾", label: "Erste Pfote" },
-    { count: 5,  emoji: "🥉", label: "Entdecker" },
-    { count: 10, emoji: "🥈", label: "Stadt-Streuner" },
-    { count: 20, emoji: "🥇", label: "Basel-Profi" },
-    { count: 30, emoji: "👑", label: "Pfoten-König" }
+// ---------- Abzeichen-System ----------
+const ACHIEVEMENTS = [
+    { id: "first_paw",    emoji: "🐾", label: "Erste Pfote",      desc: "Besuche deinen ersten Spot",    check: () => Object.keys(state.paws).length >= 1 },
+    { id: "explorer",     emoji: "🥉", label: "Entdecker",        desc: "Besuche 5 Spots",               check: () => Object.keys(state.paws).length >= 5 },
+    { id: "streamer",     emoji: "🥈", label: "Stadt-Streuner",   desc: "Besuche 10 Spots",              check: () => Object.keys(state.paws).length >= 10 },
+    { id: "pro",          emoji: "🥇", label: "Basel-Profi",      desc: "Besuche 20 Spots",              check: () => Object.keys(state.paws).length >= 20 },
+    { id: "king",         emoji: "👑", label: "Pfoten-König",     desc: "Alle Spots besucht",            check: () => Object.keys(state.paws).length >= POIS.length },
+    { id: "week1",        emoji: "🔥", label: "Erste Woche",      desc: "Schließe 1 Wochenchallenge ab", check: () => state.weeklyStreak >= 1 },
+    { id: "streak3",      emoji: "💪", label: "3er-Streak",       desc: "3 Wochenchallenges in Folge",   check: () => state.weeklyStreak >= 3 },
+    { id: "streak5",      emoji: "⚡", label: "5er-Streak",       desc: "5 Wochenchallenges in Folge",   check: () => state.weeklyStreak >= 5 },
+    { id: "social",       emoji: "💬", label: "Sozialer Hund",    desc: "5 Matches gesammelt",           check: () => state.matches.length >= 5 },
+    { id: "popular",      emoji: "🌟", label: "Beliebt",          desc: "10 Matches gesammelt",          check: () => state.matches.length >= 10 },
+    { id: "park_lover",   emoji: "🌳", label: "Park-Liebhaber",   desc: "5 verschiedene Parks besucht",  check: () => countPawsByCat("park") >= 5 },
+    { id: "vet_friend",   emoji: "🏥", label: "Arzt-Vertraut",    desc: "3 Tierärzte besucht",           check: () => countPawsByCat("vet") >= 3 },
 ];
+
+const SKINS = [
+    { id: "default",      emoji: "🐾", label: "Standard",         desc: "Das Original",               unlockBadge: null },
+    { id: "golden",       emoji: "✨", label: "Gold-Pfote",       desc: "Goldener Glanz",             unlockBadge: "pro" },
+    { id: "fire",         emoji: "🔥", label: "Feuer-Pfote",      desc: "Für Streak-Champions",       unlockBadge: "streak3" },
+    { id: "crown",        emoji: "👑", label: "Königs-Pfote",     desc: "Für den Pfoten-König",       unlockBadge: "king" },
+    { id: "rainbow",      emoji: "🌈", label: "Regenbogen",       desc: "Für den sozialen Hund",      unlockBadge: "social" },
+    { id: "nature",       emoji: "🌿", label: "Natur-Pfote",      desc: "Für Park-Liebhaber",         unlockBadge: "park_lover" },
+    { id: "lightning",    emoji: "⚡", label: "Blitz-Pfote",      desc: "Für 5er-Streak-Helden",      unlockBadge: "streak5" },
+    { id: "diamond",      emoji: "💎", label: "Diamant-Pfote",    desc: "Für die Beliebtesten",       unlockBadge: "popular" },
+];
+
+const SKIN_GRADIENTS = {
+    default:   "linear-gradient(135deg, #ffd5cd, #ffebe0)",
+    golden:    "linear-gradient(135deg, #ffd700, #ffec80)",
+    fire:      "linear-gradient(135deg, #ff6b6b, #ff9a56)",
+    crown:     "linear-gradient(135deg, #a855f7, #e879f9)",
+    rainbow:   "linear-gradient(135deg, #ff6b6b, #ffd166, #4ecdc4, #a855f7)",
+    nature:    "linear-gradient(135deg, #4ecdc4, #a8e6cf)",
+    lightning: "linear-gradient(135deg, #ffd166, #ff6b6b)",
+    diamond:   "linear-gradient(135deg, #93c5fd, #c4b5fd)",
+};
+
+function countPawsByCat(cat) {
+    return POIS.filter(p => p.cat === cat && state.paws[p.id]).length;
+}
+
+function checkAchievements() {
+    let newUnlocks = [];
+    ACHIEVEMENTS.forEach(a => {
+        if (!state.unlockedBadges.includes(a.id) && a.check()) {
+            state.unlockedBadges.push(a.id);
+            newUnlocks.push(a);
+            // Auto-unlock skins tied to this badge
+            SKINS.forEach(s => {
+                if (s.unlockBadge === a.id && !state.unlockedSkins.includes(s.id)) {
+                    state.unlockedSkins.push(s.id);
+                }
+            });
+        }
+    });
+    if (newUnlocks.length > 0) {
+        saveState();
+        newUnlocks.forEach(a => {
+            flashToast(`🏆 Abzeichen freigeschaltet: ${a.emoji} ${a.label}`);
+        });
+    }
+    return newUnlocks.length > 0;
+}
 
 function renderPawCollector() {
     const total = Object.keys(state.paws).length;
@@ -1813,22 +1792,34 @@ function renderPawCollector() {
     const week = pawsThisWeek();
     const goal = 5;
     if (week >= goal) {
-        challenge.textContent = `🎉 Wochen-Challenge geschafft (${week}/${goal})!`;
+        if (!state._weekClaimed) {
+            state.weeklyStreak = (state.weeklyStreak || 0) + 1;
+            state._weekClaimed = true;
+            saveState();
+        }
+        challenge.innerHTML = `🎉 Challenge geschafft! <strong>Streak: ${state.weeklyStreak}🔥</strong>`;
         challenge.classList.add("done");
     } else {
-        challenge.textContent = `Wochenchallenge: ${week}/${goal} neue Spots besucht`;
+        state._weekClaimed = false;
+        challenge.innerHTML = `Wochenchallenge: <strong>${week}/${goal}</strong> neue Spots · Streak: ${state.weeklyStreak || 0}🔥`;
         challenge.classList.remove("done");
     }
 
+    checkAchievements();
+
     badges.innerHTML = "";
-    PAW_BADGES.forEach(b => {
-        const unlocked = total >= b.count;
+    ACHIEVEMENTS.forEach(a => {
+        const unlocked = state.unlockedBadges.includes(a.id);
         const el = document.createElement("div");
         el.className = "paw-badge" + (unlocked ? " unlocked" : "");
-        el.title = b.label + " (" + b.count + " Spots)";
-        el.innerHTML = `<span>${b.emoji}</span><small>${b.count}</small>`;
+        el.title = a.label + ": " + a.desc;
+        el.innerHTML = `<span>${a.emoji}</span><small>${a.label}</small>`;
         badges.appendChild(el);
     });
+}
+
+function getActiveSkinGradient() {
+    return SKIN_GRADIENTS[state.activeSkin] || SKIN_GRADIENTS.default;
 }
 
 // ---------- Map-Suche & Kategorie-Filter ----------
@@ -2075,8 +2066,75 @@ function renderProfile() {
     $("#infoNeutered").textContent = p.neutered || "—";
     $("#infoEnergy").textContent   = p.energy || "—";
     $("#infoPlay").textContent     = p.playStyle || "—";
+    // Skin-Ring auf Avatar
+    const ring = document.querySelector(".avatar-ring");
+    if (ring) ring.style.background = getActiveSkinGradient();
+    // Earned badges showcase (top 3 on profile)
+    const badgeShowcase = document.createElement("div");
+    badgeShowcase.className = "profile-badge-showcase";
+    const existing = chipsEl.parentElement.querySelector(".profile-badge-showcase");
+    if (existing) existing.remove();
+    const earned = ACHIEVEMENTS.filter(a => state.unlockedBadges.includes(a.id)).slice(-3);
+    if (earned.length > 0) {
+        earned.forEach(a => {
+            const el = document.createElement("span");
+            el.className = "showcase-badge";
+            el.title = a.label;
+            el.textContent = a.emoji;
+            badgeShowcase.appendChild(el);
+        });
+        chipsEl.parentElement.appendChild(badgeShowcase);
+    }
     // Photo grid
     renderProfilePhotos();
+}
+
+function renderProfileBadges() {
+    checkAchievements();
+    const badgeGrid = $("#badgeGrid");
+    const skinGrid = $("#skinGrid");
+    if (!badgeGrid || !skinGrid) return;
+
+    badgeGrid.innerHTML = "";
+    ACHIEVEMENTS.forEach(a => {
+        const unlocked = state.unlockedBadges.includes(a.id);
+        const el = document.createElement("div");
+        el.className = "badge-card" + (unlocked ? " unlocked" : " locked");
+        el.innerHTML = `
+            <span class="bc-emoji">${unlocked ? a.emoji : "🔒"}</span>
+            <strong class="bc-label">${a.label}</strong>
+            <small class="bc-desc">${a.desc}</small>
+        `;
+        badgeGrid.appendChild(el);
+    });
+
+    skinGrid.innerHTML = "";
+    SKINS.forEach(s => {
+        const unlocked = s.id === "default" || state.unlockedSkins.includes(s.id);
+        const active = state.activeSkin === s.id;
+        const el = document.createElement("button");
+        el.className = "skin-card" + (unlocked ? " unlocked" : " locked") + (active ? " active" : "");
+        el.disabled = !unlocked;
+        const gradient = SKIN_GRADIENTS[s.id] || SKIN_GRADIENTS.default;
+        el.innerHTML = `
+            <div class="sc-preview" style="background: ${gradient}">
+                <span>${s.emoji}</span>
+            </div>
+            <strong class="sc-label">${s.label}</strong>
+            <small class="sc-desc">${unlocked ? s.desc : "Braucht: " + (ACHIEVEMENTS.find(a => a.id === s.unlockBadge)?.label || "?")}</small>
+            ${active ? '<span class="sc-active">✓ Aktiv</span>' : ""}
+        `;
+        if (unlocked && !active) {
+            el.addEventListener("click", () => {
+                state.activeSkin = s.id;
+                saveState();
+                renderProfileBadges();
+                renderProfile();
+                flashToast(`🎨 Skin gewechselt: ${s.emoji} ${s.label}`);
+            });
+        }
+        skinGrid.appendChild(el);
+    });
 }
 
 function renderProfilePhotos() {
@@ -2097,6 +2155,8 @@ function switchProfileTab(name) {
     $$(".profile-tab").forEach(b => b.classList.toggle("active", b.dataset.ptab === name));
     $("#profilePhotos").classList.toggle("hidden", name !== "photos");
     $("#profileInfo").classList.toggle("hidden", name !== "info");
+    $("#profileBadges").classList.toggle("hidden", name !== "badges");
+    if (name === "badges") renderProfileBadges();
 }
 
 // --- Photo gallery ---
@@ -2435,8 +2495,6 @@ function openSettings() {
     $("#setInvisible").checked = s.invisible;
     $("#setLocShare").checked = s.locShare;
     $("#setReadReceipts").checked = s.readReceipts;
-    if ($("#setShowOnMap"))     $("#setShowOnMap").checked = s.showOnMap !== false;
-    if ($("#setShowSitters"))   $("#setShowSitters").checked = s.showSittersOnMap !== false;
     $("#setDark").checked = s.dark;
     $("#setLang").value = s.lang;
     $("#setUnit").value = s.unit;
@@ -2451,8 +2509,6 @@ function saveSettings() {
         invisible:        $("#setInvisible").checked && state.premium,
         locShare:         $("#setLocShare").checked,
         readReceipts:     $("#setReadReceipts").checked,
-        showOnMap:        $("#setShowOnMap") ? $("#setShowOnMap").checked : true,
-        showSittersOnMap: $("#setShowSitters") ? $("#setShowSitters").checked : true,
         dark:             $("#setDark").checked,
         lang:             $("#setLang").value,
         unit:             $("#setUnit").value

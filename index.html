@@ -351,8 +351,6 @@
                 <div class="map-actions">
                     <button id="reportDangerBtn" class="btn-danger">☠ Gefahr melden</button>
                 </div>
-                <h3 class="sub-title">Treffpunkte &amp; Live-Check-Ins</h3>
-                <div id="spotList" class="spot-list"></div>
                 <h3 class="sub-title">⚠ Gefahren-Radar</h3>
                 <div id="dangerList" class="danger-list"></div>
             </section>
@@ -394,6 +392,7 @@
                     <div class="profile-tabs" role="tablist">
                         <button class="profile-tab active" data-ptab="photos">🏞️ Fotos</button>
                         <button class="profile-tab" data-ptab="info">ℹ Info</button>
+                        <button class="profile-tab" data-ptab="badges">🏆 Abzeichen</button>
                     </div>
 
                     <!-- Photos grid -->
@@ -413,6 +412,15 @@
                         <div class="info-row"><span>⚡ Energie</span><strong id="infoEnergy">—</strong></div>
                         <div class="info-row"><span>🎾 Spielstil</span><strong id="infoPlay">—</strong></div>
                         <div class="info-row"><span>📍 Standort</span><strong id="infoLocation">Basel</strong></div>
+                    </div>
+
+                    <!-- Badges & Skins panel -->
+                    <div id="profileBadges" class="profile-badges hidden">
+                        <h4 class="badges-section-title">🏆 Abzeichen</h4>
+                        <div id="badgeGrid" class="badge-grid"></div>
+                        <h4 class="badges-section-title">🎨 Profil-Skins</h4>
+                        <p class="skin-hint">Schalte Abzeichen frei, um neue Skins zu verdienen. Aktiver Skin wird auf deinem Profil-Ring angezeigt.</p>
+                        <div id="skinGrid" class="skin-grid"></div>
                     </div>
                 </div>
 
@@ -902,18 +910,6 @@
                 <label class="setting-row">
                     <span>👀 Lesebestätigungen senden</span>
                     <input type="checkbox" id="setReadReceipts" checked />
-                </label>
-            </div>
-
-            <div class="settings-group">
-                <h3>Karte</h3>
-                <label class="setting-row">
-                    <span>🐾 Mich auf der Karte zeigen</span>
-                    <input type="checkbox" id="setShowOnMap" checked />
-                </label>
-                <label class="setting-row">
-                    <span>🏡 Hundesitter auf der Karte anzeigen</span>
-                    <input type="checkbox" id="setShowSitters" checked />
                 </label>
             </div>
 
