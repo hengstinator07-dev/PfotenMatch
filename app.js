@@ -302,7 +302,7 @@ function bindFilterSheet() {
     $("#openFiltersBtn").addEventListener("click", openFilterSheet);
     $("#filterOverlay").addEventListener("click", closeFilterSheet);
     $("#closeFilterSheet").addEventListener("click", closeFilterSheet);
-    // Radius slider (now inside sheet)
+    // Radius slider (in filter-bar)
     $("#radiusSlider").addEventListener("input", (e) => {
         state.radius = parseInt(e.target.value);
         $("#radiusLabel").textContent = state.radius;

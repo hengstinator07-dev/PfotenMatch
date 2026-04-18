@@ -261,15 +261,9 @@
                 <span class="paw">🐾</span>
                 <span class="brand">PfotenMatch</span>
             </div>
-            <div class="topbar-actions">
-                <button id="openFiltersBtn" class="topbar-filter-btn" title="Filter">
-                    <span>⚙</span>
-                    <span id="filterBadge" class="filter-badge hidden">0</span>
-                </button>
-                <button id="premiumBadge" class="premium-badge" title="Premium upgraden">
-                    <span class="star">★</span> Premium
-                </button>
-            </div>
+            <button id="premiumBadge" class="premium-badge" title="Premium upgraden">
+                <span class="star">★</span> Premium
+            </button>
         </header>
 
         <!-- Main content area – views are swapped -->
@@ -277,7 +271,16 @@
 
             <!-- ============ SWIPE VIEW ============ -->
             <section id="view-swipe" class="view active">
-                <!-- Active filter chips (shown when filters are set) -->
+                <div class="filter-bar">
+                    <label>
+                        Umkreis: <span id="radiusLabel">10</span> km
+                        <input type="range" id="radiusSlider" min="1" max="50" value="10" />
+                    </label>
+                    <button id="openFiltersBtn" class="btn-filter">
+                        ⚙ Filter
+                        <span id="filterBadge" class="filter-badge hidden">0</span>
+                    </button>
+                </div>
                 <div id="activeFilterChips" class="active-filter-chips">
                     <!-- live-injected chips -->
                 </div>
@@ -1056,10 +1059,6 @@
             <button id="resetFilterBtn" class="fs-reset">Zurücksetzen</button>
         </div>
         <div class="fs-body">
-            <div class="fs-group">
-                <label class="fs-label">📍 Umkreis: <strong id="radiusLabel">10</strong> km</label>
-                <input type="range" id="radiusSlider" min="1" max="50" value="10" class="fs-range" />
-            </div>
             <div class="fs-group">
                 <label class="fs-label">📏 Größe</label>
                 <div class="fs-chips" id="fSizeChips">

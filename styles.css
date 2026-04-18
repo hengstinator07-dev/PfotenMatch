@@ -84,56 +84,65 @@ button { font-family: inherit; }
 .view.active { display: block; }
 .view-title { margin: 4px 0 16px; font-size: 22px; }
 
-/* ---------- Topbar actions ---------- */
-.topbar-actions {
+/* ---------- Filter bar ---------- */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--muted);
+}
+.filter-bar label {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex: 1;
+    font-weight: 600;
 }
-.topbar-filter-btn {
+.filter-bar input[type="range"] {
+    flex: 1;
+    accent-color: var(--brand);
+}
+.btn-filter {
     position: relative;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1.5px solid rgba(255, 255, 255, 0.35);
-    border-radius: 12px;
-    padding: 6px 10px;
-    font-size: 16px;
-    cursor: pointer;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    backdrop-filter: blur(4px);
-}
-.topbar-filter-btn:hover { background: rgba(255, 255, 255, 0.3); }
-.topbar-filter-btn.has-filters {
     background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.btn-filter:hover { border-color: #ccc; }
+.btn-filter.has-filters {
+    border-color: var(--brand);
+    background: #fff6f3;
     color: var(--brand);
-    border-color: white;
 }
 .filter-badge {
     position: absolute;
-    top: -6px;
-    right: -6px;
+    top: -7px;
+    right: -7px;
     min-width: 18px;
     height: 18px;
     padding: 0 5px;
     border-radius: 9px;
-    background: white;
-    color: var(--brand);
+    background: var(--brand);
+    color: white;
     font-size: 11px;
     font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-}
-.topbar-filter-btn.has-filters .filter-badge {
-    background: var(--brand);
-    color: white;
 }
 
-/* ---------- Active filter chips (below topbar, inside swipe view) ---------- */
+/* ---------- Active filter chips ---------- */
 .active-filter-chips {
     display: flex;
     gap: 6px;
