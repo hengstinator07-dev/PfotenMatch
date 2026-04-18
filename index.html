@@ -261,9 +261,15 @@
                 <span class="paw">🐾</span>
                 <span class="brand">PfotenMatch</span>
             </div>
-            <button id="premiumBadge" class="premium-badge" title="Premium upgraden">
-                <span class="star">★</span> Premium
-            </button>
+            <div class="topbar-actions">
+                <button id="openFiltersBtn" class="topbar-filter-btn" title="Filter">
+                    <span>⚙</span>
+                    <span id="filterBadge" class="filter-badge hidden">0</span>
+                </button>
+                <button id="premiumBadge" class="premium-badge" title="Premium upgraden">
+                    <span class="star">★</span> Premium
+                </button>
+            </div>
         </header>
 
         <!-- Main content area – views are swapped -->
@@ -271,16 +277,9 @@
 
             <!-- ============ SWIPE VIEW ============ -->
             <section id="view-swipe" class="view active">
-                <!-- Compact filter chip row -->
-                <div class="filter-chip-row">
-                    <button id="openFiltersBtn" class="filter-toggle-btn">
-                        <span class="ftb-icon">⚙</span>
-                        <span class="ftb-label">Filter</span>
-                        <span id="filterBadge" class="filter-badge hidden">0</span>
-                    </button>
-                    <div id="activeFilterChips" class="active-filter-chips">
-                        <!-- live-injected chips -->
-                    </div>
+                <!-- Active filter chips (shown when filters are set) -->
+                <div id="activeFilterChips" class="active-filter-chips">
+                    <!-- live-injected chips -->
                 </div>
 
                 <div id="dailyPickBanner" class="daily-pick-banner hidden">

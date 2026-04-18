@@ -84,61 +84,65 @@ button { font-family: inherit; }
 .view.active { display: block; }
 .view-title { margin: 4px 0 16px; font-size: 22px; }
 
-/* ---------- Filter bar ---------- */
-/* ---------- Filter chip row (compact top bar) ---------- */
-.filter-chip-row {
+/* ---------- Topbar actions ---------- */
+.topbar-actions {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 10px;
-    min-height: 36px;
-    flex-shrink: 0;
 }
-.filter-toggle-btn {
+.topbar-filter-btn {
+    position: relative;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    border-radius: 12px;
+    padding: 6px 10px;
+    font-size: 16px;
+    cursor: pointer;
+    color: white;
     display: flex;
     align-items: center;
-    gap: 5px;
-    background: white;
-    border: 1.5px solid var(--border);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 13px;
-    font-weight: 700;
-    font-family: inherit;
-    color: var(--text);
-    cursor: pointer;
-    position: relative;
+    justify-content: center;
     transition: all 0.15s;
-    flex-shrink: 0;
+    backdrop-filter: blur(4px);
 }
-.filter-toggle-btn:hover { border-color: #ccc; }
-.filter-toggle-btn.has-filters {
-    border-color: var(--brand);
-    background: #fff6f3;
+.topbar-filter-btn:hover { background: rgba(255, 255, 255, 0.3); }
+.topbar-filter-btn.has-filters {
+    background: white;
     color: var(--brand);
+    border-color: white;
 }
 .filter-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
     min-width: 18px;
     height: 18px;
     padding: 0 5px;
     border-radius: 9px;
-    background: var(--brand);
-    color: white;
+    background: white;
+    color: var(--brand);
     font-size: 11px;
     font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
+.topbar-filter-btn.has-filters .filter-badge {
+    background: var(--brand);
+    color: white;
+}
+
+/* ---------- Active filter chips (below topbar, inside swipe view) ---------- */
 .active-filter-chips {
     display: flex;
     gap: 6px;
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    flex: 1;
-    min-width: 0;
+    padding-bottom: 2px;
 }
+.active-filter-chips:empty { display: none; }
 .active-filter-chips::-webkit-scrollbar { display: none; }
 .active-chip {
     display: flex;
@@ -147,7 +151,7 @@ button { font-family: inherit; }
     background: #fff0ec;
     border: 1.5px solid var(--brand);
     border-radius: 20px;
-    padding: 4px 10px;
+    padding: 5px 11px;
     font-size: 11px;
     font-weight: 700;
     font-family: inherit;
