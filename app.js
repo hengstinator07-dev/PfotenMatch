@@ -3477,24 +3477,12 @@ function onbChooseAuth(method) {
         $("#authEmail").focus();
         return;
     }
-    // Google / Apple — OAuth via Supabase
-    const btn = document.querySelector(`.auth-btn.${method}`);
-    if (btn) {
-        const orig = btn.innerHTML;
-        btn.innerHTML = `<span class="auth-ic">⏳</span><span>Wird verbunden…</span>`;
-        btn.disabled = true;
-        sb.auth.signInWithOAuth({ provider: method }).then(({ error }) => {
-            if (error) {
-                btn.innerHTML = orig;
-                btn.disabled = false;
-                flashToast(`OAuth für ${method} ist nicht konfiguriert. Nutze E-Mail.`);
-            }
-        }).catch(() => {
-            btn.innerHTML = orig;
-            btn.disabled = false;
-            flashToast(`OAuth nicht verfügbar. Nutze E-Mail.`);
-        });
-    }
+    // Google / Apple — zeige E-Mail-Formular mit Hinweis
+    const labels = { google: "Google", apple: "Apple" };
+    flashToast(`${labels[method] || method}-Login: Bitte E-Mail & Passwort nutzen`);
+    $("#emailForm").classList.remove("hidden");
+    $("#authEmail").focus();
+}
 }
 
 function updatePwStrength() {
