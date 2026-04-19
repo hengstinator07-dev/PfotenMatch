@@ -240,3 +240,41 @@ async function sbGetMatchDbId(dogId) {
     if (data) _matchDbIds[dogId] = data.id;
     return data ? data.id : null;
 }
+
+// ---------- Friend Code ----------
+
+function generateFriendCode(userId) {
+    const clean = userId.replace(/-/g, "").toUpperCase();
+    return clean.slice(0, 4) + "-" + clean.slice(4, 8);
+}
+
+async function sbSaveFriendCode(userId) {
+    const code = generateFriendCode(userId);
+    await sb.from("dog_profiles")
+        .update({ friend_code: code })
+        .eq("user_id", userId);
+    return code;
+}
+
+async function sbFindByFriendCode(code) {
+    const normalized = code.toUpperCase().replace(/\s/g, "");
+    const { data, error } = await sb
+        .from("dog_profiles")
+        .select("*")
+        .eq("friend_code", normalized)
+        .maybeSingle();
+    if (error) throw error;
+    return data;
+}
+
+async function sbGetMyFriendCode() {
+    const user = await sbGetUser();
+    if (!user) return null;
+    const { data } = await sb
+        .from("dog_profiles")
+        .select("friend_code")
+        .eq("user_id", user.id)
+        .maybeSingle();
+    if (data && data.friend_code) return data.friend_code;
+    return sbSaveFriendCode(user.id);
+}

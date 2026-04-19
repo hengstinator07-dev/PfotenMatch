@@ -309,7 +309,10 @@
 
             <!-- ============ MATCHES / CHAT VIEW ============ -->
             <section id="view-matches" class="view">
-                <h2 class="view-title">Deine Matches</h2>
+                <div class="matches-header">
+                    <h2 class="view-title">Deine Matches</h2>
+                    <button id="connectFriendBtn" class="btn-connect-friend">🔗 Freund verbinden</button>
+                </div>
                 <div id="matchesList" class="matches-list">
                     <p class="empty-state">Noch keine Matches – swipe los!</p>
                 </div>
@@ -1098,6 +1101,40 @@
                 <button class="btn-primary" id="buyPremiumBtn">Premium aktivieren</button>
             </div>
             <button class="btn-ghost" id="closePremiumBtn">Später</button>
+        </div>
+    </div>
+
+    <!-- Share Profile modal -->
+    <div id="shareProfileModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>🔗 Profil teilen</h2>
+            <p class="muted">Teile deinen persönlichen Code mit Freunden, damit sie direkt mit dir matchen können.</p>
+            <div class="friend-code-box">
+                <span class="friend-code-label">Dein Code</span>
+                <div class="friend-code" id="myFriendCode">— — — —</div>
+                <button class="btn-ghost full" id="copyCodeBtn">📋 Code kopieren</button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary full" id="shareCodeBtn">📤 Teilen</button>
+                <button class="btn-ghost" id="closeShareProfileBtn">Schließen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connect Friend modal -->
+    <div id="connectFriendModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>🤝 Freund verbinden</h2>
+            <p class="muted">Gib den 8-stelligen Code deines Freundes ein.</p>
+            <div class="friend-code-input-wrap">
+                <input type="text" id="friendCodeInput" placeholder="z. B. 3F7A-2B1C"
+                    maxlength="9" autocomplete="off" autocapitalize="characters" />
+            </div>
+            <div id="friendLookupResult" class="friend-lookup-result hidden"></div>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="cancelConnectBtn">Abbrechen</button>
+                <button class="btn-primary" id="confirmConnectBtn">Verbinden</button>
+            </div>
         </div>
     </div>
 

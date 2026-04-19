@@ -539,7 +539,73 @@ button { font-family: inherit; }
 .action-btn.like { color: #2ecc71; }
 
 /* ---------- Matches list ---------- */
+.matches-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px 8px;
+}
+.matches-header .view-title { margin: 0; }
+.btn-connect-friend {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
 .matches-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* Friend code display */
+.friend-code-box {
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    margin: 16px 0;
+}
+.friend-code-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.friend-code {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: var(--brand);
+    margin-bottom: 14px;
+}
+.friend-code-input-wrap input {
+    width: 100%;
+    font-size: 1.6rem;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 0.12em;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    outline: none;
+    color: var(--brand);
+    background: var(--bg);
+    font-family: inherit;
+}
+.friend-code-input-wrap input:focus { border-color: var(--brand); }
+.friend-lookup-result {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #f0fff4;
+    font-size: 0.9rem;
+    color: #2d6a4f;
+    text-align: center;
+}
 .match-item {
     display: flex;
     align-items: center;

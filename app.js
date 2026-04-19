@@ -3256,15 +3256,36 @@ function bindEvents() {
         });
     });
     $("#editProfileBtn").addEventListener("click", openEditProfile);
-    $("#shareProfileBtn").addEventListener("click", () => {
+    $("#shareProfileBtn").addEventListener("click", openShareProfileModal);
+    $("#closeShareProfileBtn").addEventListener("click", () => $("#shareProfileModal").classList.add("hidden"));
+    $("#copyCodeBtn").addEventListener("click", () => {
+        const code = $("#myFriendCode").textContent;
+        if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => flashToast("📋 Code kopiert!")).catch(() => {});
+    });
+    $("#shareCodeBtn").addEventListener("click", () => {
+        const code = $("#myFriendCode").textContent;
         const p = state.myProfile;
-        const txt = `Schau dir ${p.name} auf PfotenMatch an! 🐾`;
+        const txt = `Verbinde dich mit ${p.name} auf PfotenMatch! 🐾 Dein Code: ${code}`;
         if (navigator.share) {
             navigator.share({ title: "PfotenMatch", text: txt }).catch(() => {});
         } else {
             if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {});
             flashToast("🔗 In Zwischenablage kopiert");
         }
+    });
+    // Connect friend
+    $("#connectFriendBtn").addEventListener("click", () => {
+        $("#friendCodeInput").value = "";
+        $("#friendLookupResult").classList.add("hidden");
+        $("#connectFriendModal").classList.remove("hidden");
+        setTimeout(() => $("#friendCodeInput").focus(), 100);
+    });
+    $("#cancelConnectBtn").addEventListener("click", () => $("#connectFriendModal").classList.add("hidden"));
+    $("#confirmConnectBtn").addEventListener("click", connectFriendByCode);
+    $("#friendCodeInput").addEventListener("input", (e) => {
+        let v = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+        if (v.length > 4) v = v.slice(0, 4) + "-" + v.slice(4, 8);
+        e.target.value = v;
     });
     $("#cancelEditProfileBtn").addEventListener("click", () => {
         $("#editProfileModal").classList.add("hidden");
@@ -3686,7 +3707,7 @@ function finishOnboarding() {
         city: d.city,
         lat: d.location.lat,
         lng: d.location.lng
-    }).catch(() => {});
+    }).then(() => sbGetMyFriendCode().catch(() => {})).catch(() => {});
     hideOnboarding();
     applyFilters();
     renderMatches();
@@ -3762,6 +3783,101 @@ function bindOnboarding() {
     });
     // Done
     $("#finishOnboardBtn").addEventListener("click", finishOnboarding);
+}
+
+// ---------- Friend Code / Share ----------
+
+async function openShareProfileModal() {
+    $("#shareProfileModal").classList.remove("hidden");
+    const codeEl = $("#myFriendCode");
+    codeEl.textContent = "⏳ Wird geladen…";
+    try {
+        const code = await sbGetMyFriendCode();
+        codeEl.textContent = code || "Nicht eingeloggt";
+    } catch (e) {
+        codeEl.textContent = "Bitte einloggen";
+    }
+}
+
+let _pendingFriendProfile = null;
+
+async function connectFriendByCode() {
+    const code = $("#friendCodeInput").value.trim().toUpperCase();
+    if (code.length < 8) { flashToast("Bitte vollständigen Code eingeben"); return; }
+    const btn = $("#confirmConnectBtn");
+    const resultEl = $("#friendLookupResult");
+    btn.disabled = true;
+    btn.textContent = "⏳ Suche…";
+    resultEl.classList.add("hidden");
+    try {
+        const profile = await sbFindByFriendCode(code);
+        if (!profile) {
+            resultEl.textContent = "❌ Kein Hund mit diesem Code gefunden.";
+            resultEl.classList.remove("hidden");
+            btn.disabled = false;
+            btn.textContent = "Verbinden";
+            return;
+        }
+        // Check not own code
+        const me = await sbGetUser();
+        if (me && profile.user_id === me.id) {
+            resultEl.textContent = "😄 Das ist dein eigener Code!";
+            resultEl.classList.remove("hidden");
+            btn.disabled = false;
+            btn.textContent = "Verbinden";
+            return;
+        }
+        // Build a local dog profile from Supabase data
+        _pendingFriendProfile = {
+            id: 9000 + Math.abs(profile.friend_code.split("").reduce((a, c) => a + c.charCodeAt(0), 0)) % 1000,
+            name: profile.name,
+            emoji: profile.emoji || "🐕",
+            breed: profile.breed || "Mischling",
+            age: profile.age || 3,
+            size: profile.size || "Mittel",
+            neutered: profile.neutered || "Nein",
+            energy: profile.energy || "Ausgeglichen",
+            playStyle: profile.play_style || "Rennend",
+            tags: [],
+            warns: [],
+            bio: profile.bio || "",
+            distance: 0.5,
+            owner: "Freund",
+            lat: profile.lat || 47.5585,
+            lng: profile.lng || 7.5880,
+            isFriend: true,
+            friendCode: profile.friend_code
+        };
+        resultEl.innerHTML = `✅ <strong>${profile.name}</strong> gefunden! (${profile.breed || "Mischling"}, ${profile.age || "?"} J.) – Verbinden?`;
+        resultEl.classList.remove("hidden");
+        btn.textContent = "✓ Ja, verbinden!";
+        btn.disabled = false;
+        btn.onclick = () => finalizeFriendConnect();
+    } catch (e) {
+        resultEl.textContent = "Fehler beim Suchen. Bitte nochmal versuchen.";
+        resultEl.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = "Verbinden";
+    }
+}
+
+function finalizeFriendConnect() {
+    if (!_pendingFriendProfile) return;
+    const dog = _pendingFriendProfile;
+    _pendingFriendProfile = null;
+    if (state.matches.some(m => m.profile.id === dog.id)) {
+        flashToast("Ihr seid bereits verbunden! 🐾");
+        $("#connectFriendModal").classList.add("hidden");
+        return;
+    }
+    addMatch(dog);
+    $("#connectFriendModal").classList.add("hidden");
+    switchView("matches");
+    flashToast(`🎉 Mit ${dog.name} verbunden!`);
+    const btn = $("#confirmConnectBtn");
+    btn.textContent = "Verbinden";
+    btn.onclick = connectFriendByCode;
+    renderMatches();
 }
 
 // ---------- Supabase Sync ----------
