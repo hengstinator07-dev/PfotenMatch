@@ -54,7 +54,12 @@ const $$ = (sel) => document.querySelectorAll(sel);
 function saveState() {
     try {
         localStorage.setItem("pfotenMatch", JSON.stringify({
-            matches: state.matches.map(m => ({ id: m.profile.id, messages: m.messages })),
+            matches: state.matches.map(m => ({
+                id: m.profile.id,
+                messages: m.messages,
+                conversationId: m.conversationId || null,
+                friendProfile: m.profile.isFriend ? m.profile : null
+            })),
             premium: state.premium,
             onboarded: state.onboarded,
             myProfile: state.myProfile,
@@ -95,6 +100,9 @@ function loadState() {
         if (Array.isArray(data.matches)) {
             state.matches = data.matches
                 .map(m => {
+                    if (m.friendProfile) {
+                        return { profile: m.friendProfile, messages: m.messages || [], conversationId: m.conversationId || null };
+                    }
                     const p = DOG_PROFILES.find(d => d.id === m.id);
                     return p ? { profile: p, messages: m.messages || [] } : null;
                 })
@@ -823,23 +831,40 @@ function openChat(dogId) {
     state.activeChatId = dogId;
     match.messages = match.messages.map(migrateMessage);
     resetChatUi();
-    sbGetMatchDbId(dogId).then(dbId => {
-        if (!dbId) return;
-        sbLoadMessages(dbId).then(msgs => {
-            if (msgs.length > match.messages.length) {
+    if (match.profile.isFriend && match.conversationId) {
+        sbLoadChatMessages(match.conversationId).then(msgs => {
+            if (msgs.length) {
                 match.messages = msgs.map(migrateMessage);
                 renderChatMessages();
                 saveState();
             }
         }).catch(() => {});
-        sbSubscribeMessages(dbId, (newMsg) => {
+        sbSubscribeChatMessages(match.conversationId, (newMsg) => {
             if (state.activeChatId !== dogId) return;
             if (match.messages.some(m => m.id === newMsg.id)) return;
             match.messages.push(migrateMessage(newMsg));
             renderChatMessages();
             saveState();
         });
-    }).catch(() => {});
+    } else {
+        sbGetMatchDbId(dogId).then(dbId => {
+            if (!dbId) return;
+            sbLoadMessages(dbId).then(msgs => {
+                if (msgs.length > match.messages.length) {
+                    match.messages = msgs.map(migrateMessage);
+                    renderChatMessages();
+                    saveState();
+                }
+            }).catch(() => {});
+            sbSubscribeMessages(dbId, (newMsg) => {
+                if (state.activeChatId !== dogId) return;
+                if (match.messages.some(m => m.id === newMsg.id)) return;
+                match.messages.push(migrateMessage(newMsg));
+                renderChatMessages();
+                saveState();
+            });
+        }).catch(() => {});
+    }
     // Header setzen
     const chatAv = $("#chatAvatar");
     chatAv.textContent = match.profile.emoji;
@@ -1026,17 +1051,23 @@ function sendMessage(text) {
     };
     pushMessage(match, msg);
     cancelReply();
-    scheduleStatusProgression(match);
-    scheduleAutoReply(match);
+    if (match.profile.isFriend && match.conversationId) {
+        sbSendChatMessage(match.conversationId, msg).catch(() => {});
+    } else {
+        scheduleStatusProgression(match);
+        scheduleAutoReply(match);
+    }
 }
 
 function pushMessage(match, msg) {
     match.messages.push(msg);
     renderChatMessages();
     saveState();
-    sbGetMatchDbId(match.profile.id).then(dbId => {
-        if (dbId) sbSaveMessage(dbId, msg).catch(() => {});
-    }).catch(() => {});
+    if (!match.profile.isFriend) {
+        sbGetMatchDbId(match.profile.id).then(dbId => {
+            if (dbId) sbSaveMessage(dbId, msg).catch(() => {});
+        }).catch(() => {});
+    }
 }
 
 function scheduleStatusProgression(match) {
@@ -3114,6 +3145,7 @@ function bindEvents() {
     $("#chatBack").addEventListener("click", () => {
         resetChatUi();
         sbUnsubscribeMessages();
+        sbUnsubscribeChatMessages();
         state.activeChatId = null;
         $("#chatModal").classList.add("hidden");
         renderMatches();
@@ -3858,6 +3890,7 @@ async function connectFriendByCode() {
             lat: profile.lat || 47.5585,
             lng: profile.lng || 7.5880,
             isFriend: true,
+            friendUserId: profile.user_id,
             friendCode: profile.friend_code
         };
         resultEl.innerHTML = `✅ <strong>${profile.name}</strong> gefunden! (${profile.breed || "Mischling"}, ${profile.age || "?"} J.) – Verbinden?`;
@@ -3873,19 +3906,28 @@ async function connectFriendByCode() {
     }
 }
 
-function finalizeFriendConnect() {
+async function finalizeFriendConnect() {
     if (!_pendingFriendProfile) return;
     const dog = _pendingFriendProfile;
     _pendingFriendProfile = null;
-    if (state.matches.some(m => m.profile.id === dog.id)) {
+    if (state.matches.some(m => m.profile.friendCode === dog.friendCode)) {
         flashToast("Ihr seid bereits verbunden! 🐾");
         $("#connectFriendModal").classList.add("hidden");
         return;
     }
-    addMatch(dog);
+    let conversationId = null;
+    try {
+        conversationId = await sbFindOrCreateConversation(dog.friendUserId);
+    } catch (e) { /* offline */ }
+    state.matches.push({
+        profile: dog,
+        messages: [],
+        conversationId: conversationId
+    });
+    saveState();
     $("#connectFriendModal").classList.add("hidden");
     switchView("matches");
-    flashToast(`🎉 Mit ${dog.name} verbunden!`);
+    flashToast(`🎉 Mit ${dog.name} verbunden! Starte jetzt den Chat.`);
     const btn = $("#confirmConnectBtn");
     btn.textContent = "Verbinden";
     btn.onclick = connectFriendByCode;

@@ -304,3 +304,116 @@ async function sbGetMyFriendCode() {
     if (data && data.friend_code) return data.friend_code;
     return sbSaveFriendCode(user.id);
 }
+
+// ---------- Conversations (Real Chat) ----------
+
+async function sbFindOrCreateConversation(otherUserId) {
+    if (!_sbReady()) return null;
+    const user = await sbGetUser();
+    if (!user) return null;
+    const { data: existing } = await sb
+        .from("conversations")
+        .select("id")
+        .or(`and(user_a_id.eq.${user.id},user_b_id.eq.${otherUserId}),and(user_a_id.eq.${otherUserId},user_b_id.eq.${user.id})`)
+        .maybeSingle();
+    if (existing) return existing.id;
+    const { data, error } = await sb
+        .from("conversations")
+        .insert({ user_a_id: user.id, user_b_id: otherUserId })
+        .select()
+        .single();
+    if (error) throw error;
+    return data.id;
+}
+
+async function sbSendChatMessage(conversationId, msg) {
+    if (!_sbReady()) return null;
+    const user = await sbGetUser();
+    if (!user) return null;
+    const { data, error } = await sb
+        .from("chat_messages")
+        .insert({
+            conversation_id: conversationId,
+            sender_id: user.id,
+            type: msg.type || "text",
+            text: msg.text || null,
+            image: msg.image || null,
+            location: msg.location || null,
+            duration: msg.duration || null,
+            reply_to: msg.replyTo || null,
+            reactions: msg.reactions || []
+        })
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+async function sbLoadChatMessages(conversationId) {
+    if (!_sbReady()) return [];
+    const user = await sbGetUser();
+    if (!user) return [];
+    const { data, error } = await sb
+        .from("chat_messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+    if (error) throw error;
+    return (data || []).map(row => ({
+        id: row.id,
+        from: row.sender_id === user.id ? "me" : "them",
+        type: row.type || "text",
+        text: row.text || "",
+        image: row.image || null,
+        location: row.location || null,
+        duration: row.duration || null,
+        replyTo: row.reply_to || null,
+        reactions: row.reactions || [],
+        deleted: row.deleted || false,
+        status: "read",
+        ts: new Date(row.created_at).getTime()
+    }));
+}
+
+let _chatSubscription = null;
+
+function sbSubscribeChatMessages(conversationId, onNewMessage) {
+    if (!_sbReady()) return;
+    if (_chatSubscription) sb.removeChannel(_chatSubscription);
+    sbGetUser().then(user => {
+        if (!user) return;
+        _chatSubscription = sb
+            .channel("chat:" + conversationId)
+            .on("postgres_changes", {
+                event: "INSERT",
+                schema: "public",
+                table: "chat_messages",
+                filter: "conversation_id=eq." + conversationId
+            }, (payload) => {
+                const row = payload.new;
+                if (row.sender_id === user.id) return;
+                onNewMessage({
+                    id: row.id,
+                    from: "them",
+                    type: row.type || "text",
+                    text: row.text || "",
+                    image: row.image || null,
+                    location: row.location || null,
+                    duration: row.duration || null,
+                    replyTo: row.reply_to || null,
+                    reactions: row.reactions || [],
+                    deleted: row.deleted || false,
+                    status: "read",
+                    ts: new Date(row.created_at).getTime()
+                });
+            })
+            .subscribe();
+    });
+}
+
+function sbUnsubscribeChatMessages() {
+    if (_chatSubscription && _sbReady()) {
+        sb.removeChannel(_chatSubscription);
+        _chatSubscription = null;
+    }
+}
