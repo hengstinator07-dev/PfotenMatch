@@ -3789,12 +3789,25 @@ function bindOnboarding() {
 async function openShareProfileModal() {
     $("#shareProfileModal").classList.remove("hidden");
     const codeEl = $("#myFriendCode");
+    if (!_sbReady()) {
+        codeEl.textContent = "⚠ Verbindung fehlgeschlagen";
+        codeEl.style.fontSize = "1rem";
+        return;
+    }
+    codeEl.style.fontSize = "";
     codeEl.textContent = "⏳ Wird geladen…";
     try {
+        const session = await sbGetSession();
+        if (!session) {
+            codeEl.textContent = "Bitte zuerst einloggen";
+            codeEl.style.fontSize = "1rem";
+            return;
+        }
         const code = await sbGetMyFriendCode();
-        codeEl.textContent = code || "Nicht eingeloggt";
+        codeEl.textContent = code || "Fehler";
     } catch (e) {
-        codeEl.textContent = "Bitte einloggen";
+        codeEl.textContent = "Fehler: " + (e.message || "Unbekannt");
+        codeEl.style.fontSize = "1rem";
     }
 }
 
