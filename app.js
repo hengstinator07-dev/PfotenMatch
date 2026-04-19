@@ -3504,7 +3504,6 @@ function onbChooseAuth(method) {
     $("#emailForm").classList.remove("hidden");
     $("#authEmail").focus();
 }
-}
 
 function updatePwStrength() {
     const v = $("#authPass").value;
