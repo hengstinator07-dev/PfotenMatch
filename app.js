@@ -3523,22 +3523,16 @@ function runTypewriter() {
 }
 
 // --- Auth step ---
-function onbChooseAuth(method) {
-    onb.authMethod = method;
-    if (method === "email") {
-        $("#emailForm").classList.remove("hidden");
-        $("#authEmail").focus();
-        return;
-    }
-    // Google / Apple — zeige E-Mail-Formular mit Hinweis
-    const labels = { google: "Google", apple: "Apple" };
-    flashToast(`${labels[method] || method}-Login: Bitte E-Mail & Passwort nutzen`);
-    $("#emailForm").classList.remove("hidden");
-    $("#authEmail").focus();
+let _pendingVerifyEmail = "";
+
+function showAuthMode(mode) {
+    $("#authRegisterMode").classList.toggle("hidden", mode !== "register");
+    $("#authLoginMode").classList.toggle("hidden", mode !== "login");
+    $("#authVerifyMode").classList.toggle("hidden", mode !== "verify");
 }
 
-function updatePwStrength() {
-    const v = $("#authPass").value;
+function updatePwStrength(inputEl, barEl) {
+    const v = inputEl.value;
     let score = 0;
     if (v.length >= 6)  score++;
     if (v.length >= 10) score++;
@@ -3547,55 +3541,123 @@ function updatePwStrength() {
     if (/[^A-Za-z0-9]/.test(v)) score++;
     const pcts   = ["0%", "20%", "40%", "60%", "80%", "100%"];
     const colors = ["transparent", "#e74c3c", "#f39c12", "#f1c40f", "#4ecdc4", "#27ae60"];
-    const el = $("#pwStrength");
-    el.style.setProperty("--pw",       pcts[score]);
-    el.style.setProperty("--pw-color", colors[score]);
+    barEl.style.setProperty("--pw",       pcts[score]);
+    barEl.style.setProperty("--pw-color", colors[score]);
 }
 
-async function onbEmailContinue(isLogin) {
-    const email = $("#authEmail").value.trim();
-    const pass  = $("#authPass").value;
-    const errEl = $("#authError");
+async function handleOAuth(provider) {
+    try {
+        await sbSignInWithOAuth(provider);
+    } catch (err) {
+        const label = provider === "google" ? "Google" : "Apple";
+        flashToast(`${label}-Login fehlgeschlagen: ${err.message || "Bitte versuche es erneut."}`);
+    }
+}
+
+async function handleEmailRegister() {
+    const email = $("#regEmail").value.trim();
+    const pass  = $("#regPass").value;
+    const errEl = $("#regError");
     errEl.classList.add("hidden");
     if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
-        flashToast("✉ Bitte eine gültige E-Mail eingeben");
+        flashToast("Bitte eine gültige E-Mail eingeben");
         return;
     }
     if (pass.length < 6) {
-        flashToast("🔒 Passwort mindestens 6 Zeichen");
+        flashToast("Passwort mindestens 6 Zeichen");
         return;
     }
-    const btn = isLogin ? $("#emailLoginBtn") : $("#emailContinueBtn");
+    const btn = $("#regSubmitBtn");
     const origText = btn.textContent;
-    btn.textContent = "⏳ Bitte warten…";
+    btn.textContent = "Bitte warten…";
     btn.disabled = true;
     try {
-        if (isLogin) {
-            await sbSignIn(email, pass);
-            flashToast("✅ Erfolgreich eingeloggt");
-            const profile = await sbLoadProfile();
-            if (profile) {
-                Object.assign(state.myProfile, profile);
-                state.onboarded = true;
-                await syncFromSupabase();
-                saveState();
-                hideOnboarding();
-                applyFilters();
-                renderMatches();
-                renderProfile();
-                return;
-            }
+        const data = await sbSignUp(email, pass);
+        const needsConfirmation = data?.user && !data.user.email_confirmed_at && (!data.session);
+        if (needsConfirmation) {
+            _pendingVerifyEmail = email;
+            $("#verifyEmailDisplay").textContent = email;
+            showAuthMode("verify");
         } else {
-            await sbSignUp(email, pass);
-            flashToast("✅ Account erstellt");
+            flashToast("Account erstellt");
+            onbGoto(2);
         }
-        onbGoto(2);
     } catch (err) {
-        const msg = err.message || "Fehler bei der Authentifizierung";
-        errEl.textContent = msg;
+        errEl.textContent = err.message || "Fehler bei der Registrierung";
         errEl.classList.remove("hidden");
     } finally {
         btn.textContent = origText;
+        btn.disabled = false;
+    }
+}
+
+async function handleEmailLogin() {
+    const email = $("#loginEmail").value.trim();
+    const pass  = $("#loginPass").value;
+    const errEl = $("#loginError");
+    errEl.classList.add("hidden");
+    if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
+        flashToast("Bitte eine gültige E-Mail eingeben");
+        return;
+    }
+    if (pass.length < 6) {
+        flashToast("Passwort mindestens 6 Zeichen");
+        return;
+    }
+    const btn = $("#loginSubmitBtn");
+    const origText = btn.textContent;
+    btn.textContent = "Bitte warten…";
+    btn.disabled = true;
+    try {
+        await sbSignIn(email, pass);
+        await handlePostLogin();
+    } catch (err) {
+        errEl.textContent = err.message || "Fehler beim Einloggen";
+        errEl.classList.remove("hidden");
+    } finally {
+        btn.textContent = origText;
+        btn.disabled = false;
+    }
+}
+
+async function handlePostLogin() {
+    flashToast("Erfolgreich eingeloggt");
+    const profile = await sbLoadProfile();
+    if (profile) {
+        Object.assign(state.myProfile, profile);
+        state.onboarded = true;
+        await syncFromSupabase();
+        saveState();
+        hideOnboarding();
+        applyFilters();
+        renderMatches();
+        renderProfile();
+    } else {
+        onbGoto(2);
+    }
+}
+
+async function handleVerifyLogin() {
+    showAuthMode("login");
+    if (_pendingVerifyEmail) {
+        $("#loginEmail").value = _pendingVerifyEmail;
+        $("#loginEmailForm").classList.remove("hidden");
+        $("#loginEmail").focus();
+    }
+}
+
+async function handleResendVerification() {
+    if (!_pendingVerifyEmail) return;
+    const btn = $("#verifyResendBtn");
+    btn.disabled = true;
+    btn.textContent = "Wird gesendet…";
+    try {
+        await sbResendConfirmation(_pendingVerifyEmail);
+        flashToast("Bestätigungs-E-Mail erneut gesendet");
+    } catch (err) {
+        flashToast(err.message || "Fehler beim Senden");
+    } finally {
+        btn.textContent = "E-Mail erneut senden";
         btn.disabled = false;
     }
 }
@@ -3760,11 +3822,29 @@ function bindOnboarding() {
         onb.draft.breed = "Labrador-Mix";
         finishOnboarding();
     });
-    // Auth
-    $$("[data-auth]").forEach(b => b.addEventListener("click", () => onbChooseAuth(b.dataset.auth)));
-    $("#authPass").addEventListener("input", updatePwStrength);
-    $("#emailContinueBtn").addEventListener("click", () => onbEmailContinue(false));
-    $("#emailLoginBtn").addEventListener("click", () => onbEmailContinue(true));
+    // Auth — Register mode
+    $("#regGoogleBtn").addEventListener("click", () => handleOAuth("google"));
+    $("#regAppleBtn").addEventListener("click", () => handleOAuth("apple"));
+    $("#showRegEmailBtn").addEventListener("click", () => {
+        $("#regEmailForm").classList.remove("hidden");
+        $("#regEmail").focus();
+    });
+    $("#regPass").addEventListener("input", () => updatePwStrength($("#regPass"), $("#regPwStrength")));
+    $("#regSubmitBtn").addEventListener("click", handleEmailRegister);
+    // Auth — Login mode
+    $("#loginGoogleBtn").addEventListener("click", () => handleOAuth("google"));
+    $("#loginAppleBtn").addEventListener("click", () => handleOAuth("apple"));
+    $("#showLoginEmailBtn").addEventListener("click", () => {
+        $("#loginEmailForm").classList.remove("hidden");
+        $("#loginEmail").focus();
+    });
+    $("#loginSubmitBtn").addEventListener("click", handleEmailLogin);
+    // Auth — Switch between register / login
+    $("#switchToLogin").addEventListener("click", () => showAuthMode("login"));
+    $("#switchToRegister").addEventListener("click", () => showAuthMode("register"));
+    // Auth — Verification mode
+    $("#verifyLoginBtn").addEventListener("click", handleVerifyLogin);
+    $("#verifyResendBtn").addEventListener("click", handleResendVerification);
     // Name preview
     $("#onbName").addEventListener("input", (e) => {
         const v = e.target.value.trim();
@@ -3986,12 +4066,20 @@ async function init() {
     try {
         const session = await sbGetSession();
         if (session) {
-            await syncFromSupabase();
-            state.onboarded = true;
-            saveState();
-            applyFilters();
-            renderMatches();
-            renderProfile();
+            const profile = await sbLoadProfile();
+            if (profile) {
+                Object.assign(state.myProfile, profile);
+                state.onboarded = true;
+                await syncFromSupabase();
+                saveState();
+                applyFilters();
+                renderMatches();
+                renderProfile();
+            } else {
+                showOnboarding();
+                onbGoto(2);
+                return;
+            }
         }
     } catch (e) { /* Supabase unavailable – continue with localStorage */ }
     if (!state.onboarded) {

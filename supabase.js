@@ -50,6 +50,27 @@ async function sbGetSession() {
     return session;
 }
 
+// ---------- OAuth ----------
+
+async function sbSignInWithOAuth(provider) {
+    if (!_sbReady()) throw new Error("Supabase nicht verfügbar");
+    const { data, error } = await sb.auth.signInWithOAuth({
+        provider: provider,
+        options: { redirectTo: window.location.origin }
+    });
+    if (error) throw error;
+    return data;
+}
+
+async function sbResendConfirmation(email) {
+    if (!_sbReady()) throw new Error("Supabase nicht verfügbar");
+    const { error } = await sb.auth.resend({
+        type: "signup",
+        email: email
+    });
+    if (error) throw error;
+}
+
 // ---------- Dog Profile ----------
 
 async function sbUpsertProfile(profile) {

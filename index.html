@@ -54,41 +54,101 @@
                 </div>
             </section>
 
-            <!-- ===== STEP 1: Sign up ===== -->
+            <!-- ===== STEP 1: Auth (Register / Login / Verify) ===== -->
             <section class="onb-step" data-step="1" hidden>
-                <div class="onb-head">
-                    <h2>Willkommen im Rudel! 🐕</h2>
-                    <p>Erstelle einen Account — dauert 30 Sekunden.</p>
+
+                <!-- REGISTER MODE (default) -->
+                <div id="authRegisterMode">
+                    <div class="onb-head">
+                        <h2>Willkommen im Rudel! 🐕</h2>
+                        <p>Erstelle einen Account — dauert 30 Sekunden.</p>
+                    </div>
+                    <div class="auth-buttons">
+                        <button class="auth-btn google" id="regGoogleBtn">
+                            <span class="auth-ic">G</span>
+                            <span>Mit Google registrieren</span>
+                        </button>
+                        <button class="auth-btn apple" id="regAppleBtn">
+                            <span class="auth-ic"></span>
+                            <span>Mit Apple registrieren</span>
+                        </button>
+                        <div class="auth-divider"><span>oder</span></div>
+                        <button class="auth-btn email" id="showRegEmailBtn">
+                            <span class="auth-ic">✉</span>
+                            <span>Mit E-Mail registrieren</span>
+                        </button>
+                    </div>
+                    <div id="regEmailForm" class="email-form hidden">
+                        <label>E-Mail
+                            <input type="email" id="regEmail" placeholder="du@beispiel.com" />
+                        </label>
+                        <label>Passwort
+                            <input type="password" id="regPass" placeholder="Mindestens 6 Zeichen" />
+                        </label>
+                        <div class="pw-strength" id="regPwStrength"></div>
+                        <div id="regError" class="auth-error hidden"></div>
+                        <button class="btn-primary full" id="regSubmitBtn">Account erstellen</button>
+                    </div>
+                    <div class="auth-switch">
+                        <span>Bereits ein Account?</span>
+                        <button class="btn-link" id="switchToLogin">Einloggen</button>
+                    </div>
+                    <p class="onb-fineprint">Mit dem Fortfahren akzeptierst du die <a href="#">AGB</a> und <a href="#">Datenschutzerklärung</a>.</p>
                 </div>
-                <div class="auth-buttons">
-                    <button class="auth-btn google" data-auth="google">
-                        <span class="auth-ic">G</span>
-                        <span>Mit Google fortfahren</span>
-                    </button>
-                    <button class="auth-btn apple" data-auth="apple">
-                        <span class="auth-ic"></span>
-                        <span>Mit Apple fortfahren</span>
-                    </button>
-                    <div class="auth-divider"><span>oder</span></div>
-                    <button class="auth-btn email" data-auth="email">
-                        <span class="auth-ic">✉</span>
-                        <span>Mit E-Mail fortfahren</span>
-                    </button>
+
+                <!-- LOGIN MODE -->
+                <div id="authLoginMode" class="hidden">
+                    <div class="onb-head">
+                        <h2>Willkommen zurück! 🐾</h2>
+                        <p>Melde dich mit deinem Account an.</p>
+                    </div>
+                    <div class="auth-buttons">
+                        <button class="auth-btn google" id="loginGoogleBtn">
+                            <span class="auth-ic">G</span>
+                            <span>Mit Google anmelden</span>
+                        </button>
+                        <button class="auth-btn apple" id="loginAppleBtn">
+                            <span class="auth-ic"></span>
+                            <span>Mit Apple anmelden</span>
+                        </button>
+                        <div class="auth-divider"><span>oder</span></div>
+                        <button class="auth-btn email" id="showLoginEmailBtn">
+                            <span class="auth-ic">✉</span>
+                            <span>Mit E-Mail einloggen</span>
+                        </button>
+                    </div>
+                    <div id="loginEmailForm" class="email-form hidden">
+                        <label>E-Mail
+                            <input type="email" id="loginEmail" placeholder="du@beispiel.com" />
+                        </label>
+                        <label>Passwort
+                            <input type="password" id="loginPass" placeholder="Dein Passwort" />
+                        </label>
+                        <div id="loginError" class="auth-error hidden"></div>
+                        <button class="btn-primary full" id="loginSubmitBtn">Einloggen</button>
+                    </div>
+                    <div class="auth-switch">
+                        <span>Noch kein Account?</span>
+                        <button class="btn-link" id="switchToRegister">Registrieren</button>
+                    </div>
                 </div>
-                <!-- Email form (hidden until email clicked) -->
-                <div id="emailForm" class="email-form hidden">
-                    <label>E-Mail
-                        <input type="email" id="authEmail" placeholder="du@beispiel.com" />
-                    </label>
-                    <label>Passwort
-                        <input type="password" id="authPass" placeholder="Mindestens 6 Zeichen" />
-                    </label>
-                    <div class="pw-strength" id="pwStrength"></div>
-                    <div id="authError" class="auth-error hidden"></div>
-                    <button class="btn-primary full" id="emailContinueBtn">Account erstellen</button>
-                    <button class="btn-ghost full" id="emailLoginBtn">Bereits ein Account? Einloggen</button>
+
+                <!-- EMAIL VERIFICATION MODE (after signup) -->
+                <div id="authVerifyMode" class="hidden">
+                    <div class="onb-head">
+                        <h2>Fast geschafft! ✉</h2>
+                    </div>
+                    <div class="verify-card">
+                        <div class="verify-icon">📬</div>
+                        <p class="verify-text">Wir haben eine Bestätigungs-E-Mail an</p>
+                        <p class="verify-email" id="verifyEmailDisplay">du@beispiel.com</p>
+                        <p class="verify-text">gesendet. Bitte öffne die E-Mail und klicke den Bestätigungslink.</p>
+                        <p class="verify-hint">Nicht erhalten? Prüfe deinen Spam-Ordner.</p>
+                    </div>
+                    <button class="btn-primary full" id="verifyLoginBtn">Bereits bestätigt? Einloggen</button>
+                    <button class="btn-ghost full" id="verifyResendBtn">E-Mail erneut senden</button>
                 </div>
-                <p class="onb-fineprint">Mit dem Fortfahren akzeptierst du die <a href="#">AGB</a> und <a href="#">Datenschutzerklärung</a>.</p>
+
                 <div class="onb-nav">
                     <button class="btn-ghost" data-prev>← Zurück</button>
                 </div>

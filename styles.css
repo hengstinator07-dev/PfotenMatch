@@ -3021,6 +3021,65 @@ button { font-family: inherit; }
     border-radius: 8px;
 }
 .auth-error.hidden { display: none; }
+
+/* Auth switch (register <-> login) */
+.auth-switch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 18px 0 4px;
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--brand);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: inherit;
+}
+.btn-link:hover {
+    background: var(--brand-light, rgba(255,107,107,0.1));
+    text-decoration: underline;
+}
+
+/* Email verification card */
+.verify-card {
+    text-align: center;
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    margin: 12px 0 20px;
+}
+.verify-icon {
+    font-size: 3.5rem;
+    margin-bottom: 12px;
+}
+.verify-text {
+    font-size: 0.95rem;
+    color: var(--text);
+    margin: 4px 0;
+    line-height: 1.5;
+}
+.verify-email {
+    font-weight: 700;
+    color: var(--brand);
+    font-size: 1.05rem;
+    margin: 8px 0;
+    word-break: break-all;
+}
+.verify-hint {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 14px;
+}
+
 .pw-strength {
     height: 4px;
     background: var(--border);
