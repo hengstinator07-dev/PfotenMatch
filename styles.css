@@ -2946,6 +2946,15 @@ button { font-family: inherit; }
     animation: stepIn 0.3s ease;
 }
 .email-form.hidden { display: none; }
+.auth-error {
+    color: var(--danger);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 8px 12px;
+    background: #ffeaea;
+    border-radius: 8px;
+}
+.auth-error.hidden { display: none; }
 .pw-strength {
     height: 4px;
     background: var(--border);

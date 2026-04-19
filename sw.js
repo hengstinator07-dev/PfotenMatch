@@ -1,10 +1,11 @@
-const CACHE_NAME = "pfotenmatch-v7";
+const CACHE_NAME = "pfotenmatch-v8";
 const ASSETS = [
     "/",
     "/index.html",
     "/styles.css",
     "/app.js",
     "/data.js",
+    "/supabase.js",
     "/manifest.json"
 ];
 

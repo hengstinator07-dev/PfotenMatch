@@ -84,7 +84,9 @@
                         <input type="password" id="authPass" placeholder="Mindestens 6 Zeichen" />
                     </label>
                     <div class="pw-strength" id="pwStrength"></div>
+                    <div id="authError" class="auth-error hidden"></div>
                     <button class="btn-primary full" id="emailContinueBtn">Account erstellen</button>
+                    <button class="btn-ghost full" id="emailLoginBtn">Bereits ein Account? Einloggen</button>
                 </div>
                 <p class="onb-fineprint">Mit dem Fortfahren akzeptierst du die <a href="#">AGB</a> und <a href="#">Datenschutzerklärung</a>.</p>
                 <div class="onb-nav">
@@ -1142,7 +1144,9 @@
         <button id="adClose">✕</button>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="data.js"></script>
+    <script src="supabase.js"></script>
     <script src="app.js"></script>
     <script>
         if ("serviceWorker" in navigator) {

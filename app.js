@@ -602,14 +602,20 @@ function handleDecision(dog, decision) {
 
 function addMatch(dog) {
     if (state.matches.some(m => m.profile.id === dog.id)) return;
+    const greetMsg = { id: genMsgId(), from: "them", type: "text", text: `Woof! Ich bin ${dog.name} 🐾`, ts: Date.now(), status: "delivered", reactions: [] };
     state.matches.push({
         profile: dog,
-        messages: [{ from: "them", text: `Woof! Ich bin ${dog.name} 🐾`, ts: Date.now() }]
+        messages: [greetMsg]
     });
-    // Neuer Match zählt als ungelesen, bis man den Chat öffnet
     chatUi.unread[dog.id] = (chatUi.unread[dog.id] || 0) + 1;
     updateMatchesNavBadge();
     saveState();
+    sbSaveMatch(dog.id).then(matchRow => {
+        if (matchRow) {
+            _matchDbIds[dog.id] = matchRow.id;
+            sbSaveMessage(matchRow.id, greetMsg).catch(() => {});
+        }
+    }).catch(() => {});
 }
 
 // ---------- Match modal ----------
@@ -815,10 +821,25 @@ function openChat(dogId) {
     const match = state.matches.find(m => m.profile.id === dogId);
     if (!match) return;
     state.activeChatId = dogId;
-    // Migration älterer Nachrichten
     match.messages = match.messages.map(migrateMessage);
-    // Reply/Attach/Picker zurücksetzen
     resetChatUi();
+    sbGetMatchDbId(dogId).then(dbId => {
+        if (!dbId) return;
+        sbLoadMessages(dbId).then(msgs => {
+            if (msgs.length > match.messages.length) {
+                match.messages = msgs.map(migrateMessage);
+                renderChatMessages();
+                saveState();
+            }
+        }).catch(() => {});
+        sbSubscribeMessages(dbId, (newMsg) => {
+            if (state.activeChatId !== dogId) return;
+            if (match.messages.some(m => m.id === newMsg.id)) return;
+            match.messages.push(migrateMessage(newMsg));
+            renderChatMessages();
+            saveState();
+        });
+    }).catch(() => {});
     // Header setzen
     const chatAv = $("#chatAvatar");
     chatAv.textContent = match.profile.emoji;
@@ -993,7 +1014,7 @@ function renderChatMessages() {
 function sendMessage(text) {
     const match = state.matches.find(m => m.profile.id === state.activeChatId);
     if (!match || !text.trim()) return;
-    pushMessage(match, {
+    const msg = {
         id: genMsgId(),
         from: "me",
         type: "text",
@@ -1002,9 +1023,9 @@ function sendMessage(text) {
         status: "sent",
         reactions: [],
         replyTo: chatUi.replyTo
-    });
+    };
+    pushMessage(match, msg);
     cancelReply();
-    // Status-Progression + Auto-Reply
     scheduleStatusProgression(match);
     scheduleAutoReply(match);
 }
@@ -1013,6 +1034,9 @@ function pushMessage(match, msg) {
     match.messages.push(msg);
     renderChatMessages();
     saveState();
+    sbGetMatchDbId(match.profile.id).then(dbId => {
+        if (dbId) sbSaveMessage(dbId, msg).catch(() => {});
+    }).catch(() => {});
 }
 
 function scheduleStatusProgression(match) {
@@ -1031,7 +1055,6 @@ function scheduleStatusProgression(match) {
 }
 
 function scheduleAutoReply(match) {
-    // Typing indicator
     $("#typingName").textContent = match.profile.name + " schreibt…";
     $("#typingIndicator").classList.remove("hidden");
     const delay = 1100 + Math.random() * 1200;
@@ -1040,7 +1063,7 @@ function scheduleAutoReply(match) {
         $("#typingIndicator").classList.add("hidden");
         const reply = AUTO_REPLIES[Math.floor(Math.random() * AUTO_REPLIES.length)];
         const active = state.activeChatId === match.profile.id;
-        match.messages.push({
+        const replyMsg = {
             id: genMsgId(),
             from: "them",
             type: "text",
@@ -1048,13 +1071,17 @@ function scheduleAutoReply(match) {
             ts: Date.now(),
             status: active ? "read" : "delivered",
             reactions: []
-        });
+        };
+        match.messages.push(replyMsg);
         if (!active) {
             chatUi.unread[match.profile.id] = (chatUi.unread[match.profile.id] || 0) + 1;
             updateMatchesNavBadge();
         }
         if (active) renderChatMessages();
         saveState();
+        sbGetMatchDbId(match.profile.id).then(dbId => {
+            if (dbId) sbSaveMessage(dbId, replyMsg).catch(() => {});
+        }).catch(() => {});
     }, delay);
 }
 
@@ -2331,6 +2358,7 @@ function bindProfileForm() {
             bio: $("#pfBio").value
         };
         saveState();
+        sbUpsertProfile(state.myProfile).catch(() => {});
         $("#editProfileModal").classList.add("hidden");
         renderProfile();
         flashToast("Profil gespeichert! 🐾");
@@ -3085,6 +3113,8 @@ function bindEvents() {
     // Chat modal
     $("#chatBack").addEventListener("click", () => {
         resetChatUi();
+        sbUnsubscribeMessages();
+        state.activeChatId = null;
         $("#chatModal").classList.add("hidden");
         renderMatches();
     });
@@ -3210,7 +3240,17 @@ function bindEvents() {
             if (kind === "help")      flashToast("💌 Feedback an hallo@pfotenmatch.app");
             if (kind === "logout") {
                 if (confirm("Wirklich abmelden? Deine lokalen Daten bleiben erhalten.")) {
-                    flashToast("👋 Abgemeldet (Demo)");
+                    sbSignOut().then(() => {
+                        state.onboarded = false;
+                        saveState();
+                        flashToast("👋 Abgemeldet");
+                        showOnboarding();
+                    }).catch(() => {
+                        flashToast("👋 Abgemeldet");
+                        state.onboarded = false;
+                        saveState();
+                        showOnboarding();
+                    });
                 }
             }
         });
@@ -3437,18 +3477,23 @@ function onbChooseAuth(method) {
         $("#authEmail").focus();
         return;
     }
-    // Google / Apple — Fake-Delay
+    // Google / Apple — OAuth via Supabase
     const btn = document.querySelector(`.auth-btn.${method}`);
     if (btn) {
         const orig = btn.innerHTML;
         btn.innerHTML = `<span class="auth-ic">⏳</span><span>Wird verbunden…</span>`;
         btn.disabled = true;
-        setTimeout(() => {
+        sb.auth.signInWithOAuth({ provider: method }).then(({ error }) => {
+            if (error) {
+                btn.innerHTML = orig;
+                btn.disabled = false;
+                flashToast(`OAuth für ${method} ist nicht konfiguriert. Nutze E-Mail.`);
+            }
+        }).catch(() => {
             btn.innerHTML = orig;
             btn.disabled = false;
-            flashToast(`✅ Mit ${method === "google" ? "Google" : "Apple"} verbunden`);
-            onbGoto(2);
-        }, 900);
+            flashToast(`OAuth nicht verfügbar. Nutze E-Mail.`);
+        });
     }
 }
 
@@ -3467,9 +3512,11 @@ function updatePwStrength() {
     el.style.setProperty("--pw-color", colors[score]);
 }
 
-function onbEmailContinue() {
+async function onbEmailContinue(isLogin) {
     const email = $("#authEmail").value.trim();
     const pass  = $("#authPass").value;
+    const errEl = $("#authError");
+    errEl.classList.add("hidden");
     if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
         flashToast("✉ Bitte eine gültige E-Mail eingeben");
         return;
@@ -3478,8 +3525,39 @@ function onbEmailContinue() {
         flashToast("🔒 Passwort mindestens 6 Zeichen");
         return;
     }
-    flashToast("✅ Account erstellt");
-    onbGoto(2);
+    const btn = isLogin ? $("#emailLoginBtn") : $("#emailContinueBtn");
+    const origText = btn.textContent;
+    btn.textContent = "⏳ Bitte warten…";
+    btn.disabled = true;
+    try {
+        if (isLogin) {
+            await sbSignIn(email, pass);
+            flashToast("✅ Erfolgreich eingeloggt");
+            const profile = await sbLoadProfile();
+            if (profile) {
+                Object.assign(state.myProfile, profile);
+                state.onboarded = true;
+                await syncFromSupabase();
+                saveState();
+                hideOnboarding();
+                applyFilters();
+                renderMatches();
+                renderProfile();
+                return;
+            }
+        } else {
+            await sbSignUp(email, pass);
+            flashToast("✅ Account erstellt");
+        }
+        onbGoto(2);
+    } catch (err) {
+        const msg = err.message || "Fehler bei der Authentifizierung";
+        errEl.textContent = msg;
+        errEl.classList.remove("hidden");
+    } finally {
+        btn.textContent = origText;
+        btn.disabled = false;
+    }
 }
 
 // --- Avatar step ---
@@ -3615,6 +3693,12 @@ function finishOnboarding() {
         localStorage.setItem("pfotenMatch", JSON.stringify(existing));
     } catch (e) { /* ignore */ }
     saveState();
+    sbUpsertProfile({
+        ...state.myProfile,
+        city: d.city,
+        lat: d.location.lat,
+        lng: d.location.lng
+    }).catch(() => {});
     hideOnboarding();
     applyFilters();
     renderMatches();
@@ -3639,7 +3723,8 @@ function bindOnboarding() {
     // Auth
     $$("[data-auth]").forEach(b => b.addEventListener("click", () => onbChooseAuth(b.dataset.auth)));
     $("#authPass").addEventListener("input", updatePwStrength);
-    $("#emailContinueBtn").addEventListener("click", onbEmailContinue);
+    $("#emailContinueBtn").addEventListener("click", () => onbEmailContinue(false));
+    $("#emailLoginBtn").addEventListener("click", () => onbEmailContinue(true));
     // Name preview
     $("#onbName").addEventListener("input", (e) => {
         const v = e.target.value.trim();
@@ -3691,22 +3776,39 @@ function bindOnboarding() {
     $("#finishOnboardBtn").addEventListener("click", finishOnboarding);
 }
 
+// ---------- Supabase Sync ----------
+async function syncFromSupabase() {
+    try {
+        const user = await sbGetUser();
+        if (!user) return;
+        const profile = await sbLoadProfile();
+        if (profile) Object.assign(state.myProfile, profile);
+        const dbMatches = await sbLoadMatches();
+        for (const dbm of dbMatches) {
+            const dog = DOG_PROFILES.find(d => d.id === dbm.dog_id);
+            if (!dog) continue;
+            _matchDbIds[dbm.dog_id] = dbm.id;
+            if (state.matches.some(m => m.profile.id === dbm.dog_id)) continue;
+            const msgs = await sbLoadMessages(dbm.id);
+            state.matches.push({ profile: dog, messages: msgs.length ? msgs : [{ id: genMsgId(), from: "them", type: "text", text: `Woof! Ich bin ${dog.name} 🐾`, ts: new Date(dbm.created_at).getTime(), status: "delivered", reactions: [] }] });
+        }
+    } catch (e) { /* offline or tables not created yet */ }
+}
+
 // ---------- Init ----------
 function bindDailyPickEvents() {
     const btn = $("#dailyPickGoBtn");
     if (btn) btn.addEventListener("click", jumpToDailyPick);
 }
 
-function init() {
+async function init() {
     loadState();
-    // Demo-Daten befüllen, wenn Gefahren/Check-Ins leer sind
     if (state.dangers.length === 0 && typeof DEMO_DANGERS !== "undefined") {
         state.dangers = DEMO_DANGERS.map(d => ({ ...d }));
     }
     if (state.checkIns.length === 0 && typeof DEMO_CHECKINS !== "undefined") {
         state.checkIns = DEMO_CHECKINS.map(c => ({ ...c }));
     }
-    // Demo-Stories für andere Hunde (nicht persistiert)
     seedDemoStoriesIfEmpty();
     bindEvents();
     bindProfileForm();
@@ -3723,7 +3825,15 @@ function init() {
     renderProfile();
     updateBookingsBadge();
     updateMatchesNavBadge();
-    // Onboarding zeigen, falls noch nicht abgeschlossen
+    const session = await sbGetSession().catch(() => null);
+    if (session) {
+        await syncFromSupabase();
+        state.onboarded = true;
+        saveState();
+        applyFilters();
+        renderMatches();
+        renderProfile();
+    }
     if (!state.onboarded) {
         showOnboarding();
     }
