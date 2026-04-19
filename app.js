@@ -3929,15 +3929,17 @@ async function init() {
     renderProfile();
     updateBookingsBadge();
     updateMatchesNavBadge();
-    const session = await sbGetSession().catch(() => null);
-    if (session) {
-        await syncFromSupabase();
-        state.onboarded = true;
-        saveState();
-        applyFilters();
-        renderMatches();
-        renderProfile();
-    }
+    try {
+        const session = await sbGetSession();
+        if (session) {
+            await syncFromSupabase();
+            state.onboarded = true;
+            saveState();
+            applyFilters();
+            renderMatches();
+            renderProfile();
+        }
+    } catch (e) { /* Supabase unavailable – continue with localStorage */ }
     if (!state.onboarded) {
         showOnboarding();
     }

@@ -1,37 +1,51 @@
 /* ============================================================
-   PfotenMatch – Supabase Integration
+   PfotenMatch – Supabase Integration (crash-safe)
    ============================================================ */
 
 const SUPABASE_URL = "https://qgmccuouetouzhpfynwq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_M6FwQhVrmkVBx9GUbmURYg_m2YBidkN";
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let sb = null;
+try {
+    if (typeof supabase !== "undefined" && supabase.createClient) {
+        sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+} catch (e) {
+    console.warn("Supabase init failed:", e);
+}
+
+function _sbReady() { return sb !== null; }
 
 // ---------- Auth Helpers ----------
 
 async function sbSignUp(email, password) {
+    if (!_sbReady()) throw new Error("Supabase nicht verfügbar");
     const { data, error } = await sb.auth.signUp({ email, password });
     if (error) throw error;
     return data;
 }
 
 async function sbSignIn(email, password) {
+    if (!_sbReady()) throw new Error("Supabase nicht verfügbar");
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
 }
 
 async function sbSignOut() {
+    if (!_sbReady()) return;
     const { error } = await sb.auth.signOut();
     if (error) throw error;
 }
 
 async function sbGetUser() {
+    if (!_sbReady()) return null;
     const { data: { user } } = await sb.auth.getUser();
     return user;
 }
 
 async function sbGetSession() {
+    if (!_sbReady()) return null;
     const { data: { session } } = await sb.auth.getSession();
     return session;
 }
@@ -39,6 +53,7 @@ async function sbGetSession() {
 // ---------- Dog Profile ----------
 
 async function sbUpsertProfile(profile) {
+    if (!_sbReady()) return null;
     const user = await sbGetUser();
     if (!user) return null;
     const row = {
@@ -70,6 +85,7 @@ async function sbUpsertProfile(profile) {
 }
 
 async function sbLoadProfile() {
+    if (!_sbReady()) return null;
     const user = await sbGetUser();
     if (!user) return null;
     const { data, error } = await sb
@@ -98,6 +114,7 @@ async function sbLoadProfile() {
 // ---------- Matches ----------
 
 async function sbSaveMatch(dogId) {
+    if (!_sbReady()) return null;
     const user = await sbGetUser();
     if (!user) return null;
     const { data, error } = await sb
@@ -113,6 +130,7 @@ async function sbSaveMatch(dogId) {
 }
 
 async function sbLoadMatches() {
+    if (!_sbReady()) return [];
     const user = await sbGetUser();
     if (!user) return [];
     const { data, error } = await sb
@@ -125,6 +143,7 @@ async function sbLoadMatches() {
 }
 
 async function sbDeleteMatch(dogId) {
+    if (!_sbReady()) return;
     const user = await sbGetUser();
     if (!user) return;
     await sb.from("matches").delete().eq("user_id", user.id).eq("dog_id", dogId);
@@ -133,6 +152,7 @@ async function sbDeleteMatch(dogId) {
 // ---------- Messages ----------
 
 async function sbSaveMessage(matchDbId, msg) {
+    if (!_sbReady()) return null;
     const { data, error } = await sb
         .from("messages")
         .insert({
@@ -156,6 +176,7 @@ async function sbSaveMessage(matchDbId, msg) {
 }
 
 async function sbLoadMessages(matchDbId) {
+    if (!_sbReady()) return [];
     const { data, error } = await sb
         .from("messages")
         .select("*")
@@ -183,6 +204,7 @@ async function sbLoadMessages(matchDbId) {
 let _messageSubscription = null;
 
 function sbSubscribeMessages(matchDbId, onNewMessage) {
+    if (!_sbReady()) return;
     if (_messageSubscription) {
         sb.removeChannel(_messageSubscription);
     }
@@ -218,7 +240,7 @@ function sbSubscribeMessages(matchDbId, onNewMessage) {
 }
 
 function sbUnsubscribeMessages() {
-    if (_messageSubscription) {
+    if (_messageSubscription && _sbReady()) {
         sb.removeChannel(_messageSubscription);
         _messageSubscription = null;
     }
@@ -228,6 +250,7 @@ function sbUnsubscribeMessages() {
 const _matchDbIds = {};
 
 async function sbGetMatchDbId(dogId) {
+    if (!_sbReady()) return null;
     if (_matchDbIds[dogId]) return _matchDbIds[dogId];
     const user = await sbGetUser();
     if (!user) return null;
@@ -249,6 +272,7 @@ function generateFriendCode(userId) {
 }
 
 async function sbSaveFriendCode(userId) {
+    if (!_sbReady()) return null;
     const code = generateFriendCode(userId);
     await sb.from("dog_profiles")
         .update({ friend_code: code })
@@ -257,6 +281,7 @@ async function sbSaveFriendCode(userId) {
 }
 
 async function sbFindByFriendCode(code) {
+    if (!_sbReady()) return null;
     const normalized = code.toUpperCase().replace(/\s/g, "");
     const { data, error } = await sb
         .from("dog_profiles")
@@ -268,6 +293,7 @@ async function sbFindByFriendCode(code) {
 }
 
 async function sbGetMyFriendCode() {
+    if (!_sbReady()) return null;
     const user = await sbGetUser();
     if (!user) return null;
     const { data } = await sb
