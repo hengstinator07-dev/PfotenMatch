@@ -51,6 +51,18 @@ const state = {
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
+function geoDistKm(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+let _realProfiles = [];
+
 function saveState() {
     try {
         localStorage.setItem("pfotenMatch", JSON.stringify({
@@ -265,20 +277,40 @@ function updateMatchesNavBadge() {
 }
 
 // ---------- Profile filtering ----------
+async function loadRealProfiles() {
+    try {
+        _realProfiles = await sbLoadAllProfiles();
+    } catch (e) {
+        _realProfiles = [];
+    }
+}
+
 function applyFilters() {
     const { size, play, energy, breed } = state.filters;
-    state.profiles = DOG_PROFILES.filter(p => {
+    const myLat = state.userLocation?.lat || 47.5585;
+    const myLng = state.userLocation?.lng || 7.5880;
+
+    const realWithDist = _realProfiles.map(p => ({
+        ...p,
+        distance: Math.round(geoDistKm(myLat, myLng, p.lat, p.lng) * 10) / 10
+    }));
+
+    const allProfiles = [...DOG_PROFILES, ...realWithDist];
+
+    state.profiles = allProfiles.filter(p => {
         if (p.distance > state.radius) return false;
-        if (size.length && !size.some(s => p.size.startsWith(s))) return false;
-        if (play.length && !play.some(s => p.playStyle.includes(s))) return false;
-        if (energy.length && !energy.some(s => p.energy.includes(s))) return false;
-        if (state.premium && breed && !p.breed.toLowerCase().includes(breed.toLowerCase())) return false;
+        if (size.length && !size.some(s => (p.size || "").startsWith(s))) return false;
+        if (play.length && !play.some(s => (p.playStyle || "").includes(s))) return false;
+        if (energy.length && !energy.some(s => (p.energy || "").includes(s))) return false;
+        if (state.premium && breed && !(p.breed || "").toLowerCase().includes(breed.toLowerCase())) return false;
         if (state.matches.some(m => m.profile.id === p.id)) return false;
         return true;
     });
-    state.profiles.sort((a, b) =>
-        computeCompatibility(state.myProfile, b) - computeCompatibility(state.myProfile, a)
-    );
+    state.profiles.sort((a, b) => {
+        if (a.isReal && !b.isReal) return -1;
+        if (!a.isReal && b.isReal) return 1;
+        return computeCompatibility(state.myProfile, b) - computeCompatibility(state.myProfile, a);
+    });
     state.currentIdx = 0;
     renderCardStack();
     updateFilterBadge();
@@ -474,16 +506,19 @@ function renderCardStack() {
         const y = (remaining.length - 1 - i) * 8;
         card.style.transform = `translateY(${y}px) scale(${scale})`;
 
-        const warnsHtml = dog.warns.map(w => `<span class="tag warn">⚠ ${w}</span>`).join("");
-        const tagsHtml  = dog.tags.map(t => `<span class="tag">${t}</span>`).join("");
+        const warnsHtml = (dog.warns || []).map(w => `<span class="tag warn">⚠ ${w}</span>`).join("");
+        const tagsHtml  = (dog.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
         const score = computeCompatibility(state.myProfile, dog);
         const scoreClass = score >= 85 ? "high" : score >= 70 ? "mid" : "low";
         const topPickId = getDailyTopPickId();
         const isTopPick = dog.id === topPickId;
+        const photoHtml = dog.avatarImage
+            ? `<img src="${dog.avatarImage}" alt="${dog.name}" style="width:100%;height:100%;object-fit:cover;" />`
+            : `<div>${dog.emoji || "🐕"}</div>`;
 
         card.innerHTML = `
             <div class="photo" style="background: linear-gradient(135deg, #ffd5cd, #ffebe0);">
-                <div>${dog.emoji}</div>
+                ${photoHtml}
                 ${isTopPick ? `<div class="top-pick-badge">⭐ Top-Pick heute</div>` : ""}
                 <div class="compat-badge ${scoreClass}" title="${compatibilityLabel(score)}">
                     🎯 <strong>${score}%</strong> Match
@@ -591,14 +626,17 @@ function flyAway(card, dog, direction) {
 function handleDecision(dog, decision) {
     state.currentIdx++;
     if (decision === "like" || decision === "super") {
-        // 60% Match-Chance bei Like, 90% bei Super-Like
-        const chance = decision === "super" ? 0.9 : 0.6;
-        if (Math.random() < chance) {
+        if (dog.isReal) {
             addMatch(dog);
             showMatchModal(dog);
-        } else if (Math.random() < 0.3) {
-            // Dieser Hund hat mich gelikt, aber kein Match (bei Premium sichtbar)
-            state.likedBy.push(dog);
+        } else {
+            const chance = decision === "super" ? 0.9 : 0.6;
+            if (Math.random() < chance) {
+                addMatch(dog);
+                showMatchModal(dog);
+            } else if (Math.random() < 0.3) {
+                state.likedBy.push(dog);
+            }
         }
     }
     renderCardStack();
@@ -610,20 +648,36 @@ function handleDecision(dog, decision) {
 
 function addMatch(dog) {
     if (state.matches.some(m => m.profile.id === dog.id)) return;
-    const greetMsg = { id: genMsgId(), from: "them", type: "text", text: `Woof! Ich bin ${dog.name} 🐾`, ts: Date.now(), status: "delivered", reactions: [] };
-    state.matches.push({
-        profile: dog,
-        messages: [greetMsg]
-    });
-    chatUi.unread[dog.id] = (chatUi.unread[dog.id] || 0) + 1;
-    updateMatchesNavBadge();
-    saveState();
-    sbSaveMatch(dog.id).then(matchRow => {
-        if (matchRow) {
-            _matchDbIds[dog.id] = matchRow.id;
-            sbSaveMessage(matchRow.id, greetMsg).catch(() => {});
-        }
-    }).catch(() => {});
+    if (dog.isReal && dog.userId) {
+        const matchEntry = {
+            profile: { ...dog, isFriend: true, friendUserId: dog.userId },
+            messages: [],
+            conversationId: null
+        };
+        state.matches.push(matchEntry);
+        chatUi.unread[dog.id] = (chatUi.unread[dog.id] || 0) + 1;
+        updateMatchesNavBadge();
+        saveState();
+        sbFindOrCreateConversation(dog.userId).then(convId => {
+            matchEntry.conversationId = convId;
+            saveState();
+        }).catch(() => {});
+    } else {
+        const greetMsg = { id: genMsgId(), from: "them", type: "text", text: `Woof! Ich bin ${dog.name} 🐾`, ts: Date.now(), status: "delivered", reactions: [] };
+        state.matches.push({
+            profile: dog,
+            messages: [greetMsg]
+        });
+        chatUi.unread[dog.id] = (chatUi.unread[dog.id] || 0) + 1;
+        updateMatchesNavBadge();
+        saveState();
+        sbSaveMatch(dog.id).then(matchRow => {
+            if (matchRow) {
+                _matchDbIds[dog.id] = matchRow.id;
+                sbSaveMessage(matchRow.id, greetMsg).catch(() => {});
+            }
+        }).catch(() => {});
+    }
 }
 
 // ---------- Match modal ----------
@@ -636,7 +690,8 @@ const MATCH_GREETINGS = [
 ];
 
 function pickGreeting(dog) {
-    const idx = (dog.id + (state.myProfile.name || "").length) % MATCH_GREETINGS.length;
+    const idNum = typeof dog.id === "number" ? dog.id : (dog.id || "").length;
+    const idx = (idNum + (state.myProfile.name || "").length) % MATCH_GREETINGS.length;
     return MATCH_GREETINGS[idx];
 }
 
@@ -647,8 +702,16 @@ function showMatchModal(dog) {
     // kurze Spannung vor dem Match
     setTimeout(() => {
         $("#matchText").textContent = `${state.myProfile.name} und ${dog.name} wollen sich treffen!`;
-        $("#matchAvatarMine").textContent = state.myProfile.emoji;
-        $("#matchAvatarOther").textContent = dog.emoji;
+        if (state.myProfile.avatarImage) {
+            $("#matchAvatarMine").innerHTML = `<img src="${state.myProfile.avatarImage}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`;
+        } else {
+            $("#matchAvatarMine").textContent = state.myProfile.emoji || "🐕";
+        }
+        if (dog.avatarImage) {
+            $("#matchAvatarOther").innerHTML = `<img src="${dog.avatarImage}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`;
+        } else {
+            $("#matchAvatarOther").textContent = dog.emoji || "🐕";
+        }
 
         const pill = $("#matchScorePill");
         if (pill) pill.innerHTML = `🎯 <strong>${score}%</strong> Match`;
@@ -3650,6 +3713,7 @@ async function handlePostLogin() {
         }
         state.onboarded = true;
         await syncFromSupabase();
+        await loadRealProfiles();
         saveState();
         hideOnboarding();
         applyFilters();
@@ -3825,6 +3889,7 @@ function finishOnboarding() {
         lng: d.location.lng
     }).then(() => sbGetMyFriendCode().catch(() => {})).catch(() => {});
     hideOnboarding();
+    loadRealProfiles().then(() => applyFilters()).catch(() => applyFilters());
     applyFilters();
     renderMatches();
     renderProfile();
@@ -4097,6 +4162,7 @@ async function init() {
                 }
                 state.onboarded = true;
                 await syncFromSupabase();
+                await loadRealProfiles();
                 saveState();
                 applyFilters();
                 renderMatches();

@@ -135,6 +135,41 @@ async function sbLoadProfile() {
     };
 }
 
+async function sbLoadAllProfiles() {
+    if (!_sbReady()) return [];
+    const user = await sbGetUser();
+    const myId = user ? user.id : null;
+    const { data, error } = await sb
+        .from("dog_profiles")
+        .select("*");
+    if (error) throw error;
+    return (data || [])
+        .filter(row => row.user_id !== myId)
+        .map(row => ({
+            id: "sb_" + row.user_id,
+            name: row.name,
+            breed: row.breed || "Mischling",
+            age: row.age || 0,
+            size: row.size || "Mittel",
+            neutered: row.neutered === true || row.neutered === "Ja",
+            energy: row.energy || "Ausgeglichen",
+            playStyle: row.play_style || "Rennend",
+            tags: row.tags ? (Array.isArray(row.tags) ? row.tags : []) : [],
+            warns: [],
+            bio: row.bio || "",
+            emoji: row.emoji || "🐕",
+            avatarImage: row.avatar_image || null,
+            photos: row.photos || [],
+            owner: row.name,
+            lat: row.lat || 47.5585,
+            lng: row.lng || 7.5880,
+            distance: 0,
+            isReal: true,
+            userId: row.user_id,
+            friendCode: row.friend_code
+        }));
+}
+
 // ---------- Matches ----------
 
 async function sbSaveMatch(dogId) {
