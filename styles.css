@@ -1133,6 +1133,90 @@ button { font-family: inherit; }
     font-family: inherit;
 }
 
+/* ---------- Walk Tracker Widget ---------- */
+.walk-tracker {
+    background: white;
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin: 10px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    border: 1px solid #f0f0f0;
+}
+.walk-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.walk-title {
+    font-weight: 700;
+    font-size: 15px;
+}
+.walk-btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    color: white;
+    transition: all 0.2s;
+}
+.walk-btn:active { transform: scale(0.95); }
+.walk-btn.active {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+.walk-stats {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.walk-stat {
+    flex: 1;
+    text-align: center;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 8px 4px;
+}
+.walk-stat strong {
+    display: block;
+    font-size: 18px;
+    color: #333;
+}
+.walk-stat small {
+    font-size: 11px;
+    color: #888;
+}
+.walk-stat.timer.running strong {
+    color: #4caf50;
+    animation: timer-blink 1s ease-in-out infinite;
+}
+@keyframes timer-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+.walk-progress {
+    text-align: center;
+}
+.walk-progress small {
+    font-size: 11px;
+    color: #888;
+}
+.walk-bar {
+    height: 6px;
+    background: #eee;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+.walk-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #81c784);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
 /* ---------- Pfoten-Sammler Widget ---------- */
 .paw-collector {
     position: relative;

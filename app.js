@@ -43,6 +43,8 @@ const state = {
     paws: {},
     // Karte: aktuelle Filter & Suche
     mapFilter: { cats: [], q: "" },
+    // Schrittzähler / Walk Tracker
+    walkTracker: { totalKm: 0, todayKm: 0, todaySteps: 0, todayDate: null, sessions: [] },
     // Onboarding abgeschlossen?
     onboarded: false
 };
@@ -83,6 +85,7 @@ function saveState() {
             mySitterProfile: state.mySitterProfile,
             sitterRequests: state.sitterRequests,
             paws: state.paws,
+            walkTracker: state.walkTracker,
             settings: state.settings
         }));
     } catch (e) { /* ignore */ }
@@ -109,6 +112,7 @@ function loadState() {
         if (data.mySitterProfile) state.mySitterProfile = data.mySitterProfile;
         if (Array.isArray(data.sitterRequests)) state.sitterRequests = data.sitterRequests;
         if (data.paws && typeof data.paws === "object") state.paws = data.paws;
+        if (data.walkTracker) Object.assign(state.walkTracker, data.walkTracker);
         if (Array.isArray(data.matches)) {
             state.matches = data.matches
                 .map(m => {
@@ -1791,6 +1795,7 @@ function renderMap() {
     pruneDangers();
     renderMapMarkers();
     renderPawCollector();
+    renderWalkTracker();
     scheduleOsmLoad();
     if (_gpsTracking) startGpsTracking();
 
@@ -2248,18 +2253,108 @@ let _gpsWatchId = null;
 let _gpsTracking = true;
 const _discoveredPois = new Set();
 let _lastProximityCheck = 0;
+let _lastWalkPos = null;
+let _walkActive = false;
+let _walkStartTs = null;
+let _walkTimerInterval = null;
 
 function startGpsTracking() {
     if (_gpsWatchId !== null || !navigator.geolocation) return;
     _gpsWatchId = navigator.geolocation.watchPosition(
         (pos) => {
-            state.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            const newPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            if (_walkActive && _lastWalkPos) {
+                const segKm = geoDistKm(_lastWalkPos.lat, _lastWalkPos.lng, newPos.lat, newPos.lng);
+                if (segKm < 0.5 && segKm > 0.001) {
+                    resetWalkDay();
+                    state.walkTracker.todayKm += segKm;
+                    state.walkTracker.totalKm += segKm;
+                    state.walkTracker.todaySteps += Math.round(segKm * 1000 / 0.7);
+                    saveState();
+                    renderWalkTracker();
+                }
+            }
+            if (_walkActive) _lastWalkPos = newPos;
+            state.userLocation = newPos;
             updateMyMarker();
             checkNearbyPois();
         },
         () => {},
         { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
     );
+}
+
+function resetWalkDay() {
+    const today = new Date().toDateString();
+    if (state.walkTracker.todayDate !== today) {
+        state.walkTracker.todayDate = today;
+        state.walkTracker.todayKm = 0;
+        state.walkTracker.todaySteps = 0;
+    }
+}
+
+function startWalk() {
+    _walkActive = true;
+    _walkStartTs = Date.now();
+    _lastWalkPos = { ...state.userLocation };
+    resetWalkDay();
+    if (!_gpsTracking) toggleGpsTracking();
+    _walkTimerInterval = setInterval(renderWalkTracker, 1000);
+    renderWalkTracker();
+    flashToast("🚶 Gassi gestartet! Viel Spass!");
+}
+
+function stopWalk() {
+    _walkActive = false;
+    const durationMin = _walkStartTs ? Math.round((Date.now() - _walkStartTs) / 60000) : 0;
+    _walkStartTs = null;
+    _lastWalkPos = null;
+    if (_walkTimerInterval) { clearInterval(_walkTimerInterval); _walkTimerInterval = null; }
+    saveState();
+    renderWalkTracker();
+    if (durationMin > 0) flashToast(`🏁 Gassi beendet! ${durationMin} Min. gelaufen`);
+}
+
+function formatWalkTime(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const h = Math.floor(m / 60);
+    const mm = String(m % 60).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+function renderWalkTracker() {
+    const el = $("#walkTracker");
+    if (!el) return;
+    resetWalkDay();
+    const t = state.walkTracker;
+    const steps = t.todaySteps || 0;
+    const km = (t.todayKm || 0).toFixed(2);
+    const goal = 5000;
+    const pct = Math.min(100, (steps / goal) * 100);
+
+    const timerText = _walkActive && _walkStartTs ? formatWalkTime(Date.now() - _walkStartTs) : "00:00";
+    const btnClass = _walkActive ? "walk-btn active" : "walk-btn";
+    const btnText = _walkActive ? "⏹ Stopp" : "▶ Gassi starten";
+
+    el.innerHTML =
+        `<div class="walk-header">` +
+            `<span class="walk-title">🚶 Schrittzähler</span>` +
+            `<button class="${btnClass}" id="walkToggleBtn">${btnText}</button>` +
+        `</div>` +
+        `<div class="walk-stats">` +
+            `<div class="walk-stat"><strong>${steps.toLocaleString("de")}</strong><small>Schritte</small></div>` +
+            `<div class="walk-stat"><strong>${km}</strong><small>km heute</small></div>` +
+            `<div class="walk-stat timer ${_walkActive ? 'running' : ''}"><strong>${timerText}</strong><small>Dauer</small></div>` +
+        `</div>` +
+        `<div class="walk-progress">` +
+            `<div class="walk-bar"><div class="walk-bar-fill" style="width:${pct}%"></div></div>` +
+            `<small>${steps.toLocaleString("de")} / ${goal.toLocaleString("de")} Tagesziel</small>` +
+        `</div>`;
+
+    const btn = el.querySelector("#walkToggleBtn");
+    if (btn) btn.addEventListener("click", () => _walkActive ? stopWalk() : startWalk());
 }
 
 function checkNearbyPois() {
@@ -2457,6 +2552,7 @@ function renderProfile() {
     $("#statMatches").textContent = state.matches.length;
     const myCheckins = state.checkIns.filter(c => c.dogName === p.name).length;
     $("#statCheckins").textContent = myCheckins;
+    $("#statKm").textContent = (state.walkTracker.totalKm || 0).toFixed(1);
     // Info-Panel
     $("#infoBreed").textContent    = p.breed || "—";
     $("#infoAge").textContent      = (p.age || 0) + " Jahre";
@@ -2464,6 +2560,8 @@ function renderProfile() {
     $("#infoNeutered").textContent = p.neutered || "—";
     $("#infoEnergy").textContent   = p.energy || "—";
     $("#infoPlay").textContent     = p.playStyle || "—";
+    $("#infoWalkKm").textContent    = (state.walkTracker.totalKm || 0).toFixed(1) + " km";
+    $("#infoWalkSteps").textContent = Math.round(state.walkTracker.totalKm * 1000 / 0.7).toLocaleString("de");
     // Photo grid
     renderProfilePhotos();
 }

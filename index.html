@@ -412,6 +412,9 @@
                     <button id="locateBtn" class="locate-btn" title="Auf meinen Standort zentrieren">🎯</button>
                 </div>
 
+                <!-- Schrittzähler / Walk Tracker -->
+                <div id="walkTracker" class="walk-tracker"></div>
+
                 <!-- Pfoten-Stempel-Sammler -->
                 <div id="pawCollector" class="paw-collector">
                     <div class="paw-info">
@@ -448,6 +451,7 @@
                             <div class="stat"><strong id="statPhotos">0</strong><span>Fotos</span></div>
                             <div class="stat"><strong id="statMatches">0</strong><span>Matches</span></div>
                             <div class="stat"><strong id="statCheckins">0</strong><span>Check-Ins</span></div>
+                            <div class="stat"><strong id="statKm">0</strong><span>km</span></div>
                         </div>
                     </div>
 
@@ -488,6 +492,8 @@
                         <div class="info-row"><span>⚡ Energie</span><strong id="infoEnergy">—</strong></div>
                         <div class="info-row"><span>🎾 Spielstil</span><strong id="infoPlay">—</strong></div>
                         <div class="info-row"><span>📍 Standort</span><strong id="infoLocation">Basel</strong></div>
+                        <div class="info-row"><span>🚶 Gelaufen</span><strong id="infoWalkKm">0 km</strong></div>
+                        <div class="info-row"><span>👣 Schritte total</span><strong id="infoWalkSteps">0</strong></div>
                     </div>
 
                 </div>
