@@ -128,7 +128,10 @@ async function sbLoadProfile() {
         bio: data.bio,
         emoji: data.emoji,
         avatarImage: data.avatar_image,
-        photos: data.photos || []
+        photos: data.photos || [],
+        city: data.city,
+        lat: data.lat,
+        lng: data.lng
     };
 }
 

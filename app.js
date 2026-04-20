@@ -2374,7 +2374,7 @@ function bindProfileForm() {
             $("#avatarPreview").textContent = b.dataset.emoji;
         });
     });
-    f.addEventListener("submit", (e) => {
+    f.addEventListener("submit", async (e) => {
         e.preventDefault();
         state.myProfile = {
             ...state.myProfile,
@@ -2389,10 +2389,19 @@ function bindProfileForm() {
             bio: $("#pfBio").value
         };
         saveState();
-        sbUpsertProfile(state.myProfile).catch(() => {});
         $("#editProfileModal").classList.add("hidden");
         renderProfile();
-        flashToast("Profil gespeichert! 🐾");
+        try {
+            await sbUpsertProfile({
+                ...state.myProfile,
+                city: state.myProfile.city || "Basel",
+                lat: state.userLocation?.lat || 47.5585,
+                lng: state.userLocation?.lng || 7.5880
+            });
+            flashToast("Profil gespeichert!");
+        } catch (err) {
+            flashToast("Profil lokal gespeichert (Sync fehlgeschlagen)");
+        }
     });
 }
 
@@ -3625,6 +3634,9 @@ async function handlePostLogin() {
     const profile = await sbLoadProfile();
     if (profile) {
         Object.assign(state.myProfile, profile);
+        if (profile.lat && profile.lng) {
+            state.userLocation = { lat: profile.lat, lng: profile.lng };
+        }
         state.onboarded = true;
         await syncFromSupabase();
         saveState();
@@ -4069,6 +4081,9 @@ async function init() {
             const profile = await sbLoadProfile();
             if (profile) {
                 Object.assign(state.myProfile, profile);
+                if (profile.lat && profile.lng) {
+                    state.userLocation = { lat: profile.lat, lng: profile.lng };
+                }
                 state.onboarded = true;
                 await syncFromSupabase();
                 saveState();
