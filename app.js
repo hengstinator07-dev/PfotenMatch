@@ -1427,8 +1427,7 @@ function pruneCheckIns() {
     state.checkIns = state.checkIns.filter(c => c.until > now);
 }
 function pruneDangers() {
-    // Gefahren verfallen nach 24 h
-    const cutoff = Date.now() - 24 * 3600e3;
+    const cutoff = Date.now() - 48 * 3600e3;
     state.dangers = state.dangers.filter(d => d.ts > cutoff);
 }
 function myCheckInFor(spotId) {
@@ -1541,6 +1540,15 @@ function formatAgo(ts) {
     const h = Math.floor(mins / 60);
     if (h < 24) return `vor ${h} Std`;
     return `vor ${Math.floor(h / 24)} Tagen`;
+}
+
+function formatTimeLeft(ts, hours) {
+    const remaining = Math.max(0, (ts + hours * 3600e3) - Date.now());
+    const h = Math.floor(remaining / 3600e3);
+    const m = Math.floor((remaining % 3600e3) / 60e3);
+    if (h > 0) return `${h} Std ${m} Min`;
+    if (m > 0) return `${m} Min`;
+    return "gleich";
 }
 
 // ---------- Map (Leaflet + OpenStreetMap) ----------
@@ -1824,7 +1832,7 @@ function renderMap() {
                 <div class="info">
                     <strong>${type.label}</strong>
                     ${d.desc ? `<div>${d.desc}</div>` : ""}
-                    <small>${formatAgo(d.ts)} · gemeldet von ${d.reporter}</small>
+                    <small>${formatAgo(d.ts)} · von ${d.reporter} · läuft ab in ${formatTimeLeft(d.ts, 48)}</small>
                 </div>
                 <button title="Als erledigt markieren" data-remove="${d.id}">✓</button>
             `;
