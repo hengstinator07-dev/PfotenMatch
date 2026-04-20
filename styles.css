@@ -786,10 +786,9 @@ button { font-family: inherit; }
     0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(255, 107, 107, 0.6)); }
     50%      { transform: scale(1.12); filter: drop-shadow(0 0 14px rgba(255, 107, 107, 1)); }
 }
-.locate-btn {
+.locate-btn, .gps-toggle-btn {
     position: absolute;
     right: 10px;
-    bottom: 10px;
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -799,8 +798,16 @@ button { font-family: inherit; }
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
     cursor: pointer;
     z-index: 1000;
+    transition: transform 0.15s, background 0.15s;
 }
-.locate-btn:hover { transform: scale(1.08); }
+.locate-btn { bottom: 10px; }
+.gps-toggle-btn { bottom: 58px; }
+.locate-btn:hover, .gps-toggle-btn:hover { transform: scale(1.08); }
+.gps-toggle-btn.active {
+    background: var(--brand);
+    color: white;
+    box-shadow: 0 2px 12px rgba(255, 107, 107, 0.4);
+}
 .map-legend {
     position: absolute;
     top: 10px;

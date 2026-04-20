@@ -1776,6 +1776,7 @@ function renderMap() {
     renderMapMarkers();
     renderPawCollector();
     scheduleOsmLoad();
+    if (_gpsTracking) startGpsTracking();
 
     setTimeout(() => leafletMap.invalidateSize(), 50);
 
@@ -2205,20 +2206,78 @@ function bindMapControls() {
     });
 }
 
+// ---------- Live GPS tracking ----------
+let _gpsWatchId = null;
+let _gpsTracking = true;
+
+function startGpsTracking() {
+    if (_gpsWatchId !== null || !navigator.geolocation) return;
+    _gpsWatchId = navigator.geolocation.watchPosition(
+        (pos) => {
+            state.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            updateMyMarker();
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    );
+}
+
+function stopGpsTracking() {
+    if (_gpsWatchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(_gpsWatchId);
+        _gpsWatchId = null;
+    }
+}
+
+function updateMyMarker() {
+    if (!leafletMap || !mapLayers.me) return;
+    const ll = [state.userLocation.lat, state.userLocation.lng];
+    mapLayers.me.setLatLng(ll);
+    if (mapLayers.radius) mapLayers.radius.setLatLng(ll);
+}
+
 function locateUser() {
     if (!navigator.geolocation) {
-        alert("Geolocation wird von deinem Browser nicht unterstützt.");
+        flashToast("Geolocation nicht verfügbar");
         return;
     }
+    const btn = $("#locateBtn");
+    if (btn) btn.textContent = "📡";
     navigator.geolocation.getCurrentPosition(
         (pos) => {
             state.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             saveState();
-            renderMap();
-            if (leafletMap) leafletMap.setView([state.userLocation.lat, state.userLocation.lng], 14);
+            updateMyMarker();
+            if (leafletMap) leafletMap.setView([state.userLocation.lat, state.userLocation.lng], 15, { animate: true });
+            if (btn) btn.textContent = "🎯";
+            if (!_gpsTracking) toggleGpsTracking();
         },
-        () => alert("Standort konnte nicht ermittelt werden.")
+        () => {
+            flashToast("Standort konnte nicht ermittelt werden");
+            if (btn) btn.textContent = "🎯";
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
     );
+}
+
+function toggleGpsTracking() {
+    _gpsTracking = !_gpsTracking;
+    const btn = $("#gpsToggleBtn");
+    if (_gpsTracking) {
+        startGpsTracking();
+        if (btn) {
+            btn.textContent = "📍";
+            btn.title = "Live-Standort aktiv – klicken zum Deaktivieren";
+            btn.classList.add("active");
+        }
+    } else {
+        stopGpsTracking();
+        if (btn) {
+            btn.textContent = "📍";
+            btn.title = "Live-Standort deaktiviert – klicken zum Aktivieren";
+            btn.classList.remove("active");
+        }
+    }
 }
 
 // ---------- Meeting planner ----------
@@ -3437,8 +3496,9 @@ function bindEvents() {
         const card = $("#cardStack .dog-card:last-child");
         if (card) flyAway(card, dog, "super");
     });
-    // Locate button
+    // Locate & GPS toggle buttons
     $("#locateBtn")?.addEventListener("click", locateUser);
+    $("#gpsToggleBtn")?.addEventListener("click", toggleGpsTracking);
     // --- Filter Bottom-Sheet ---
     bindFilterSheet();
     // Match modal
