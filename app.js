@@ -1529,13 +1529,18 @@ let _osmTimer = null;
 let _osmLastBounds = null;
 
 const OSM_TAG_MAP = {
-    "amenity=veterinary":   { cat: "vet",    icon: "🏥" },
-    "leisure=dog_park":     { cat: "park",   icon: "🐕" },
-    "leisure=park":         { cat: "park",   icon: "🌳" },
-    "shop=pet":             { cat: "shop",   icon: "🦴" },
-    "craft=dog_grooming":   { cat: "groom",  icon: "💈" },
-    "amenity=animal_shelter": { cat: "shop", icon: "🐾" },
-    "amenity=cafe":         { cat: "cafe",   icon: "☕" },
+    "amenity=veterinary":      { cat: "vet",    icon: "🏥" },
+    "healthcare=veterinary":   { cat: "vet",    icon: "🏥" },
+    "leisure=dog_park":        { cat: "park",   icon: "🐕" },
+    "leisure=park":            { cat: "park",   icon: "🌳" },
+    "shop=pet":                { cat: "shop",   icon: "🦴" },
+    "shop=pet_grooming":       { cat: "groom",  icon: "💈" },
+    "craft=dog_grooming":      { cat: "groom",  icon: "💈" },
+    "shop=dog_beauty":         { cat: "groom",  icon: "💈" },
+    "amenity=animal_boarding": { cat: "shop",   icon: "🏠" },
+    "amenity=animal_shelter":  { cat: "shop",   icon: "🐾" },
+    "amenity=cafe":            { cat: "cafe",   icon: "☕" },
+    "amenity=dog_training":    { cat: "school", icon: "🎓" },
 };
 
 async function fetchOsmPois(bounds) {
@@ -1545,17 +1550,21 @@ async function fetchOsmPois(bounds) {
     const e = bounds.getEast().toFixed(5);
     const bbox = `${s},${w},${n},${e}`;
 
-    const query = `[out:json][timeout:12];(
-      node["amenity"="veterinary"](${bbox});
-      node["leisure"="dog_park"](${bbox});
-      node["leisure"="park"]["name"](${bbox});
-      node["shop"="pet"](${bbox});
-      node["craft"="dog_grooming"](${bbox});
-      node["amenity"="animal_shelter"](${bbox});
-      node["amenity"="cafe"]["dog"="yes"](${bbox});
-      way["leisure"="dog_park"](${bbox});
-      way["leisure"="park"]["name"](${bbox});
-    );out center body qt 200;`;
+    const query = `[out:json][timeout:15];(
+      nwr["amenity"="veterinary"](${bbox});
+      nwr["healthcare"="veterinary"](${bbox});
+      nwr["leisure"="dog_park"](${bbox});
+      nwr["leisure"="park"]["name"](${bbox});
+      nwr["shop"="pet"](${bbox});
+      nwr["shop"="pet_grooming"](${bbox});
+      nwr["craft"="dog_grooming"](${bbox});
+      nwr["shop"="dog_beauty"](${bbox});
+      nwr["amenity"="animal_shelter"](${bbox});
+      nwr["amenity"="animal_boarding"](${bbox});
+      nwr["amenity"="dog_training"](${bbox});
+      nwr["amenity"="cafe"]["dog"="yes"](${bbox});
+      nwr["amenity"="cafe"]["pets"="yes"](${bbox});
+    );out center body qt 300;`;
 
     const resp = await fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
@@ -1572,7 +1581,7 @@ async function fetchOsmPois(bounds) {
         if (!lat || !lng) return null;
 
         const tags = el.tags || {};
-        const name = tags.name || tags["name:de"] || "";
+        const name = tags.name || tags["name:de"] || tags.operator || tags.brand || "";
         if (!name) return null;
 
         const key = `${name}-${lat.toFixed(4)}-${lng.toFixed(4)}`;
