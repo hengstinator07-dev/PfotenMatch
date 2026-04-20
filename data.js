@@ -200,7 +200,8 @@ const POI_CATEGORIES = [
     { id: "vet",      label: "Tierärzte",     icon: "🏥", color: "#e74c3c" },
     { id: "groom",    label: "Hundesalons",   icon: "💈", color: "#9b59b6" },
     { id: "cafe",     label: "Cafés",         icon: "☕", color: "#f39c12" },
-    { id: "school",   label: "Hundeschulen",  icon: "🎓", color: "#34495e" }
+    { id: "school",   label: "Hundeschulen",  icon: "🎓", color: "#34495e" },
+    { id: "sight",    label: "Sehenswürdigkeiten", icon: "🏛️", color: "#8e44ad" }
 ];
 
 // Points of Interest (Basel). Erweitern die MEETING_SPOTS um weitere Kategorien.
@@ -239,7 +240,19 @@ const POIS = [
 
     // Hundeschulen
     { id: 260, cat: "school", name: "Hundeschule Gute Pfote",      desc: "Welpen- und Erziehungskurse",                          lat: 47.5480, lng: 7.5680, rating: 4.9, open: "Termine n.V." },
-    { id: 261, cat: "school", name: "Dogs Academy Basel",          desc: "Agility & Beschäftigung",                              lat: 47.5700, lng: 7.6200, rating: 4.7, open: "Termine n.V." }
+    { id: 261, cat: "school", name: "Dogs Academy Basel",          desc: "Agility & Beschäftigung",                              lat: 47.5700, lng: 7.6200, rating: 4.7, open: "Termine n.V." },
+
+    // Sehenswürdigkeiten
+    { id: 270, cat: "sight", name: "Basler Münster",                desc: "Wahrzeichen der Stadt, Münsterplatz",                   lat: 47.5566, lng: 7.5925, rating: 4.9, open: "24 h" },
+    { id: 271, cat: "sight", name: "Mittlere Brücke",              desc: "Älteste Rheinbrücke, schöner Spazierweg",              lat: 47.5603, lng: 7.5896, rating: 4.7, open: "24 h" },
+    { id: 272, cat: "sight", name: "Rathaus Basel",                desc: "Prachtvoller roter Rathausbau am Marktplatz",           lat: 47.5577, lng: 7.5886, rating: 4.8, open: "24 h" },
+    { id: 273, cat: "sight", name: "Spalentor",                    desc: "Historisches Stadttor von 1400",                        lat: 47.5587, lng: 7.5750, rating: 4.6, open: "24 h" },
+    { id: 274, cat: "sight", name: "Tinguely-Brunnen",             desc: "Witzige Wasserskulpturen auf dem Theaterplatz",         lat: 47.5533, lng: 7.5903, rating: 4.5, open: "24 h" },
+    { id: 275, cat: "sight", name: "Dreiländereck",                desc: "Wo Schweiz, Deutschland und Frankreich sich treffen",   lat: 47.5894, lng: 7.5885, rating: 4.7, open: "24 h" },
+    { id: 276, cat: "sight", name: "Rheinpromenade Kleinbasel",    desc: "Beliebter Spazierweg am Rhein",                         lat: 47.5625, lng: 7.5950, rating: 4.8, open: "24 h" },
+    { id: 277, cat: "sight", name: "Pfalz (Münster-Terrasse)",     desc: "Aussichtspunkt über den Rhein",                         lat: 47.5562, lng: 7.5935, rating: 4.9, open: "24 h" },
+    { id: 278, cat: "sight", name: "Fondation Beyeler (Garten)",   desc: "Skulpturengarten, Hunde im Aussenbereich erlaubt",     lat: 47.5913, lng: 7.6497, rating: 4.8, open: "10–18 Uhr" },
+    { id: 279, cat: "sight", name: "Zoo Basel (Zolli) Umgebung",   desc: "Spazierweg rund um den Zoo",                            lat: 47.5477, lng: 7.5790, rating: 4.6, open: "24 h" }
 ];
 
 // B2B-Werbung

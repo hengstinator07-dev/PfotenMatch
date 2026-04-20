@@ -1076,6 +1076,15 @@ button { font-family: inherit; }
 .discovery-text small {
     opacity: 0.9;
 }
+
+/* ---------- 30m Proximity Ring (Pokémon GO) ---------- */
+.proximity-ring {
+    animation: ring-pulse 2s ease-in-out infinite;
+}
+@keyframes ring-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
 .emoji-marker.dog-marker .emoji-pin {
     position: relative;
 }

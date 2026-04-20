@@ -1583,6 +1583,14 @@ const OSM_TAG_MAP = {
     "amenity=animal_shelter":  { cat: "shop",   icon: "🐾" },
     "amenity=cafe":            { cat: "cafe",   icon: "☕" },
     "amenity=dog_training":    { cat: "school", icon: "🎓" },
+    "tourism=attraction":      { cat: "sight",  icon: "🏛️" },
+    "tourism=viewpoint":       { cat: "sight",  icon: "🔭" },
+    "historic=monument":       { cat: "sight",  icon: "🗿" },
+    "historic=memorial":       { cat: "sight",  icon: "🕊️" },
+    "historic=castle":         { cat: "sight",  icon: "🏰" },
+    "amenity=fountain":        { cat: "sight",  icon: "⛲" },
+    "tourism=artwork":         { cat: "sight",  icon: "🎨" },
+    "tourism=museum":          { cat: "sight",  icon: "🏛️" },
 };
 
 async function fetchOsmPois(bounds) {
@@ -1606,7 +1614,15 @@ async function fetchOsmPois(bounds) {
       nwr["amenity"="dog_training"](${bbox});
       nwr["amenity"="cafe"]["dog"="yes"](${bbox});
       nwr["amenity"="cafe"]["pets"="yes"](${bbox});
-    );out center body qt 300;`;
+      nwr["tourism"="attraction"]["name"](${bbox});
+      nwr["tourism"="viewpoint"]["name"](${bbox});
+      nwr["tourism"="artwork"]["name"](${bbox});
+      nwr["tourism"="museum"]["name"](${bbox});
+      nwr["historic"="monument"]["name"](${bbox});
+      nwr["historic"="memorial"]["name"](${bbox});
+      nwr["historic"="castle"]["name"](${bbox});
+      nwr["amenity"="fountain"]["name"](${bbox});
+    );out center body qt 500;`;
 
     const resp = await fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
@@ -1877,11 +1893,13 @@ function renderMapMarkers() {
     );
     if (mapLayers.radius) leafletMap.removeLayer(mapLayers.radius);
     mapLayers.radius = L.circle([state.userLocation.lat, state.userLocation.lng], {
-        radius: state.radius * 1000,
-        color: "#ff6b6b",
+        radius: 30,
+        color: "#4caf50",
         weight: 2,
-        fillColor: "#ff6b6b",
-        fillOpacity: 0.08
+        fillColor: "#4caf50",
+        fillOpacity: 0.12,
+        dashArray: "6 4",
+        className: "proximity-ring"
     }).addTo(leafletMap);
 
     // ----- POIs (gefiltert) inkl. Clustering -----
