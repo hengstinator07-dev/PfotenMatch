@@ -2088,13 +2088,23 @@ function downscaleImage(file, maxW, quality, cb) {
     reader.readAsDataURL(file);
 }
 
+function syncProfileToSupabase() {
+    return sbUpsertProfile({
+        ...state.myProfile,
+        city: state.myProfile.city || "Basel",
+        lat: state.userLocation?.lat || 47.5585,
+        lng: state.userLocation?.lng || 7.5880
+    });
+}
+
 function handleGalleryFile(file) {
     if (!file || !file.type.startsWith("image/")) return;
     downscaleImage(file, 800, 0.78, (dataUrl) => {
         state.myProfile.photos.push({ id: "p" + Date.now(), src: dataUrl, ts: Date.now() });
         saveState();
         renderProfile();
-        flashToast("📷 Foto hinzugefügt");
+        syncProfileToSupabase().then(() => flashToast("Foto gespeichert!"))
+            .catch(() => flashToast("Foto lokal gespeichert (Sync fehlgeschlagen)"));
     });
 }
 
@@ -2102,9 +2112,14 @@ function handleAvatarFile(file) {
     if (!file || !file.type.startsWith("image/")) return;
     downscaleImage(file, 400, 0.82, (dataUrl) => {
         state.myProfile.avatarImage = dataUrl;
+        state.myProfile.emoji = "";
         saveState();
         renderProfile();
-        flashToast("✨ Profilbild aktualisiert");
+        syncProfileToSupabase().then(() => {
+            flashToast("Profilbild gespeichert!");
+        }).catch(() => {
+            flashToast("Profilbild lokal gespeichert (Sync fehlgeschlagen)");
+        });
     });
 }
 
@@ -2330,6 +2345,7 @@ function deleteCurrentPhoto() {
     saveState();
     $("#photoViewerModal").classList.add("hidden");
     renderProfile();
+    syncProfileToSupabase().catch(() => {});
 }
 
 // --- Edit profile modal ---
@@ -2392,12 +2408,7 @@ function bindProfileForm() {
         $("#editProfileModal").classList.add("hidden");
         renderProfile();
         try {
-            await sbUpsertProfile({
-                ...state.myProfile,
-                city: state.myProfile.city || "Basel",
-                lat: state.userLocation?.lat || 47.5585,
-                lng: state.userLocation?.lng || 7.5880
-            });
+            await syncProfileToSupabase();
             flashToast("Profil gespeichert!");
         } catch (err) {
             flashToast("Profil lokal gespeichert (Sync fehlgeschlagen)");
