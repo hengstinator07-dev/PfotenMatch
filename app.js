@@ -2866,6 +2866,146 @@ function deleteCurrentPhoto() {
     syncProfileToSupabase().catch(() => {});
 }
 
+// ---------- Other User Profile ----------
+let _viewingProfile = null;
+const _photoInteractions = JSON.parse(localStorage.getItem("pfm_photoInteractions") || "{}");
+
+function savePhotoInteractions() {
+    localStorage.setItem("pfm_photoInteractions", JSON.stringify(_photoInteractions));
+}
+
+function getPhotoData(photoId) {
+    if (!_photoInteractions[photoId]) _photoInteractions[photoId] = { likes: 0, liked: false, comments: [] };
+    return _photoInteractions[photoId];
+}
+
+function openOtherProfile(dogId) {
+    const match = state.matches.find(m => m.profile.id === dogId);
+    if (!match) return;
+    const dog = match.profile;
+    _viewingProfile = dog;
+
+    const avEl = $("#opAvatar");
+    if (dog.avatarImage) {
+        avEl.innerHTML = `<img src="${dog.avatarImage}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`;
+    } else {
+        avEl.innerHTML = "";
+        avEl.textContent = dog.emoji || "🐕";
+    }
+    $("#opName").textContent = dog.name || "Unbekannt";
+    const handle = "@" + (dog.name || "hund").toLowerCase().replace(/[^a-z0-9]+/g, "");
+    $("#opHandle").textContent = `${handle} · ${dog.breed || "Mischling"} · ${dog.age || 0} J.`;
+    $("#opBio").textContent = dog.bio || "";
+    $("#opStatPhotos").textContent = (dog.photos || []).length;
+    $("#opStatPaws").textContent = "—";
+    $("#opStatKm").textContent = "—";
+    $("#opSize").textContent = dog.size || "—";
+    $("#opEnergy").textContent = dog.energy || "—";
+    $("#opPlay").textContent = dog.playStyle || "—";
+    $("#opNeutered").textContent = dog.neutered === true || dog.neutered === "Ja" ? "Ja" : "Nein";
+
+    const chipsEl = $("#opChips");
+    chipsEl.innerHTML = "";
+    const chips = [];
+    if (dog.size) chips.push("📏 " + dog.size);
+    if (dog.energy) chips.push("⚡ " + dog.energy);
+    if (dog.playStyle) chips.push("🎾 " + dog.playStyle);
+    chips.forEach(t => {
+        const s = document.createElement("span");
+        s.className = "chip";
+        s.textContent = t;
+        chipsEl.appendChild(s);
+    });
+
+    renderOtherPhotos(dog);
+    $("#otherProfileModal").classList.remove("hidden");
+}
+
+function renderOtherPhotos(dog) {
+    const grid = $("#opPhotos");
+    grid.innerHTML = "";
+    const photos = dog.photos || [];
+    if (photos.length === 0) {
+        grid.innerHTML = `<p class="op-no-photos">Noch keine Fotos</p>`;
+        return;
+    }
+    photos.forEach(photo => {
+        const pd = getPhotoData(photo.id);
+        const cell = document.createElement("div");
+        cell.className = "op-photo-cell";
+        cell.innerHTML =
+            `<img src="${photo.src}" alt="" />` +
+            `<div class="op-photo-overlay">` +
+                `<span>${pd.liked ? "❤️" : "🤍"} ${pd.likes}</span>` +
+                `<span>💬 ${pd.comments.length}</span>` +
+            `</div>`;
+        cell.addEventListener("click", () => openPhotoDetail(photo, dog));
+        grid.appendChild(cell);
+    });
+}
+
+let _currentDetailPhoto = null;
+let _currentDetailDog = null;
+
+function openPhotoDetail(photo, dog) {
+    _currentDetailPhoto = photo;
+    _currentDetailDog = dog;
+    const pd = getPhotoData(photo.id);
+    $("#photoDetailImg").src = photo.src;
+    updatePhotoLikeBtn(pd);
+    renderPhotoComments(pd);
+    $("#photoDetailModal").classList.remove("hidden");
+}
+
+function updatePhotoLikeBtn(pd) {
+    $("#photoLikeBtn").innerHTML = `${pd.liked ? "❤️" : "🤍"} <span id="photoLikeCount">${pd.likes}</span>`;
+    $("#photoLikeBtn").classList.toggle("liked", pd.liked);
+}
+
+function togglePhotoLike() {
+    if (!_currentDetailPhoto) return;
+    const pd = getPhotoData(_currentDetailPhoto.id);
+    pd.liked = !pd.liked;
+    pd.likes += pd.liked ? 1 : -1;
+    if (pd.likes < 0) pd.likes = 0;
+    savePhotoInteractions();
+    updatePhotoLikeBtn(pd);
+    if (_currentDetailDog) renderOtherPhotos(_currentDetailDog);
+}
+
+function addPhotoComment() {
+    if (!_currentDetailPhoto) return;
+    const input = $("#photoCommentInput");
+    const text = input.value.trim();
+    if (!text) return;
+    const pd = getPhotoData(_currentDetailPhoto.id);
+    pd.comments.push({
+        id: Date.now(),
+        from: state.myProfile.name || "Du",
+        text: text,
+        ts: Date.now()
+    });
+    input.value = "";
+    savePhotoInteractions();
+    renderPhotoComments(pd);
+    $("#photoCommentCount").textContent = pd.comments.length;
+    if (_currentDetailDog) renderOtherPhotos(_currentDetailDog);
+}
+
+function renderPhotoComments(pd) {
+    const wrap = $("#photoComments");
+    $("#photoCommentCount").textContent = pd.comments.length;
+    if (pd.comments.length === 0) {
+        wrap.innerHTML = `<p class="no-comments">Noch keine Kommentare</p>`;
+        return;
+    }
+    wrap.innerHTML = pd.comments.map(c => {
+        const ago = formatAgo(c.ts);
+        return `<div class="photo-comment"><strong>${escapeHtml(c.from)}</strong> <span>${escapeHtml(c.text)}</span><small>${ago}</small></div>`;
+    }).join("");
+    wrap.scrollTop = wrap.scrollHeight;
+}
+
 // --- Edit profile modal ---
 function setSelectByPrefix(sel, prefix) {
     const el = $(sel);
@@ -3892,6 +4032,16 @@ function bindEvents() {
     // Photo viewer
     $("#photoViewerClose").addEventListener("click", () => $("#photoViewerModal").classList.add("hidden"));
     $("#photoViewerDelete").addEventListener("click", deleteCurrentPhoto);
+    // Other profile
+    $("#otherProfileClose").addEventListener("click", () => $("#otherProfileModal").classList.add("hidden"));
+    $("#photoDetailClose").addEventListener("click", () => $("#photoDetailModal").classList.add("hidden"));
+    $("#photoLikeBtn").addEventListener("click", togglePhotoLike);
+    $("#photoCommentSend").addEventListener("click", addPhotoComment);
+    $("#photoCommentInput").addEventListener("keydown", (e) => { if (e.key === "Enter") addPhotoComment(); });
+    // Chat header → open other profile
+    $("#chatTitleArea").addEventListener("click", () => {
+        if (state.activeChatId != null) openOtherProfile(state.activeChatId);
+    });
     // Settings
     $("#closeSettingsBtn").addEventListener("click", saveSettings);
     $("#exportDataBtn").addEventListener("click", exportData);

@@ -1085,6 +1085,221 @@ button { font-family: inherit; }
     0%, 100% { opacity: 0.5; }
     50% { opacity: 1; }
 }
+/* ---------- Other User Profile Modal ---------- */
+.other-profile-modal {
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 20px;
+    border-radius: 20px;
+    position: relative;
+}
+.modal-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #888;
+    z-index: 2;
+}
+.op-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+.op-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd5cd, #ffebe0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.op-identity h2 {
+    margin: 0;
+    font-size: 20px;
+}
+.op-handle {
+    color: #888;
+    font-size: 13px;
+    margin: 2px 0 0;
+}
+.op-stats-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.op-stat {
+    flex: 1;
+    text-align: center;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 8px 4px;
+}
+.op-stat strong {
+    display: block;
+    font-size: 18px;
+}
+.op-stat small {
+    font-size: 11px;
+    color: #888;
+}
+.op-bio {
+    font-size: 14px;
+    color: #555;
+    margin: 0 0 10px;
+}
+.op-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.op-info {
+    margin-bottom: 14px;
+}
+.op-section {
+    font-size: 15px;
+    margin: 10px 0 8px;
+}
+.op-photos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.op-photo-cell {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+}
+.op-photo-cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.op-photo-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.6));
+    color: white;
+    padding: 4px 6px;
+    font-size: 11px;
+    display: flex;
+    gap: 8px;
+}
+.op-no-photos {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #aaa;
+    padding: 20px;
+    font-size: 14px;
+}
+
+/* ---------- Photo Detail Modal ---------- */
+.photo-detail {
+    max-width: 440px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+.photo-detail img {
+    width: 100%;
+    max-height: 50vh;
+    object-fit: contain;
+    background: #000;
+}
+.photo-actions {
+    display: flex;
+    gap: 16px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #eee;
+}
+.photo-action-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background 0.15s;
+}
+.photo-action-btn:active { background: #f0f0f0; }
+.photo-action-btn.liked { color: #e74c3c; }
+.photo-comments {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 16px;
+    max-height: 25vh;
+    min-height: 60px;
+}
+.photo-comment {
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+.photo-comment strong {
+    margin-right: 6px;
+    font-size: 13px;
+}
+.photo-comment small {
+    display: block;
+    color: #aaa;
+    font-size: 11px;
+    margin-top: 2px;
+}
+.no-comments {
+    text-align: center;
+    color: #bbb;
+    font-size: 13px;
+    padding: 12px;
+}
+.photo-comment-input {
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid #eee;
+}
+.photo-comment-input input {
+    flex: 1;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 14px;
+    outline: none;
+}
+.photo-comment-input input:focus { border-color: var(--brand); }
+.photo-send-btn {
+    background: var(--brand);
+    color: white;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+}
+
 .emoji-marker.dog-marker .emoji-pin {
     position: relative;
 }

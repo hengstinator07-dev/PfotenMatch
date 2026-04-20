@@ -766,7 +766,7 @@
             <header class="chat-header">
                 <button id="chatBack" class="chat-icon-btn">←</button>
                 <div id="chatAvatar" class="chat-avatar">🐶</div>
-                <div class="chat-title">
+                <div class="chat-title" id="chatTitleArea" style="cursor:pointer">
                     <span id="chatName">Rex</span>
                     <small id="chatStatus" class="chat-status">online</small>
                 </div>
@@ -1248,6 +1248,52 @@
             <div class="modal-actions">
                 <button class="btn-ghost" id="cancelMeetBtn">Abbrechen</button>
                 <button class="btn-primary" id="sendMeetBtn">Senden</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Other user profile modal -->
+    <div id="otherProfileModal" class="modal hidden">
+        <div class="modal-content other-profile-modal">
+            <button id="otherProfileClose" class="modal-close-btn">✕</button>
+            <div class="op-header">
+                <div id="opAvatar" class="op-avatar">🐕</div>
+                <div class="op-identity">
+                    <h2 id="opName">Name</h2>
+                    <p id="opHandle" class="op-handle">@name · Rasse · 3 J.</p>
+                </div>
+            </div>
+            <div class="op-stats-row">
+                <div class="op-stat"><strong id="opStatPhotos">0</strong><small>Fotos</small></div>
+                <div class="op-stat"><strong id="opStatPaws">0</strong><small>Pfoten</small></div>
+                <div class="op-stat"><strong id="opStatKm">0</strong><small>km</small></div>
+            </div>
+            <p id="opBio" class="op-bio"></p>
+            <div id="opChips" class="op-chips"></div>
+            <div class="op-info">
+                <div class="info-row"><span>📏 Größe</span><strong id="opSize">—</strong></div>
+                <div class="info-row"><span>⚡ Energie</span><strong id="opEnergy">—</strong></div>
+                <div class="info-row"><span>🎾 Spielstil</span><strong id="opPlay">—</strong></div>
+                <div class="info-row"><span>✂ Kastriert</span><strong id="opNeutered">—</strong></div>
+            </div>
+            <h3 class="op-section">🏞️ Fotos</h3>
+            <div id="opPhotos" class="op-photos"></div>
+        </div>
+    </div>
+
+    <!-- Photo detail modal (other user) -->
+    <div id="photoDetailModal" class="modal hidden">
+        <div class="photo-detail">
+            <button id="photoDetailClose" class="photo-viewer-close">✕</button>
+            <img id="photoDetailImg" src="" alt="" />
+            <div class="photo-actions">
+                <button id="photoLikeBtn" class="photo-action-btn">🤍 <span id="photoLikeCount">0</span></button>
+                <button id="photoCommentToggle" class="photo-action-btn">💬 <span id="photoCommentCount">0</span></button>
+            </div>
+            <div id="photoComments" class="photo-comments"></div>
+            <div class="photo-comment-input">
+                <input type="text" id="photoCommentInput" placeholder="Kommentar schreiben…" />
+                <button id="photoCommentSend" class="photo-send-btn">➤</button>
             </div>
         </div>
     </div>
