@@ -4798,33 +4798,110 @@ button { font-family: inherit; }
     box-shadow: 0 3px 10px rgba(255, 107, 107, 0.2);
 }
 
-/* Phone verify simulation */
+/* Phone verification */
 .ms-verify {
     background: #f9f9f9;
     border-radius: 12px;
-    padding: 12px 14px;
+    padding: 14px;
     margin-top: 4px;
 }
-.ms-verify-row {
+.ms-verify h4 { margin: 0 0 4px; font-size: 14px; }
+.ms-verify .form-hint { margin: 0 0 10px; font-size: 12px; color: #888; }
+.phone-input-row {
     display: flex;
+    gap: 8px;
     align-items: center;
-    gap: 10px;
+}
+.phone-input-row input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 14px;
+}
+.phone-input-row input:focus { border-color: var(--brand); outline: none; }
+.btn-ghost-sm {
+    padding: 8px 14px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: white;
     font-size: 13px;
-    color: #444;
     cursor: pointer;
-    font-weight: 600;
+    white-space: nowrap;
 }
-.ms-verify-row input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: #4ecdc4;
-    cursor: pointer;
+.btn-ghost-sm:hover { border-color: var(--brand); }
+.verified-success {
+    display: inline-block;
+    color: #2ecc71;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 8px 0;
 }
-.ms-verify-row small {
-    display: block;
+
+/* Sitter location search */
+.sitter-location-search {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.sitter-location-search input {
+    flex: 1;
+}
+
+/* Sitter Premium gate */
+.sitter-premium-gate { margin: 16px 0; }
+.premium-gate-card {
+    background: linear-gradient(135deg, #fff9e6, #fff3cc);
+    border: 2px solid #ffd700;
+    border-radius: 16px;
+    padding: 18px;
+    text-align: center;
+}
+.premium-gate-card h4 { margin: 0 0 8px; font-size: 16px; }
+.premium-gate-card p { font-size: 13px; color: #666; margin: 0 0 12px; }
+.premium-gate-price {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 12px;
+}
+.premium-gate-price small {
+    font-size: 14px;
+    font-weight: 400;
     color: #888;
-    font-weight: 500;
+}
+
+/* Sitter radius filter */
+.radius-filter {
+    font-size: 13px;
+    color: #555;
+    margin-top: 6px;
+}
+.radius-filter input[type="range"] {
+    width: 100%;
+}
+
+/* Dashboard subscription status */
+.dash-sub-status {
+    text-align: center;
+    padding: 10px 0;
+    margin-bottom: 10px;
+    border-radius: 10px;
+}
+.sub-active {
+    color: #2ecc71;
+    font-weight: 700;
+    font-size: 14px;
+}
+.sub-inactive {
+    color: #e67e22;
+    font-weight: 700;
+    font-size: 14px;
+}
+.sub-hint {
+    display: block;
     font-size: 11px;
+    color: #888;
     margin-top: 2px;
 }
 

@@ -476,3 +476,131 @@ function sbUnsubscribeChatMessages() {
         _chatSubscription = null;
     }
 }
+
+// ---------- Sitter Profiles ----------
+
+async function sbUpsertSitterProfile(profile) {
+    if (!_sbReady()) return null;
+    const user = await sbGetUser();
+    if (!user) return null;
+    const row = {
+        user_id: user.id,
+        name: profile.name,
+        avatar: profile.avatar,
+        bio: profile.bio,
+        experience: profile.experience,
+        response_time: profile.responseTime,
+        availability: profile.availability,
+        services: profile.services,
+        accepted_sizes: profile.acceptedSizes,
+        price_hour: profile.priceHour || null,
+        price_day: profile.priceDay || null,
+        price_night: profile.priceNight || null,
+        city: profile.city || "",
+        location: profile.lat && profile.lng
+            ? `POINT(${profile.lng} ${profile.lat})`
+            : null,
+        phone_verified: profile.phoneVerified || false,
+        updated_at: new Date().toISOString()
+    };
+    const { data, error } = await sb
+        .from("sitter_profiles")
+        .upsert(row, { onConflict: "user_id" })
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+async function sbLoadMySitterProfile() {
+    if (!_sbReady()) return null;
+    const user = await sbGetUser();
+    if (!user) return null;
+    const { data, error } = await sb
+        .from("sitter_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+    if (error) throw error;
+    return data;
+}
+
+async function sbDeleteSitterProfile() {
+    if (!_sbReady()) return;
+    const user = await sbGetUser();
+    if (!user) return;
+    await sb.from("sitter_profiles").delete().eq("user_id", user.id);
+}
+
+async function sbFindSittersNearby(lat, lng, radiusKm) {
+    if (!_sbReady()) return [];
+    const { data, error } = await sb.rpc("find_sitters_nearby", {
+        user_lat: lat,
+        user_lng: lng,
+        radius_km: radiusKm || 10
+    });
+    if (error) throw error;
+    return data || [];
+}
+
+async function sbCreateBooking(sitterProfileId, booking) {
+    if (!_sbReady()) return null;
+    const user = await sbGetUser();
+    if (!user) return null;
+    const { data, error } = await sb
+        .from("sitter_bookings")
+        .insert({
+            client_id: user.id,
+            sitter_id: sitterProfileId,
+            service: booking.service,
+            date_from: booking.dateFrom,
+            date_to: booking.dateTo || booking.dateFrom,
+            hours: booking.hours || null,
+            notes: booking.notes || "",
+            total: booking.total
+        })
+        .select()
+        .single();
+    if (error) throw error;
+    return data;
+}
+
+async function sbUpdateBookingStatus(bookingId, status) {
+    if (!_sbReady()) return;
+    const { error } = await sb
+        .from("sitter_bookings")
+        .update({ status })
+        .eq("id", bookingId);
+    if (error) throw error;
+}
+
+async function sbGetSitterSubscriptionStatus() {
+    if (!_sbReady()) return "inactive";
+    const user = await sbGetUser();
+    if (!user) return "inactive";
+    const { data } = await sb
+        .from("sitter_profiles")
+        .select("subscription_status")
+        .eq("user_id", user.id)
+        .maybeSingle();
+    return data?.subscription_status || "inactive";
+}
+
+// ---------- Phone Verification via Supabase Auth ----------
+
+async function sbSendPhoneOtp(phone) {
+    if (!_sbReady()) throw new Error("Supabase nicht verfügbar");
+    const { error } = await sb.auth.signInWithOtp({ phone });
+    if (error) throw error;
+}
+
+async function sbVerifyPhoneOtp(phone, token) {
+    if (!_sbReady()) throw new Error("Supabase nicht verfügbar");
+    const { data, error } = await sb.auth.verifyOtp({
+        phone,
+        token,
+        type: "sms"
+    });
+    if (error) throw error;
+    return data;
+}

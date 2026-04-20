@@ -3137,10 +3137,15 @@ function flashToast(text) {
 // ============================================================
 // SITTER – Hundesitter finden & buchen
 // ============================================================
+let _remoteSitters = [];
+let _sitterPhoneVerified = false;
+let _sitterPhone = "";
+
 const sitterUi = {
-    mode: "discover",    // "discover" | "bookings"
+    mode: "discover",
     service: "",
-    maxPrice: 25,
+    maxPrice: 100,
+    radius: 10,
     detailId: null
 };
 
@@ -3164,6 +3169,7 @@ function renderSitterView() {
     updateBookingsBadge();
     updateSitterRequestsBadge();
     switchSitterTab(sitterUi.mode);
+    loadRemoteSitters().catch(() => {});
 }
 
 function switchSitterTab(mode) {
@@ -3191,19 +3197,22 @@ function renderSitters() {
     const list = $("#sitterList");
     if (!list) return;
     list.innerHTML = "";
-    // Alle Sitter inkl. eigenem Profil (falls vorhanden)
     const all = [...DOG_SITTERS];
     if (state.mySitterProfile) all.unshift(state.mySitterProfile);
+    // Add real sitters from Supabase
+    _remoteSitters.forEach(rs => {
+        if (!all.some(s => s.remoteId === rs.id)) all.push(rs);
+    });
 
     const filtered = all
         .filter(s => !sitterUi.service || s.services.includes(sitterUi.service))
         .filter(s => !s.priceHour || s.priceHour <= sitterUi.maxPrice)
-        .map(s => ({ ...s, distance: sitterDistance(s) }))
+        .map(s => ({ ...s, distance: s.distance ?? sitterDistance(s) }))
+        .filter(s => s.distance <= sitterUi.radius)
         .sort((a, b) => {
-            // Eigenes Profil immer oben
             if (a.id === "me") return -1;
             if (b.id === "me") return 1;
-            return b.rating - a.rating;
+            return a.distance - b.distance;
         });
 
     if (filtered.length === 0) {
@@ -3478,14 +3487,12 @@ function initSitterFormDefaults() {
 }
 
 function bindSitterRegistration() {
-    // Avatar-Picker
     $$("#msAvatarPicker button").forEach(b => {
         b.addEventListener("click", () => {
             sitterForm.selectedAvatar = b.dataset.av;
             $$("#msAvatarPicker button").forEach(x => x.classList.toggle("active", x === b));
         });
     });
-    // Größen-Picker (Multi-Select)
     $$("#msSizes button").forEach(b => {
         b.addEventListener("click", () => {
             const size = b.dataset.size;
@@ -3495,30 +3502,34 @@ function bindSitterRegistration() {
             b.classList.toggle("active");
         });
     });
-    // Formular-Submit
     $("#sitterForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
         saveMySitterProfile();
     });
-    // Dashboard
     $("#dashEditBtn")?.addEventListener("click", editMySitterProfile);
     $("#dashDeleteBtn")?.addEventListener("click", deleteMySitterProfile);
+    $("#sitterUpgradeBtn")?.addEventListener("click", openSitterCheckout);
+    bindSitterLocationSearch();
+    bindPhoneVerification();
 }
 
 function saveMySitterProfile() {
     const name = $("#msName").value.trim();
-    const hood = $("#msHood").value;
     const bio  = $("#msBio").value.trim();
     const experience = $("#msExperience").value;
     const responseTime = $("#msResponse").value;
     const availability = $("#msAvailability").value.trim() || "Nach Absprache";
-    const phoneVerified = $("#msPhoneVerify").checked;
+
+    const lat = parseFloat($("#msLat").value);
+    const lng = parseFloat($("#msLng").value);
+    const city = $("#msCity").value || $("#msLocationInput").value.trim();
 
     const services = [];
     $$('input[name="msSvc"]:checked').forEach(i => services.push(i.value));
 
     if (!name)    { flashToast("Bitte Namen eingeben"); return; }
     if (!bio)     { flashToast("Bitte eine kurze Bio schreiben"); return; }
+    if (!lat || !lng) { flashToast("Bitte Standort angeben"); return; }
     if (services.length === 0) { flashToast("Wähle mindestens einen Service"); return; }
     if (sitterForm.selectedSizes.length === 0) { flashToast("Wähle mindestens eine Hundegröße"); return; }
 
@@ -3532,39 +3543,48 @@ function saveMySitterProfile() {
         flashToast("Bitte Nachtpreis angeben"); return;
     }
 
-    const coords = HOOD_COORDS[hood] || { lat: state.userLocation.lat, lng: state.userLocation.lng };
-
     const isNew = !state.mySitterProfile;
     state.mySitterProfile = {
         id: "me",
         name,
         avatar: sitterForm.selectedAvatar,
-        neighborhood: hood,
-        lat: coords.lat, lng: coords.lng,
+        neighborhood: city,
+        lat, lng,
         rating: state.mySitterProfile?.rating || 5.0,
         reviewCount: state.mySitterProfile?.reviewCount || 0,
         priceHour, priceDay, priceNight,
         services,
         bio,
         experience,
-        verified: phoneVerified,
+        verified: _sitterPhoneVerified,
+        phoneVerified: _sitterPhoneVerified,
         acceptedSizes: [...sitterForm.selectedSizes],
         responseTime,
         availability,
+        city,
+        subscriptionStatus: state.mySitterProfile?.subscriptionStatus || "inactive",
         createdAt: state.mySitterProfile?.createdAt || Date.now()
     };
     saveState();
 
+    sbUpsertSitterProfile({
+        name, avatar: sitterForm.selectedAvatar, bio, experience,
+        responseTime, availability, services,
+        acceptedSizes: sitterForm.selectedSizes,
+        priceHour, priceDay, priceNight,
+        lat, lng, city,
+        phoneVerified: _sitterPhoneVerified
+    }).catch(e => console.warn("Sitter sync failed:", e));
+
     if (isNew) {
-        flashToast("🎉 Sitter-Profil veröffentlicht!");
-        // Demo-Anfragen nach kurzer Verzögerung einspielen
+        flashToast("🎉 Sitter-Profil gespeichert!");
         setTimeout(seedDemoSitterRequests, 1500);
     } else {
         flashToast("✓ Profil aktualisiert");
     }
 
     renderBecomeSitter();
-    renderSitters();      // eigenes Profil im Entdecken-Tab zeigen
+    renderSitters();
     updateSitterRequestsBadge();
     if (leafletMap) renderMapMarkers();
 }
@@ -3572,14 +3592,20 @@ function saveMySitterProfile() {
 function editMySitterProfile() {
     const p = state.mySitterProfile;
     if (!p) return;
-    // Formular mit vorhandenen Werten befüllen
     $("#msName").value = p.name;
-    $("#msHood").value = p.neighborhood;
+    $("#msLocationInput").value = p.city || p.neighborhood || "";
+    $("#msLat").value = p.lat || "";
+    $("#msLng").value = p.lng || "";
+    $("#msCity").value = p.city || p.neighborhood || "";
+    if (p.lat && p.lng) {
+        $("#msLocationStatus").textContent = `📍 ${p.city || p.neighborhood} (${p.lat.toFixed(2)}, ${p.lng.toFixed(2)})`;
+    }
     $("#msBio").value = p.bio;
     $("#msExperience").value = p.experience;
     $("#msResponse").value = p.responseTime;
     $("#msAvailability").value = p.availability;
-    $("#msPhoneVerify").checked = !!p.verified;
+    _sitterPhoneVerified = !!p.verified || !!p.phoneVerified;
+    updatePhoneVerifyUi();
     $("#msPriceHour").value  = p.priceHour  || "";
     $("#msPriceDay").value   = p.priceDay   || "";
     $("#msPriceNight").value = p.priceNight || "";
@@ -3590,22 +3616,34 @@ function editMySitterProfile() {
     sitterForm.selectedSizes = [...p.acceptedSizes];
     initSitterFormDefaults();
 
-    // Während Bearbeitung: Dashboard ausblenden, Formular zeigen
     $("#sitterRegisterWrap").classList.remove("hidden");
     $("#sitterDashboardWrap").classList.add("hidden");
     $("#sitterRegisterWrap").scrollIntoView({ behavior: "smooth" });
+}
+
+function updatePhoneVerifyUi() {
+    if (_sitterPhoneVerified) {
+        $("#phoneStep1")?.classList.add("hidden");
+        $("#phoneStep2")?.classList.add("hidden");
+        $("#phoneVerified")?.classList.remove("hidden");
+    } else {
+        $("#phoneStep1")?.classList.remove("hidden");
+        $("#phoneStep2")?.classList.add("hidden");
+        $("#phoneVerified")?.classList.add("hidden");
+    }
 }
 
 function deleteMySitterProfile() {
     if (!confirm("Sitter-Profil wirklich löschen? Alle offenen Anfragen gehen verloren.")) return;
     state.mySitterProfile = null;
     state.sitterRequests = [];
+    _sitterPhoneVerified = false;
     sitterForm.selectedAvatar = "👩";
     sitterForm.selectedSizes = [];
-    // Form leeren
     const form = $("#sitterForm");
     if (form) form.reset();
     saveState();
+    sbDeleteSitterProfile().catch(() => {});
     renderBecomeSitter();
     renderSitters();
     updateSitterRequestsBadge();
@@ -3666,9 +3704,25 @@ function renderSitterDashboard() {
     if (!p) return;
     $("#dashAv").textContent = p.avatar;
     $("#dashName").textContent = p.name;
-    $("#dashHood").textContent = `${p.neighborhood} · ${p.services.length} Services`;
-    $("#dashVerified").classList.toggle("hidden", !p.verified);
+    $("#dashHood").textContent = `${p.city || p.neighborhood} · ${p.services.length} Services`;
+    $("#dashVerified").classList.toggle("hidden", !p.verified && !p.phoneVerified);
     $("#dashRating").textContent = (p.rating || 5.0).toFixed(1);
+
+    const subStatus = p.subscriptionStatus || "inactive";
+    const subEl = $("#dashSubStatus");
+    if (subEl) {
+        if (subStatus === "active") {
+            subEl.innerHTML = `<span class="sub-active">⭐ Sitter Premium aktiv</span><span class="sub-hint">Dein Profil ist öffentlich sichtbar</span>`;
+            $("#dashUpgradeBtn")?.classList.add("hidden");
+        } else {
+            subEl.innerHTML = `<span class="sub-inactive">🔒 Sitter Premium inaktiv</span><span class="sub-hint">Profil ist nicht öffentlich sichtbar</span>`;
+            const upgradeBtn = $("#dashUpgradeBtn");
+            if (upgradeBtn) {
+                upgradeBtn.classList.remove("hidden");
+                upgradeBtn.onclick = openSitterCheckout;
+            }
+        }
+    }
 
     // Stats: Verdienst + Aufträge (nur accepted/completed)
     const done = state.sitterRequests.filter(r => r.status === "accepted" || r.status === "completed");
@@ -3783,6 +3837,172 @@ function updateSitterRequestsBadge() {
         badge.classList.remove("hidden");
     } else {
         badge.classList.add("hidden");
+    }
+}
+
+// ---------- Sitter location search (Nominatim) ----------
+let _sitterLocTimer = null;
+
+function bindSitterLocationSearch() {
+    const inp = $("#msLocationInput");
+    const results = $("#msLocationResults");
+    if (!inp) return;
+
+    inp.addEventListener("input", () => {
+        if (_sitterLocTimer) clearTimeout(_sitterLocTimer);
+        const q = inp.value.trim();
+        if (q.length < 2) { results?.classList.add("hidden"); return; }
+        _sitterLocTimer = setTimeout(async () => {
+            try {
+                const data = await searchCity(q);
+                if (!data || data.length === 0) { results?.classList.add("hidden"); return; }
+                results.innerHTML = "";
+                data.slice(0, 5).forEach(r => {
+                    const item = document.createElement("div");
+                    item.className = "city-result-item";
+                    item.textContent = r.display_name.split(",").slice(0, 3).join(", ");
+                    item.addEventListener("click", () => {
+                        $("#msLat").value = r.lat;
+                        $("#msLng").value = r.lon;
+                        const cityName = r.display_name.split(",").slice(0, 2).join(", ");
+                        $("#msCity").value = cityName;
+                        inp.value = cityName;
+                        $("#msLocationStatus").textContent = `📍 ${cityName}`;
+                        results.classList.add("hidden");
+                    });
+                    results.appendChild(item);
+                });
+                results.classList.remove("hidden");
+            } catch (e) { /* ignore */ }
+        }, 400);
+    });
+
+    const gpsBtn = $("#msUseGps");
+    if (gpsBtn) {
+        gpsBtn.addEventListener("click", () => {
+            if (!navigator.geolocation) { flashToast("GPS nicht verfügbar"); return; }
+            gpsBtn.textContent = "📡";
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    $("#msLat").value = lat;
+                    $("#msLng").value = lng;
+                    try {
+                        const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=12`);
+                        const data = await resp.json();
+                        const city = data.address?.city || data.address?.town || data.address?.village || "Mein Standort";
+                        $("#msCity").value = city;
+                        inp.value = city;
+                        $("#msLocationStatus").textContent = `📍 ${city}`;
+                    } catch (e) {
+                        inp.value = "GPS Standort";
+                        $("#msCity").value = "GPS Standort";
+                        $("#msLocationStatus").textContent = `📍 Standort erkannt`;
+                    }
+                    gpsBtn.textContent = "📍";
+                },
+                () => {
+                    flashToast("Standort konnte nicht ermittelt werden");
+                    gpsBtn.textContent = "📍";
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        });
+    }
+}
+
+// ---------- Phone Verification ----------
+function bindPhoneVerification() {
+    const sendBtn = $("#sendOtpBtn");
+    const verifyBtn = $("#verifyOtpBtn");
+
+    if (sendBtn) {
+        sendBtn.addEventListener("click", async () => {
+            const phone = $("#msPhone").value.trim();
+            if (!phone || phone.length < 8) { flashToast("Bitte gültige Telefonnummer eingeben"); return; }
+            _sitterPhone = phone;
+            sendBtn.textContent = "⏳";
+            sendBtn.disabled = true;
+            try {
+                await sbSendPhoneOtp(phone);
+                $("#phoneStep1").classList.add("hidden");
+                $("#phoneStep2").classList.remove("hidden");
+                flashToast("📱 SMS-Code wurde gesendet");
+            } catch (e) {
+                flashToast("Fehler: " + (e.message || "SMS konnte nicht gesendet werden"));
+            } finally {
+                sendBtn.textContent = "SMS senden";
+                sendBtn.disabled = false;
+            }
+        });
+    }
+
+    if (verifyBtn) {
+        verifyBtn.addEventListener("click", async () => {
+            const code = $("#msOtpCode").value.trim();
+            if (!code || code.length < 6) { flashToast("Bitte 6-stelligen Code eingeben"); return; }
+            verifyBtn.textContent = "⏳";
+            verifyBtn.disabled = true;
+            try {
+                await sbVerifyPhoneOtp(_sitterPhone, code);
+                _sitterPhoneVerified = true;
+                updatePhoneVerifyUi();
+                flashToast("✅ Telefon erfolgreich verifiziert!");
+            } catch (e) {
+                flashToast("❌ Code ungültig: " + (e.message || "Bitte erneut versuchen"));
+            } finally {
+                verifyBtn.textContent = "Bestätigen";
+                verifyBtn.disabled = false;
+            }
+        });
+    }
+}
+
+// ---------- Stripe Checkout for Sitter Premium ----------
+const STRIPE_SITTER_PRICE_ID = "price_sitter_premium_monthly";
+
+function openSitterCheckout() {
+    const user = sbGetUser().then(u => {
+        if (!u) { flashToast("Bitte zuerst anmelden"); return; }
+        const checkoutUrl = `https://checkout.stripe.com/pay/${STRIPE_SITTER_PRICE_ID}?client_reference_id=${u.id}&prefilled_email=${encodeURIComponent(u.email || "")}`;
+        window.open(checkoutUrl, "_blank");
+        flashToast("⭐ Stripe Checkout wird geöffnet…");
+    }).catch(() => flashToast("Fehler beim Öffnen von Stripe"));
+}
+
+// ---------- Load remote sitters from Supabase ----------
+async function loadRemoteSitters() {
+    try {
+        const ul = state.userLocation;
+        const data = await sbFindSittersNearby(ul.lat, ul.lng, sitterUi.radius);
+        _remoteSitters = data.map(s => ({
+            id: "sb_sitter_" + s.id,
+            remoteId: s.id,
+            userId: s.user_id,
+            name: s.name,
+            avatar: s.avatar || "👩",
+            neighborhood: s.city || "",
+            lat: s.approx_lat,
+            lng: s.approx_lng,
+            distance: s.distance_km,
+            rating: parseFloat(s.rating) || 5.0,
+            reviewCount: s.review_count || 0,
+            priceHour: s.price_hour,
+            priceDay: s.price_day,
+            priceNight: s.price_night,
+            services: s.services || [],
+            bio: s.bio || "",
+            experience: s.experience || "",
+            verified: s.phone_verified,
+            acceptedSizes: s.accepted_sizes || [],
+            responseTime: s.response_time || "~1 Std",
+            availability: s.availability || "",
+            isReal: true
+        }));
+        renderSitters();
+    } catch (e) {
+        console.warn("Failed to load remote sitters:", e);
     }
 }
 
@@ -4069,6 +4289,12 @@ function bindEvents() {
         sitterUi.maxPrice = parseInt(e.target.value);
         $("#maxPriceLabel").textContent = `CHF ${sitterUi.maxPrice}`;
         renderSitters();
+    });
+    $("#sitterRadiusSlider")?.addEventListener("input", (e) => {
+        sitterUi.radius = parseInt(e.target.value);
+        $("#sitterRadiusLabel").textContent = `${sitterUi.radius} km`;
+        renderSitters();
+        loadRemoteSitters().catch(() => {});
     });
     $("#sitterDetailClose").addEventListener("click", () =>
         $("#sitterDetailModal").classList.add("hidden"));

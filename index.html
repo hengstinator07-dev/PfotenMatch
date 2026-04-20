@@ -532,8 +532,12 @@
                             <button class="chip" data-svc="Urlaub">✈ Urlaub</button>
                         </div>
                         <label class="price-filter">
-                            <span>Max. Preis/Std: <strong id="maxPriceLabel">CHF 25</strong></span>
-                            <input type="range" id="maxPriceSlider" min="10" max="25" value="25" />
+                            <span>Max. Preis/Std: <strong id="maxPriceLabel">CHF 100</strong></span>
+                            <input type="range" id="maxPriceSlider" min="5" max="100" value="100" step="5" />
+                        </label>
+                        <label class="radius-filter">
+                            <span>Umkreis: <strong id="sitterRadiusLabel">10 km</strong></span>
+                            <input type="range" id="sitterRadiusSlider" min="1" max="50" value="10" />
                         </label>
                     </div>
                     <div id="sitterList" class="sitter-list"></div>
@@ -548,14 +552,24 @@
                     <div id="sitterRegisterWrap">
                         <div class="sitter-hero">
                             <div class="sitter-hero-emoji">🏡</div>
-                            <h3>Werde Hundesitter in Basel</h3>
+                            <h3>Werde Hundesitter</h3>
                             <p>Verdiene Geld mit dem, was du liebst – Hunde betreuen.<br>Bestimme selbst Preise, Verfügbarkeit und welche Hunde du nimmst.</p>
                             <ul class="sitter-perks">
                                 <li>💰 <strong>Du bestimmst</strong> die Preise</li>
                                 <li>📅 <strong>Volle Flexibilität</strong> bei der Verfügbarkeit</li>
-                                <li>✓ <strong>Verifizierungs-Badge</strong> nach Telefon-Check</li>
-                                <li>🐾 Eigene Pin auf der Karte</li>
+                                <li>✓ <strong>Verifizierungs-Badge</strong> nach SMS-Verifizierung</li>
+                                <li>🗺️ <strong>Standortbasiert</strong> – überall einsetzbar</li>
+                                <li>⭐ <strong>Premium Sitter-Abo</strong> zum Veröffentlichen</li>
                             </ul>
+                            <div id="sitterPremiumGate" class="sitter-premium-gate hidden">
+                                <div class="premium-gate-card">
+                                    <h4>⭐ Sitter Premium erforderlich</h4>
+                                    <p>Um dein Profil zu veröffentlichen und Anfragen zu erhalten, benötigst du ein aktives Sitter-Abo.</p>
+                                    <div class="premium-gate-price">CHF 9.90 <small>/ Monat</small></div>
+                                    <button type="button" class="btn-primary full" id="sitterUpgradeBtn">⭐ Jetzt Sitter Premium aktivieren</button>
+                                    <small class="muted">Jederzeit kündbar. Du kannst dein Profil erstellen und erst später upgraden.</small>
+                                </div>
+                            </div>
                         </div>
 
                         <form id="sitterForm" class="sitter-form">
@@ -578,18 +592,16 @@
                                 </div>
                             </label>
                             <label>
-                                <span>Quartier in Basel</span>
-                                <select id="msHood">
-                                    <option value="Kleinbasel">Kleinbasel</option>
-                                    <option value="Gundeldingen">Gundeldingen</option>
-                                    <option value="St. Johann">St. Johann</option>
-                                    <option value="Bruderholz">Bruderholz</option>
-                                    <option value="Matthäus">Matthäus</option>
-                                    <option value="Iselin">Iselin</option>
-                                    <option value="Breite">Breite</option>
-                                    <option value="Riehen">Riehen</option>
-                                    <option value="Bachletten">Bachletten</option>
-                                </select>
+                                <span>📍 Standort</span>
+                                <div class="sitter-location-search">
+                                    <input type="text" id="msLocationInput" placeholder="Stadt oder Ort suchen …" autocomplete="off" />
+                                    <button type="button" id="msUseGps" class="btn-ghost-sm" title="GPS verwenden">📍</button>
+                                </div>
+                                <div id="msLocationResults" class="city-results hidden"></div>
+                                <input type="hidden" id="msLat" />
+                                <input type="hidden" id="msLng" />
+                                <input type="hidden" id="msCity" />
+                                <small id="msLocationStatus" class="muted">Dein genauer Standort wird nie angezeigt – nur der ungefähre Umkreis.</small>
                             </label>
                             <label>
                                 <span>Über dich (Bio)</span>
@@ -602,17 +614,17 @@
                                 <label class="ms-svc">
                                     <input type="checkbox" name="msSvc" value="Gassi" />
                                     <span>🚶 Gassi gehen</span>
-                                    <input type="number" id="msPriceHour" min="5" max="50" step="1" placeholder="CHF/Std" />
+                                    <input type="number" id="msPriceHour" min="1" step="1" placeholder="CHF/Std" />
                                 </label>
                                 <label class="ms-svc">
                                     <input type="checkbox" name="msSvc" value="Tag" />
                                     <span>☀ Tagesbetreuung</span>
-                                    <input type="number" id="msPriceDay" min="20" max="200" step="5" placeholder="CHF/Tag" />
+                                    <input type="number" id="msPriceDay" min="1" step="1" placeholder="CHF/Tag" />
                                 </label>
                                 <label class="ms-svc">
                                     <input type="checkbox" name="msSvc" value="Nacht" />
                                     <span>🌙 Übernachtung</span>
-                                    <input type="number" id="msPriceNight" min="30" max="300" step="5" placeholder="CHF/Nacht" />
+                                    <input type="number" id="msPriceNight" min="1" step="1" placeholder="CHF/Nacht" />
                                 </label>
                                 <label class="ms-svc">
                                     <input type="checkbox" name="msSvc" value="Urlaub" />
@@ -655,13 +667,30 @@
                             </label>
 
                             <div class="ms-verify">
-                                <label class="ms-verify-row">
-                                    <input type="checkbox" id="msPhoneVerify" />
-                                    <span>📱 Telefon-Verifizierung simulieren <small>(für Verifiziert-Badge ✓)</small></span>
-                                </label>
+                                <h4>📱 Telefon-Verifizierung</h4>
+                                <p class="form-hint">Verifiziere deine Telefonnummer für das ✓-Badge. Mehr Vertrauen = mehr Buchungen.</p>
+                                <div id="phoneVerifySection">
+                                    <div id="phoneStep1">
+                                        <div class="phone-input-row">
+                                            <input type="tel" id="msPhone" placeholder="+41 79 123 45 67" />
+                                            <button type="button" id="sendOtpBtn" class="btn-ghost-sm">SMS senden</button>
+                                        </div>
+                                    </div>
+                                    <div id="phoneStep2" class="hidden">
+                                        <div class="phone-input-row">
+                                            <input type="text" id="msOtpCode" placeholder="6-stelliger Code" maxlength="6" />
+                                            <button type="button" id="verifyOtpBtn" class="btn-ghost-sm">Bestätigen</button>
+                                        </div>
+                                        <small class="muted">Code wurde per SMS gesendet.</small>
+                                    </div>
+                                    <div id="phoneVerified" class="hidden">
+                                        <span class="verified-success">✅ Telefon verifiziert</span>
+                                    </div>
+                                </div>
                             </div>
 
-                            <button type="submit" class="btn-primary full" id="msSubmit">🐾 Sitter-Profil veröffentlichen</button>
+                            <button type="submit" class="btn-primary full" id="msSubmit">🐾 Sitter-Profil speichern</button>
+                            <small class="muted" style="text-align:center;display:block;margin-top:6px">Dein Profil wird erst nach Aktivierung von Sitter Premium öffentlich sichtbar.</small>
                         </form>
                     </div>
 
@@ -690,8 +719,10 @@
                                     <small>Rating</small>
                                 </div>
                             </div>
+                            <div id="dashSubStatus" class="dash-sub-status"></div>
                             <div class="sd-actions">
                                 <button id="dashEditBtn" class="btn-ghost">✎ Bearbeiten</button>
+                                <button id="dashUpgradeBtn" class="btn-primary hidden">⭐ Sitter Premium aktivieren</button>
                                 <button id="dashDeleteBtn" class="btn-danger-outline">🗑 Profil löschen</button>
                             </div>
                         </div>
