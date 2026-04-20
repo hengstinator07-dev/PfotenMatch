@@ -1927,8 +1927,15 @@ function addPoiMarker(p) {
     const cat = getCategoryById(p.cat);
     const icon = p.osmIcon || (cat ? cat.icon : "📍");
     const visited = !!state.paws[p.id];
+    const dist = getPoiDistance(p);
+    const isNearby = dist <= 30;
+    const isDiscovered = _discoveredPois.has(p.id) || isNearby;
+    let cls = "poi-marker cat-" + p.cat;
+    if (visited) cls += " visited";
+    if (isNearby) cls += " nearby";
+    else if (!visited) cls += " locked";
     const marker = L.marker([p.lat, p.lng], {
-        icon: buildEmojiIcon(icon, 30, "poi-marker " + (visited ? "visited" : "") + " cat-" + p.cat),
+        icon: buildEmojiIcon(icon, 30, cls),
         title: p.name
     }).addTo(leafletMap);
     const ratingLine = p.rating ? `⭐ ${p.rating} · ` : "";
@@ -1936,17 +1943,22 @@ function addPoiMarker(p) {
     const osmBadge = p.isOsm ? '<span class="osm-badge">OSM</span>' : '';
     const visitedBadge = visited ? '<br><span style="color:#ff6b6b;font-weight:700">🐾 Schon besucht</span>' : '';
     const descLine = p.desc ? `${escapeHtml(p.desc)}<br>` : "";
+    const distText = dist < Infinity ? (dist < 1000 ? `${Math.round(dist)}m entfernt` : `${(dist / 1000).toFixed(1)}km entfernt`) : "";
+    const distLine = distText ? `<br><small class="poi-dist ${isNearby ? 'near' : 'far'}">${isNearby ? '✅' : '📏'} ${distText}</small>` : "";
+    const btnDisabled = !isNearby && !visited ? ' disabled' : '';
+    const btnLabel = visited ? "Erneut besuchen" : (isNearby ? "🐾 Pfote setzen" : "🔒 Näher kommen (30m)");
     marker.bindPopup(
         `<strong>${icon} ${escapeHtml(p.name)}</strong>${osmBadge}<br>` +
         descLine +
         `<small>${ratingLine}${openLine}</small>` +
+        distLine +
         visitedBadge +
-        `<br><button class="popup-btn" data-paw="${p.id}">${visited ? "Erneut besuchen" : "🐾 Pfote setzen"}</button>`
+        `<br><button class="popup-btn${btnDisabled ? ' locked-btn' : ''}" data-paw="${p.id}"${btnDisabled}>${btnLabel}</button>`
     );
     marker.on("popupopen", (e) => {
         const btn = e.popup._contentNode.querySelector("[data-paw]");
         if (btn) btn.addEventListener("click", () => {
-            collectPaw(p.id);
+            collectPaw(p.id, p);
             marker.closePopup();
         });
     });
@@ -1954,7 +1966,14 @@ function addPoiMarker(p) {
 }
 
 // ---------- Pfoten-Stempel-Sammlung & Wochen-Challenge ----------
-function collectPaw(poiId) {
+function collectPaw(poiId, poi) {
+    if (poi) {
+        const dist = getPoiDistance(poi);
+        if (dist > 30 && !state.paws[poiId]) {
+            flashToast(`🔒 Noch ${Math.round(dist)}m entfernt – komm auf 30m ran!`);
+            return;
+        }
+    }
     const isNew = !state.paws[poiId];
     state.paws[poiId] = Date.now();
     saveState();
@@ -2209,6 +2228,8 @@ function bindMapControls() {
 // ---------- Live GPS tracking ----------
 let _gpsWatchId = null;
 let _gpsTracking = true;
+const _discoveredPois = new Set();
+let _lastProximityCheck = 0;
 
 function startGpsTracking() {
     if (_gpsWatchId !== null || !navigator.geolocation) return;
@@ -2216,10 +2237,50 @@ function startGpsTracking() {
         (pos) => {
             state.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             updateMyMarker();
+            checkNearbyPois();
         },
         () => {},
         { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
     );
+}
+
+function checkNearbyPois() {
+    const now = Date.now();
+    if (now - _lastProximityCheck < 3000) return;
+    _lastProximityCheck = now;
+    const ul = state.userLocation;
+    if (!ul || !ul.lat) return;
+    const allPois = [...POIS, ..._osmPois];
+    let newNearby = false;
+    allPois.forEach(p => {
+        const dist = geoDistKm(ul.lat, ul.lng, p.lat, p.lng) * 1000;
+        if (dist <= 50 && !_discoveredPois.has(p.id) && !state.paws[p.id]) {
+            _discoveredPois.add(p.id);
+            newNearby = true;
+            showDiscoveryToast(p);
+        }
+    });
+    if (newNearby) renderMapMarkers();
+}
+
+function showDiscoveryToast(poi) {
+    const cat = getCategoryById(poi.cat);
+    const icon = poi.osmIcon || (cat ? cat.icon : "📍");
+    const toast = document.createElement("div");
+    toast.className = "discovery-toast";
+    toast.innerHTML = `<span class="discovery-icon">${icon}</span><span class="discovery-text"><strong>${escapeHtml(poi.name)}</strong><br><small>In der Nähe entdeckt! Geh hin für 🐾</small></span>`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add("show"));
+    setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 400);
+    }, 3500);
+}
+
+function getPoiDistance(poi) {
+    const ul = state.userLocation;
+    if (!ul || !ul.lat) return Infinity;
+    return geoDistKm(ul.lat, ul.lng, poi.lat, poi.lng) * 1000;
 }
 
 function stopGpsTracking() {
