@@ -2550,8 +2550,7 @@ function renderProfile() {
     // Stats
     $("#statPhotos").textContent = (p.photos || []).length;
     $("#statMatches").textContent = state.matches.length;
-    const myCheckins = state.checkIns.filter(c => c.dogName === p.name).length;
-    $("#statCheckins").textContent = myCheckins;
+    $("#statPaws").textContent = Object.keys(state.paws).length;
     $("#statKm").textContent = (state.walkTracker.totalKm || 0).toFixed(1);
     // Info-Panel
     $("#infoBreed").textContent    = p.breed || "—";
