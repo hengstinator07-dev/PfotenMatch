@@ -382,13 +382,24 @@
             <section id="view-map" class="view">
                 <h2 class="view-title">Gassi-Karte</h2>
 
-                <!-- Suchleiste -->
+                <!-- Stadt-Suche -->
+                <div class="map-searchbar city-search">
+                    <span class="map-search-icon">📍</span>
+                    <input type="text" id="citySearch" placeholder="Stadt suchen (z.B. Zürich, Berlin, Wien …)" autocomplete="off" />
+                    <button id="citySearchClear" class="map-search-clear hidden" title="Löschen">✕</button>
+                </div>
+                <div id="citySearchResults" class="map-search-results hidden"></div>
+
+                <!-- POI-Suchleiste -->
                 <div class="map-searchbar">
                     <span class="map-search-icon">🔍</span>
                     <input type="text" id="mapSearch" placeholder="Park, Tierarzt, Café, Hund …" autocomplete="off" />
                     <button id="mapSearchClear" class="map-search-clear hidden" title="Löschen">✕</button>
                 </div>
                 <div id="mapSearchResults" class="map-search-results hidden"></div>
+
+                <!-- Live-Daten Hinweis -->
+                <div id="osmStatus" class="osm-status hidden">🔄 Lade Orte aus OpenStreetMap…</div>
 
                 <!-- Kategorie-Chips -->
                 <div id="mapCatChips" class="map-cat-chips">

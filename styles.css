@@ -849,7 +849,7 @@ button { font-family: inherit; }
     margin-right: 8px;
     color: var(--muted);
 }
-#mapSearch {
+#mapSearch, #citySearch {
     flex: 1;
     border: none;
     background: transparent;
@@ -858,6 +858,27 @@ button { font-family: inherit; }
     font-family: inherit;
     outline: none;
     color: var(--text);
+}
+.city-search { margin-bottom: 4px; }
+.osm-status {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--muted);
+    padding: 4px 0;
+    animation: pulse 1.2s ease-in-out infinite;
+}
+.osm-status.hidden { display: none; }
+@keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+.osm-badge {
+    display: inline-block;
+    background: #e8f5e9;
+    color: #2e7d32;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-left: 4px;
+    vertical-align: middle;
 }
 .map-search-clear {
     background: var(--bg);

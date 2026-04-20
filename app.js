@@ -1522,6 +1522,119 @@ function buildEmojiIcon(emoji, size = 32, extraClass = "") {
     });
 }
 
+// ---------- Overpass API (live OSM data) ----------
+let _osmPois = [];
+let _osmLoading = false;
+let _osmTimer = null;
+let _osmLastBounds = null;
+
+const OSM_TAG_MAP = {
+    "amenity=veterinary":   { cat: "vet",    icon: "🏥" },
+    "leisure=dog_park":     { cat: "park",   icon: "🐕" },
+    "leisure=park":         { cat: "park",   icon: "🌳" },
+    "shop=pet":             { cat: "shop",   icon: "🦴" },
+    "craft=dog_grooming":   { cat: "groom",  icon: "💈" },
+    "amenity=animal_shelter": { cat: "shop", icon: "🐾" },
+    "amenity=cafe":         { cat: "cafe",   icon: "☕" },
+};
+
+async function fetchOsmPois(bounds) {
+    const s = bounds.getSouth().toFixed(5);
+    const w = bounds.getWest().toFixed(5);
+    const n = bounds.getNorth().toFixed(5);
+    const e = bounds.getEast().toFixed(5);
+    const bbox = `${s},${w},${n},${e}`;
+
+    const query = `[out:json][timeout:12];(
+      node["amenity"="veterinary"](${bbox});
+      node["leisure"="dog_park"](${bbox});
+      node["leisure"="park"]["name"](${bbox});
+      node["shop"="pet"](${bbox});
+      node["craft"="dog_grooming"](${bbox});
+      node["amenity"="animal_shelter"](${bbox});
+      node["amenity"="cafe"]["dog"="yes"](${bbox});
+      way["leisure"="dog_park"](${bbox});
+      way["leisure"="park"]["name"](${bbox});
+    );out center body qt 200;`;
+
+    const resp = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: "data=" + encodeURIComponent(query),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+    });
+    if (!resp.ok) throw new Error("Overpass error");
+    const data = await resp.json();
+
+    const seen = new Set();
+    return (data.elements || []).map(el => {
+        const lat = el.lat || el.center?.lat;
+        const lng = el.lon || el.center?.lon;
+        if (!lat || !lng) return null;
+
+        const tags = el.tags || {};
+        const name = tags.name || tags["name:de"] || "";
+        if (!name) return null;
+
+        const key = `${name}-${lat.toFixed(4)}-${lng.toFixed(4)}`;
+        if (seen.has(key)) return null;
+        seen.add(key);
+
+        let mapped = null;
+        for (const [tagKey, val] of Object.entries(OSM_TAG_MAP)) {
+            const [k, v] = tagKey.split("=");
+            if (tags[k] === v) { mapped = val; break; }
+        }
+        if (!mapped) return null;
+
+        return {
+            id: "osm_" + el.id,
+            cat: mapped.cat,
+            name: name,
+            desc: tags.description || tags["addr:street"] || "",
+            lat, lng,
+            rating: null,
+            open: tags.opening_hours || "",
+            osmIcon: mapped.icon,
+            isOsm: true
+        };
+    }).filter(Boolean);
+}
+
+function scheduleOsmLoad() {
+    if (_osmTimer) clearTimeout(_osmTimer);
+    _osmTimer = setTimeout(loadOsmForView, 600);
+}
+
+async function loadOsmForView() {
+    if (!leafletMap || _osmLoading) return;
+    const bounds = leafletMap.getBounds();
+    if (_osmLastBounds && _osmLastBounds.contains(bounds)) return;
+
+    _osmLoading = true;
+    const status = $("#osmStatus");
+    if (status) status.classList.remove("hidden");
+    try {
+        const padded = bounds.pad(0.3);
+        _osmPois = await fetchOsmPois(padded);
+        _osmLastBounds = padded;
+        renderMapMarkers();
+    } catch (e) { /* silently fail */ }
+    _osmLoading = false;
+    if (status) status.classList.add("hidden");
+}
+
+// ---------- Nominatim city search ----------
+let _cityTimer = null;
+
+async function searchCity(query) {
+    const resp = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(query)}`,
+        { headers: { "Accept-Language": "de" } }
+    );
+    if (!resp.ok) return [];
+    return resp.json();
+}
+
 function buildClusterIcon(count) {
     const size = count >= 10 ? 50 : count >= 5 ? 44 : 38;
     return L.divIcon({
@@ -1536,11 +1649,11 @@ function getCategoryById(id) {
     return POI_CATEGORIES.find(c => c.id === id);
 }
 
-// Filter POIs nach aktivem Filter (Kategorie + Suche)
 function filteredPOIs() {
     const cats = state.mapFilter.cats;
     const q = (state.mapFilter.q || "").trim().toLowerCase();
-    return POIS.filter(p => {
+    const combined = [...POIS, ..._osmPois];
+    return combined.filter(p => {
         if (cats.length && !cats.includes(p.cat)) return false;
         if (q) {
             const hay = (p.name + " " + p.desc + " " + (getCategoryById(p.cat)?.label || "")).toLowerCase();
@@ -1601,14 +1714,17 @@ function renderMap() {
             subdomains: "abcd",
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>'
         }).addTo(leafletMap);
-        // Bei Zoom/Move neu clustern
-        leafletMap.on("zoomend moveend", () => renderMapMarkers());
+        leafletMap.on("zoomend moveend", () => {
+            renderMapMarkers();
+            scheduleOsmLoad();
+        });
     }
 
     pruneCheckIns();
     pruneDangers();
     renderMapMarkers();
     renderPawCollector();
+    scheduleOsmLoad();
 
     setTimeout(() => leafletMap.invalidateSize(), 50);
 
@@ -1757,7 +1873,7 @@ function renderMapMarkers() {
 // Einzelnen POI-Marker zeichnen (mit Pfoten-Stempel-Logik)
 function addPoiMarker(p) {
     const cat = getCategoryById(p.cat);
-    const icon = cat ? cat.icon : "📍";
+    const icon = p.osmIcon || (cat ? cat.icon : "📍");
     const visited = !!state.paws[p.id];
     const marker = L.marker([p.lat, p.lng], {
         icon: buildEmojiIcon(icon, 30, "poi-marker " + (visited ? "visited" : "") + " cat-" + p.cat),
@@ -1765,10 +1881,12 @@ function addPoiMarker(p) {
     }).addTo(leafletMap);
     const ratingLine = p.rating ? `⭐ ${p.rating} · ` : "";
     const openLine = p.open ? `🕒 ${p.open}` : "";
+    const osmBadge = p.isOsm ? '<span class="osm-badge">OSM</span>' : '';
     const visitedBadge = visited ? '<br><span style="color:#ff6b6b;font-weight:700">🐾 Schon besucht</span>' : '';
+    const descLine = p.desc ? `${escapeHtml(p.desc)}<br>` : "";
     marker.bindPopup(
-        `<strong>${icon} ${escapeHtml(p.name)}</strong><br>` +
-        `${escapeHtml(p.desc)}<br>` +
+        `<strong>${icon} ${escapeHtml(p.name)}</strong>${osmBadge}<br>` +
+        descLine +
         `<small>${ratingLine}${openLine}</small>` +
         visitedBadge +
         `<br><button class="popup-btn" data-paw="${p.id}">${visited ? "Erneut besuchen" : "🐾 Pfote setzen"}</button>`
@@ -1902,10 +2020,10 @@ function renderMapSearchResults() {
     if (!q) { box.classList.add("hidden"); box.innerHTML = ""; return; }
 
     const results = [];
-    // POIs
-    POIS.forEach(p => {
+    // POIs (local + OSM)
+    [...POIS, ..._osmPois].forEach(p => {
         const cat = getCategoryById(p.cat);
-        const hay = (p.name + " " + p.desc + " " + (cat?.label || "")).toLowerCase();
+        const hay = (p.name + " " + (p.desc || "") + " " + (cat?.label || "")).toLowerCase();
         if (hay.includes(q)) results.push({ kind: "poi", item: p, cat });
     });
     // Hunde
@@ -1979,9 +2097,59 @@ function bindMapControls() {
             inp.focus();
         });
     }
+
+    // City search (Nominatim)
+    const cityInp = $("#citySearch");
+    const cityClear = $("#citySearchClear");
+    const cityBox = $("#citySearchResults");
+    if (cityInp) {
+        cityInp.addEventListener("input", () => {
+            cityClear.classList.toggle("hidden", !cityInp.value);
+            if (_cityTimer) clearTimeout(_cityTimer);
+            const q = cityInp.value.trim();
+            if (q.length < 2) { cityBox.classList.add("hidden"); return; }
+            _cityTimer = setTimeout(async () => {
+                try {
+                    const results = await searchCity(q);
+                    cityBox.innerHTML = "";
+                    if (results.length === 0) {
+                        cityBox.innerHTML = '<div class="msr-empty">Keine Stadt gefunden</div>';
+                    } else {
+                        results.forEach(r => {
+                            const btn = document.createElement("button");
+                            btn.className = "msr-item";
+                            btn.innerHTML = `<span class="msr-icon">📍</span><div><strong>${escapeHtml(r.display_name.split(",")[0])}</strong><small>${escapeHtml(r.display_name.split(",").slice(1, 3).join(","))}</small></div>`;
+                            btn.addEventListener("click", () => {
+                                const lat = parseFloat(r.lat);
+                                const lng = parseFloat(r.lon);
+                                if (leafletMap) {
+                                    leafletMap.setView([lat, lng], 14, { animate: true });
+                                    _osmLastBounds = null;
+                                    scheduleOsmLoad();
+                                }
+                                cityInp.value = r.display_name.split(",")[0];
+                                cityBox.classList.add("hidden");
+                            });
+                            cityBox.appendChild(btn);
+                        });
+                    }
+                    cityBox.classList.remove("hidden");
+                } catch (e) { /* network error */ }
+            }, 400);
+        });
+    }
+    if (cityClear) {
+        cityClear.addEventListener("click", () => {
+            cityInp.value = "";
+            cityClear.classList.add("hidden");
+            cityBox.classList.add("hidden");
+        });
+    }
+
     document.addEventListener("click", (e) => {
-        if (!e.target.closest(".map-searchbar") && !e.target.closest("#mapSearchResults")) {
+        if (!e.target.closest(".map-searchbar") && !e.target.closest("#mapSearchResults") && !e.target.closest("#citySearchResults")) {
             $("#mapSearchResults")?.classList.add("hidden");
+            $("#citySearchResults")?.classList.add("hidden");
         }
     });
 }
