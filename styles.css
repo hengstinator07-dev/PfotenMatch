@@ -1760,7 +1760,7 @@ button { font-family: inherit; }
     align-items: center;
     justify-content: center;
     padding: 20px;
-    z-index: 100;
+    z-index: 10000;
     backdrop-filter: blur(3px);
     animation: fadein 0.2s;
 }

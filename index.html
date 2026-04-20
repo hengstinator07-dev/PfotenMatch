@@ -1212,7 +1212,7 @@
     <!-- Danger report modal -->
     <div id="dangerModal" class="modal hidden">
         <div class="modal-content">
-            <h2>☠ Gefahr melden</h2>
+            <h2>Gefahr melden</h2>
             <p class="muted">Hilf anderen Hundebesitzern, indem du eine Gefahr in deiner Nähe meldest.</p>
             <label>Art der Gefahr
                 <select id="dangerType"></select>
@@ -1220,10 +1220,10 @@
             <label>Beschreibung (optional)
                 <input type="text" id="dangerDesc" placeholder="z. B. am Parkeingang Richtung Nord" />
             </label>
-            <p class="muted">Position: dein aktueller Standort auf der Karte.</p>
+            <p class="muted" id="dangerLocStatus">Standort wird ermittelt…</p>
             <div class="modal-actions">
                 <button class="btn-ghost" id="cancelDangerBtn">Abbrechen</button>
-                <button class="btn-primary" id="saveDangerBtn">Melden</button>
+                <button class="btn-primary" id="saveDangerBtn" disabled>Melden</button>
             </div>
         </div>
     </div>

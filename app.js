@@ -1462,7 +1462,14 @@ function toggleCheckIn(spotId) {
 }
 
 // ---------- Gefahren-Radar ----------
+let _dangerGpsLat = null;
+let _dangerGpsLng = null;
+
 function openDangerReport() {
+    _dangerGpsLat = null;
+    _dangerGpsLng = null;
+    const locStatus = $("#dangerLocStatus");
+
     const sel = $("#dangerType");
     sel.innerHTML = "";
     DANGER_TYPES.forEach(t => {
@@ -1472,24 +1479,51 @@ function openDangerReport() {
         sel.appendChild(opt);
     });
     $("#dangerDesc").value = "";
+    $("#saveDangerBtn").disabled = true;
+
+    if (locStatus) locStatus.textContent = "Standort wird ermittelt…";
     $("#dangerModal").classList.remove("hidden");
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                _dangerGpsLat = pos.coords.latitude;
+                _dangerGpsLng = pos.coords.longitude;
+                if (locStatus) locStatus.textContent = "Standort erkannt – Meldung wird an deiner Position gesetzt.";
+                $("#saveDangerBtn").disabled = false;
+            },
+            () => {
+                _dangerGpsLat = state.userLocation.lat;
+                _dangerGpsLng = state.userLocation.lng;
+                if (locStatus) locStatus.textContent = "GPS nicht verfügbar – Profilstandort wird verwendet.";
+                $("#saveDangerBtn").disabled = false;
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    } else {
+        _dangerGpsLat = state.userLocation.lat;
+        _dangerGpsLng = state.userLocation.lng;
+        if (locStatus) locStatus.textContent = "GPS nicht verfügbar – Profilstandort wird verwendet.";
+        $("#saveDangerBtn").disabled = false;
+    }
 }
 
 function saveDangerReport() {
+    if (!_dangerGpsLat || !_dangerGpsLng) return;
     const typeId = $("#dangerType").value;
     const desc = $("#dangerDesc").value.trim();
     state.dangers.push({
         id: "d" + Date.now(),
         type: typeId,
-        lat: state.userLocation.lat,
-        lng: state.userLocation.lng,
+        lat: _dangerGpsLat,
+        lng: _dangerGpsLng,
         desc: desc,
         ts: Date.now(),
         reporter: state.myProfile.name
     });
     saveState();
     $("#dangerModal").classList.add("hidden");
-    flashToast("⚠ Gefahr gemeldet – danke!");
+    flashToast("Gefahr gemeldet – danke!");
     renderMap();
 }
 
