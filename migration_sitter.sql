@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS sitter_profiles (
         CHECK (subscription_status IN ('active', 'inactive', 'past_due', 'canceled')),
     stripe_customer_id     TEXT,
     stripe_subscription_id TEXT,
-    public        BOOLEAN DEFAULT FALSE,
+    is_public     BOOLEAN DEFAULT FALSE,
     rating        NUMERIC(2,1) DEFAULT 5.0,
     review_count  INTEGER DEFAULT 0,
     created_at    TIMESTAMPTZ DEFAULT now(),
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS sitter_profiles (
     UNIQUE(user_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_sitter_public ON sitter_profiles (public) WHERE public = TRUE;
+CREATE INDEX IF NOT EXISTS idx_sitter_public ON sitter_profiles (is_public) WHERE is_public = TRUE;
 CREATE INDEX IF NOT EXISTS idx_sitter_user   ON sitter_profiles (user_id);
 
 -- 2) Sitter bookings table
@@ -78,7 +78,7 @@ ALTER TABLE sitter_reviews  ENABLE ROW LEVEL SECURITY;
 
 -- Sitter profiles
 CREATE POLICY "sitter_select" ON sitter_profiles FOR SELECT
-    USING (public = TRUE OR auth.uid() = user_id);
+    USING (is_public = TRUE OR auth.uid() = user_id);
 
 CREATE POLICY "sitter_insert" ON sitter_profiles FOR INSERT
     WITH CHECK (auth.uid() = user_id);
@@ -94,8 +94,8 @@ CREATE POLICY "sitter_delete" ON sitter_profiles FOR DELETE
 CREATE OR REPLACE FUNCTION enforce_sitter_subscription()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.public = TRUE AND NEW.subscription_status != 'active' THEN
-        NEW.public := FALSE;
+    IF NEW.is_public = TRUE AND NEW.subscription_status != 'active' THEN
+        NEW.is_public := FALSE;
     END IF;
     RETURN NEW;
 END;
@@ -197,7 +197,7 @@ BEGIN
         sp.rating,
         sp.review_count
     FROM sitter_profiles sp
-    WHERE sp.public = TRUE
+    WHERE sp.is_public = TRUE
       AND sp.subscription_status = 'active'
       AND sp.lat IS NOT NULL
       AND sp.lng IS NOT NULL

@@ -49,7 +49,7 @@ serve(async (req: Request) => {
               stripe_customer_id: customerId,
               stripe_subscription_id: subscriptionId,
               subscription_status: "active",
-              public: true,
+              is_public: true,
               updated_at: new Date().toISOString(),
             })
             .eq("user_id", userId);
@@ -66,7 +66,7 @@ serve(async (req: Request) => {
             .from("sitter_profiles")
             .update({
               subscription_status: "active",
-              public: true,
+              is_public: true,
               updated_at: new Date().toISOString(),
             })
             .eq("stripe_subscription_id", subscriptionId);
@@ -83,7 +83,7 @@ serve(async (req: Request) => {
             .from("sitter_profiles")
             .update({
               subscription_status: "past_due",
-              public: false,
+              is_public: false,
               updated_at: new Date().toISOString(),
             })
             .eq("stripe_subscription_id", subscriptionId);
@@ -98,7 +98,7 @@ serve(async (req: Request) => {
           .from("sitter_profiles")
           .update({
             subscription_status: "canceled",
-            public: false,
+            is_public: false,
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", subscription.id);
@@ -113,7 +113,7 @@ serve(async (req: Request) => {
           .from("sitter_profiles")
           .update({
             subscription_status: status,
-            public: status === "active",
+            is_public: status === "active",
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", subscription.id);
