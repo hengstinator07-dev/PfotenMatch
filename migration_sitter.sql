@@ -3,8 +3,13 @@
 -- Nutzt lat/lng Spalten + Haversine-Formel für Distanzsuche
 -- ============================================================
 
+-- Clean up old tables from previous migration attempts
+DROP TABLE IF EXISTS sitter_reviews CASCADE;
+DROP TABLE IF EXISTS sitter_bookings CASCADE;
+DROP TABLE IF EXISTS sitter_profiles CASCADE;
+
 -- 1) Sitter profiles table
-CREATE TABLE IF NOT EXISTS sitter_profiles (
+CREATE TABLE sitter_profiles (
     id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     name          TEXT NOT NULL,
@@ -38,7 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_sitter_public ON sitter_profiles (is_public) WHER
 CREATE INDEX IF NOT EXISTS idx_sitter_user   ON sitter_profiles (user_id);
 
 -- 2) Sitter bookings table
-CREATE TABLE IF NOT EXISTS sitter_bookings (
+CREATE TABLE sitter_bookings (
     id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     client_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     sitter_id   UUID NOT NULL REFERENCES sitter_profiles(id) ON DELETE CASCADE,
@@ -57,7 +62,7 @@ CREATE INDEX IF NOT EXISTS idx_bookings_client ON sitter_bookings (client_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_sitter ON sitter_bookings (sitter_id);
 
 -- 3) Sitter reviews table
-CREATE TABLE IF NOT EXISTS sitter_reviews (
+CREATE TABLE sitter_reviews (
     id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     booking_id  UUID NOT NULL REFERENCES sitter_bookings(id) ON DELETE CASCADE,
     reviewer_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
