@@ -497,9 +497,8 @@ async function sbUpsertSitterProfile(profile) {
         price_day: profile.priceDay || null,
         price_night: profile.priceNight || null,
         city: profile.city || "",
-        location: profile.lat && profile.lng
-            ? `POINT(${profile.lng} ${profile.lat})`
-            : null,
+        lat: profile.lat || null,
+        lng: profile.lng || null,
         phone_verified: profile.phoneVerified || false,
         updated_at: new Date().toISOString()
     };

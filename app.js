@@ -2548,7 +2548,6 @@ function renderProfile() {
         chipsEl.appendChild(s);
     });
     // Stats
-    $("#statPhotos").textContent = (p.photos || []).length;
     $("#statMatches").textContent = state.matches.length;
     $("#statPaws").textContent = Object.keys(state.paws).length;
     $("#statKm").textContent = (state.walkTracker.totalKm || 0).toFixed(1);

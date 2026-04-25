@@ -1,12 +1,9 @@
 -- ============================================================
--- PfotenMatch – Sitter System Migration
--- PostGIS, RLS, Stripe Subscription, Verification
+-- PfotenMatch – Sitter System Migration (ohne PostGIS)
+-- Nutzt lat/lng Spalten + Haversine-Formel für Distanzsuche
 -- ============================================================
 
--- 1) Enable PostGIS extension (needed for geo queries)
-CREATE EXTENSION IF NOT EXISTS postgis;
-
--- 2) Sitter profiles table
+-- 1) Sitter profiles table
 CREATE TABLE IF NOT EXISTS sitter_profiles (
     id            UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id       UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -21,31 +18,26 @@ CREATE TABLE IF NOT EXISTS sitter_profiles (
     price_hour    INTEGER,
     price_day     INTEGER,
     price_night   INTEGER,
-    -- Location: approximate (city-level), never exact address
-    location      GEOGRAPHY(Point, 4326),
+    lat           DOUBLE PRECISION,
+    lng           DOUBLE PRECISION,
     city          TEXT DEFAULT '',
-    -- Verification & subscription
-    phone_verified   BOOLEAN DEFAULT FALSE,
-    subscription_status TEXT DEFAULT 'inactive' CHECK (subscription_status IN ('active', 'inactive', 'past_due', 'canceled')),
-    stripe_customer_id  TEXT,
+    phone_verified      BOOLEAN DEFAULT FALSE,
+    subscription_status TEXT DEFAULT 'inactive'
+        CHECK (subscription_status IN ('active', 'inactive', 'past_due', 'canceled')),
+    stripe_customer_id     TEXT,
     stripe_subscription_id TEXT,
-    -- Visibility: only visible when subscription is active
     public        BOOLEAN DEFAULT FALSE,
-    -- Stats
     rating        NUMERIC(2,1) DEFAULT 5.0,
     review_count  INTEGER DEFAULT 0,
-    -- Timestamps
     created_at    TIMESTAMPTZ DEFAULT now(),
     updated_at    TIMESTAMPTZ DEFAULT now(),
     UNIQUE(user_id)
 );
 
--- Index for geo queries
-CREATE INDEX IF NOT EXISTS idx_sitter_location ON sitter_profiles USING GIST (location);
 CREATE INDEX IF NOT EXISTS idx_sitter_public ON sitter_profiles (public) WHERE public = TRUE;
-CREATE INDEX IF NOT EXISTS idx_sitter_user ON sitter_profiles (user_id);
+CREATE INDEX IF NOT EXISTS idx_sitter_user   ON sitter_profiles (user_id);
 
--- 3) Sitter bookings table
+-- 2) Sitter bookings table
 CREATE TABLE IF NOT EXISTS sitter_bookings (
     id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     client_id   UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -56,14 +48,15 @@ CREATE TABLE IF NOT EXISTS sitter_bookings (
     hours       INTEGER,
     notes       TEXT DEFAULT '',
     total       INTEGER NOT NULL DEFAULT 0,
-    status      TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'declined', 'completed', 'canceled')),
+    status      TEXT DEFAULT 'pending'
+        CHECK (status IN ('pending', 'confirmed', 'declined', 'completed', 'canceled')),
     created_at  TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_bookings_client ON sitter_bookings (client_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_sitter ON sitter_bookings (sitter_id);
 
--- 4) Sitter reviews table
+-- 3) Sitter reviews table
 CREATE TABLE IF NOT EXISTS sitter_reviews (
     id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     booking_id  UUID NOT NULL REFERENCES sitter_bookings(id) ON DELETE CASCADE,
@@ -76,33 +69,28 @@ CREATE TABLE IF NOT EXISTS sitter_reviews (
 );
 
 -- ============================================================
--- 5) RLS Policies
+-- 4) RLS Policies
 -- ============================================================
 
 ALTER TABLE sitter_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sitter_bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sitter_reviews  ENABLE ROW LEVEL SECURITY;
 
--- Sitter profiles: anyone can read public profiles, owners can edit their own
-CREATE POLICY "Public sitter profiles are viewable by everyone"
-    ON sitter_profiles FOR SELECT
+-- Sitter profiles
+CREATE POLICY "sitter_select" ON sitter_profiles FOR SELECT
     USING (public = TRUE OR auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own sitter profile"
-    ON sitter_profiles FOR INSERT
+CREATE POLICY "sitter_insert" ON sitter_profiles FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own sitter profile"
-    ON sitter_profiles FOR UPDATE
+CREATE POLICY "sitter_update" ON sitter_profiles FOR UPDATE
     USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own sitter profile"
-    ON sitter_profiles FOR DELETE
+CREATE POLICY "sitter_delete" ON sitter_profiles FOR DELETE
     USING (auth.uid() = user_id);
 
--- CRITICAL: Enforce that public=true only when subscription is active
--- This is enforced via a trigger rather than RLS to prevent client-side bypass
+-- Enforce: public=true only when subscription_status='active'
 CREATE OR REPLACE FUNCTION enforce_sitter_subscription()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -113,41 +101,37 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_enforce_sitter_subscription ON sitter_profiles;
 CREATE TRIGGER trg_enforce_sitter_subscription
     BEFORE INSERT OR UPDATE ON sitter_profiles
     FOR EACH ROW EXECUTE FUNCTION enforce_sitter_subscription();
 
--- Bookings: clients see their own, sitters see bookings for them
-CREATE POLICY "Clients can view their own bookings"
-    ON sitter_bookings FOR SELECT
+-- Bookings
+CREATE POLICY "booking_select" ON sitter_bookings FOR SELECT
     USING (
         auth.uid() = client_id
         OR auth.uid() = (SELECT user_id FROM sitter_profiles WHERE id = sitter_id)
     );
 
-CREATE POLICY "Clients can create bookings"
-    ON sitter_bookings FOR INSERT
+CREATE POLICY "booking_insert" ON sitter_bookings FOR INSERT
     WITH CHECK (auth.uid() = client_id);
 
-CREATE POLICY "Sitters can update booking status"
-    ON sitter_bookings FOR UPDATE
+CREATE POLICY "booking_update" ON sitter_bookings FOR UPDATE
     USING (auth.uid() = (SELECT user_id FROM sitter_profiles WHERE id = sitter_id));
 
--- Reviews: anyone can read, only booking clients can write
-CREATE POLICY "Anyone can view reviews"
-    ON sitter_reviews FOR SELECT
+-- Reviews
+CREATE POLICY "review_select" ON sitter_reviews FOR SELECT
     USING (TRUE);
 
-CREATE POLICY "Clients can write reviews for their bookings"
-    ON sitter_reviews FOR INSERT
+CREATE POLICY "review_insert" ON sitter_reviews FOR INSERT
     WITH CHECK (
         auth.uid() = reviewer_id
         AND auth.uid() = (SELECT client_id FROM sitter_bookings WHERE id = booking_id)
     );
 
 -- ============================================================
--- 6) RPC: Find sitters within radius (privacy-safe)
--- Returns approximate location only (rounded to ~500m)
+-- 5) RPC: Find sitters nearby using Haversine formula
+-- Returns approximate location (rounded to ~500m for privacy)
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION find_sitters_nearby(
@@ -195,14 +179,19 @@ BEGIN
         sp.price_day,
         sp.price_night,
         sp.city,
-        -- Round coordinates to ~500m for privacy
-        ROUND(ST_Y(sp.location::geometry)::numeric, 2)::double precision AS approx_lat,
-        ROUND(ST_X(sp.location::geometry)::numeric, 2)::double precision AS approx_lng,
-        -- Distance in km
-        ROUND((ST_Distance(
-            sp.location,
-            ST_SetSRID(ST_MakePoint(user_lng, user_lat), 4326)::geography
-        ) / 1000.0)::numeric, 1)::double precision AS distance_km,
+        -- Round to ~500m for privacy (2 decimal places)
+        ROUND(sp.lat::numeric, 2)::double precision AS approx_lat,
+        ROUND(sp.lng::numeric, 2)::double precision AS approx_lng,
+        -- Haversine distance in km
+        ROUND((
+            6371.0 * acos(
+                LEAST(1.0, GREATEST(-1.0,
+                    cos(radians(user_lat)) * cos(radians(sp.lat))
+                    * cos(radians(sp.lng) - radians(user_lng))
+                    + sin(radians(user_lat)) * sin(radians(sp.lat))
+                ))
+            )
+        )::numeric, 1)::double precision AS distance_km,
         sp.phone_verified,
         sp.subscription_status,
         sp.rating,
@@ -210,31 +199,38 @@ BEGIN
     FROM sitter_profiles sp
     WHERE sp.public = TRUE
       AND sp.subscription_status = 'active'
-      AND ST_DWithin(
-          sp.location,
-          ST_SetSRID(ST_MakePoint(user_lng, user_lat), 4326)::geography,
-          radius_km * 1000
-      )
+      AND sp.lat IS NOT NULL
+      AND sp.lng IS NOT NULL
+      AND (
+          6371.0 * acos(
+              LEAST(1.0, GREATEST(-1.0,
+                  cos(radians(user_lat)) * cos(radians(sp.lat))
+                  * cos(radians(sp.lng) - radians(user_lng))
+                  + sin(radians(user_lat)) * sin(radians(sp.lat))
+              ))
+          )
+      ) <= radius_km
     ORDER BY distance_km ASC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================================
--- 7) Auto-update rating when a review is added
+-- 6) Auto-update rating when a review is added
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION update_sitter_rating()
 RETURNS TRIGGER AS $$
 BEGIN
     UPDATE sitter_profiles SET
-        rating = (SELECT ROUND(AVG(rating)::numeric, 1) FROM sitter_reviews WHERE sitter_id = NEW.sitter_id),
-        review_count = (SELECT COUNT(*) FROM sitter_reviews WHERE sitter_id = NEW.sitter_id),
+        rating = (SELECT ROUND(AVG(r.rating)::numeric, 1) FROM sitter_reviews r WHERE r.sitter_id = NEW.sitter_id),
+        review_count = (SELECT COUNT(*) FROM sitter_reviews r WHERE r.sitter_id = NEW.sitter_id),
         updated_at = now()
     WHERE id = NEW.sitter_id;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_update_sitter_rating ON sitter_reviews;
 CREATE TRIGGER trg_update_sitter_rating
     AFTER INSERT ON sitter_reviews
     FOR EACH ROW EXECUTE FUNCTION update_sitter_rating();
