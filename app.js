@@ -1603,36 +1603,45 @@ async function fetchOsmPois(bounds) {
     const e = bounds.getEast().toFixed(5);
     const bbox = `${s},${w},${n},${e}`;
 
-    const query = `[out:json][timeout:10];(`
-        + `node["leisure"="dog_park"](${bbox});`
-        + `way["leisure"="dog_park"](${bbox});`
-        + `way["leisure"="park"]["name"](${bbox});`
-        + `node["amenity"="veterinary"](${bbox});`
-        + `node["shop"="pet"](${bbox});`
-        + `node["tourism"="attraction"]["name"](${bbox});`
-        + `node["tourism"="museum"]["name"](${bbox});`
-        + `node["tourism"="viewpoint"]["name"](${bbox});`
-        + `node["historic"="monument"]["name"](${bbox});`
-        + `node["historic"="castle"]["name"](${bbox});`
-        + `node["amenity"="fountain"]["name"](${bbox});`
-        + `node["amenity"="cafe"]["dog"="yes"](${bbox});`
-        + `);out center body qt 200;`;
-
-    const OVERPASS_SERVERS = [
-        "https://overpass-api.de/api/interpreter",
-        "https://overpass.kumi.systems/api/interpreter"
-    ];
+    const query = `[out:json][timeout:15];(
+      nwr["amenity"="veterinary"](${bbox});
+      nwr["healthcare"="veterinary"](${bbox});
+      nwr["leisure"="dog_park"](${bbox});
+      nwr["leisure"="park"]["name"](${bbox});
+      nwr["shop"="pet"](${bbox});
+      nwr["shop"="pet_grooming"](${bbox});
+      nwr["craft"="dog_grooming"](${bbox});
+      nwr["amenity"="animal_shelter"](${bbox});
+      nwr["amenity"="animal_boarding"](${bbox});
+      nwr["amenity"="cafe"]["dog"="yes"](${bbox});
+      nwr["amenity"="cafe"]["pets"="yes"](${bbox});
+      nwr["tourism"="attraction"]["name"](${bbox});
+      nwr["tourism"="viewpoint"]["name"](${bbox});
+      nwr["tourism"="museum"]["name"](${bbox});
+      nwr["historic"="monument"]["name"](${bbox});
+      nwr["historic"="castle"]["name"](${bbox});
+      nwr["amenity"="fountain"]["name"](${bbox});
+    );out center body qt 300;`;
 
     let data = null;
-    for (const server of OVERPASS_SERVERS) {
+    try {
+        const resp = await fetch("https://overpass-api.de/api/interpreter", {
+            method: "POST",
+            body: "data=" + encodeURIComponent(query),
+            headers: { "Content-Type": "application/x-www-form-urlencoded" }
+        });
+        if (resp.ok) data = await resp.json();
+    } catch (e) { /* primary server failed */ }
+
+    if (!data) {
         try {
-            const url = server + "?data=" + encodeURIComponent(query);
-            const resp = await fetch(url);
-            if (resp.ok) {
-                data = await resp.json();
-                break;
-            }
-        } catch (e) { /* try next server */ }
+            const resp = await fetch("https://overpass.kumi.systems/api/interpreter", {
+                method: "POST",
+                body: "data=" + encodeURIComponent(query),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            });
+            if (resp.ok) data = await resp.json();
+        } catch (e) { /* fallback server failed */ }
     }
 
     if (!data) {
@@ -1679,16 +1688,22 @@ function parseOverpassResults(data) {
 }
 
 const PHOTON_SEARCH_TERMS = [
-    { q: "park",       cat: "park",  icon: "🌳" },
-    { q: "dog park",   cat: "park",  icon: "🐕" },
-    { q: "tierarzt",   cat: "vet",   icon: "🏥" },
-    { q: "veterinary", cat: "vet",   icon: "🏥" },
-    { q: "zooladen",   cat: "shop",  icon: "🦴" },
-    { q: "pet shop",   cat: "shop",  icon: "🦴" },
-    { q: "museum",     cat: "sight", icon: "🏛️" },
-    { q: "monument",   cat: "sight", icon: "🗿" },
-    { q: "fountain",   cat: "sight", icon: "⛲" },
-    { q: "castle",     cat: "sight", icon: "🏰" },
+    { q: "park",          cat: "park",  icon: "🌳" },
+    { q: "hundewiese",    cat: "park",  icon: "🐕" },
+    { q: "spielplatz",    cat: "park",  icon: "🌳" },
+    { q: "tierarzt",      cat: "vet",   icon: "🏥" },
+    { q: "tierklinik",    cat: "vet",   icon: "🏥" },
+    { q: "zoohandlung",   cat: "shop",  icon: "🦴" },
+    { q: "fressnapf",     cat: "shop",  icon: "🦴" },
+    { q: "qualipet",      cat: "shop",  icon: "🦴" },
+    { q: "hundeschule",   cat: "school",icon: "🎓" },
+    { q: "museum",        cat: "sight", icon: "🏛️" },
+    { q: "kirche",        cat: "sight", icon: "⛪" },
+    { q: "brunnen",       cat: "sight", icon: "⛲" },
+    { q: "schloss",       cat: "sight", icon: "🏰" },
+    { q: "denkmal",       cat: "sight", icon: "🗿" },
+    { q: "sehenswürdigkeit", cat: "sight", icon: "🏛️" },
+    { q: "café hund",     cat: "cafe",  icon: "☕" },
 ];
 
 async function fetchPhotonPois(bounds) {
