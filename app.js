@@ -1579,6 +1579,10 @@ const OSM_TAG_MAP = {
     "healthcare=veterinary":   { cat: "vet",    icon: "🏥" },
     "leisure=dog_park":        { cat: "park",   icon: "🐕" },
     "leisure=park":            { cat: "park",   icon: "🌳" },
+    "leisure=garden":          { cat: "park",   icon: "🌿" },
+    "leisure=nature_reserve":  { cat: "park",   icon: "🌲" },
+    "natural=water":           { cat: "swim",   icon: "🏊" },
+    "leisure=swimming_area":   { cat: "swim",   icon: "🏊" },
     "shop=pet":                { cat: "shop",   icon: "🦴" },
     "shop=pet_grooming":       { cat: "groom",  icon: "💈" },
     "craft=dog_grooming":      { cat: "groom",  icon: "💈" },
@@ -1586,15 +1590,19 @@ const OSM_TAG_MAP = {
     "amenity=animal_boarding": { cat: "shop",   icon: "🏠" },
     "amenity=animal_shelter":  { cat: "shop",   icon: "🐾" },
     "amenity=cafe":            { cat: "cafe",   icon: "☕" },
+    "amenity=restaurant":      { cat: "cafe",   icon: "🍽️" },
     "amenity=dog_training":    { cat: "school", icon: "🎓" },
     "tourism=attraction":      { cat: "sight",  icon: "🏛️" },
     "tourism=viewpoint":       { cat: "sight",  icon: "🔭" },
     "historic=monument":       { cat: "sight",  icon: "🗿" },
     "historic=memorial":       { cat: "sight",  icon: "🕊️" },
     "historic=castle":         { cat: "sight",  icon: "🏰" },
+    "historic=ruins":          { cat: "sight",  icon: "🏚️" },
+    "historic=church":         { cat: "sight",  icon: "⛪" },
     "amenity=fountain":        { cat: "sight",  icon: "⛲" },
     "tourism=artwork":         { cat: "sight",  icon: "🎨" },
     "tourism=museum":          { cat: "sight",  icon: "🏛️" },
+    "amenity=place_of_worship":{ cat: "sight",  icon: "⛪" },
 };
 
 async function fetchOsmPois(bounds) {
@@ -1604,11 +1612,14 @@ async function fetchOsmPois(bounds) {
     const e = bounds.getEast().toFixed(5);
     const bbox = `${s},${w},${n},${e}`;
 
-    const query = `[out:json][timeout:15];(
+    const query = `[out:json][timeout:20];(
       nwr["amenity"="veterinary"](${bbox});
       nwr["healthcare"="veterinary"](${bbox});
       nwr["leisure"="dog_park"](${bbox});
       nwr["leisure"="park"]["name"](${bbox});
+      nwr["leisure"="garden"]["name"](${bbox});
+      nwr["leisure"="nature_reserve"]["name"](${bbox});
+      nwr["leisure"="swimming_area"]["name"](${bbox});
       nwr["shop"="pet"](${bbox});
       nwr["shop"="pet_grooming"](${bbox});
       nwr["craft"="dog_grooming"](${bbox});
@@ -1618,6 +1629,9 @@ async function fetchOsmPois(bounds) {
       nwr["amenity"="dog_training"](${bbox});
       nwr["amenity"="cafe"]["dog"="yes"](${bbox});
       nwr["amenity"="cafe"]["pets"="yes"](${bbox});
+      nwr["amenity"="cafe"]["outdoor_seating"="yes"](${bbox});
+      nwr["amenity"="restaurant"]["dog"="yes"](${bbox});
+      nwr["amenity"="restaurant"]["pets"="yes"](${bbox});
       nwr["tourism"="attraction"]["name"](${bbox});
       nwr["tourism"="viewpoint"]["name"](${bbox});
       nwr["tourism"="artwork"]["name"](${bbox});
@@ -1625,7 +1639,10 @@ async function fetchOsmPois(bounds) {
       nwr["historic"="monument"]["name"](${bbox});
       nwr["historic"="memorial"]["name"](${bbox});
       nwr["historic"="castle"]["name"](${bbox});
+      nwr["historic"="ruins"]["name"](${bbox});
+      nwr["historic"="church"]["name"](${bbox});
       nwr["amenity"="fountain"]["name"](${bbox});
+      nwr["amenity"="place_of_worship"]["name"](${bbox});
     );out center body qt 500;`;
 
     const resp = await fetch("https://overpass-api.de/api/interpreter", {
@@ -1683,15 +1700,26 @@ async function loadOsmForView() {
 
     _osmLoading = true;
     const status = $("#osmStatus");
-    if (status) status.classList.remove("hidden");
-    try {
-        const padded = bounds.pad(0.3);
-        _osmPois = await fetchOsmPois(padded);
-        _osmLastBounds = padded;
-        renderMapMarkers();
-    } catch (e) { /* silently fail */ }
+    if (status) { status.textContent = "🔄 Lade Orte aus OpenStreetMap…"; status.classList.remove("hidden"); }
+    let retries = 2;
+    while (retries >= 0) {
+        try {
+            const padded = bounds.pad(0.3);
+            _osmPois = await fetchOsmPois(padded);
+            _osmLastBounds = padded;
+            renderMapMarkers();
+            break;
+        } catch (e) {
+            retries--;
+            if (retries < 0) {
+                if (status) { status.textContent = "⚠ Orte konnten nicht geladen werden – ziehe die Karte um es erneut zu versuchen"; status.classList.remove("hidden"); setTimeout(() => status.classList.add("hidden"), 4000); }
+            } else {
+                await new Promise(r => setTimeout(r, 1500));
+            }
+        }
+    }
     _osmLoading = false;
-    if (status) status.classList.add("hidden");
+    if (status && retries >= 0) status.classList.add("hidden");
 }
 
 // ---------- Nominatim city search ----------
@@ -1723,7 +1751,11 @@ function getCategoryById(id) {
 function filteredPOIs() {
     const cats = state.mapFilter.cats;
     const q = (state.mapFilter.q || "").trim().toLowerCase();
-    const combined = [...POIS, ..._osmPois];
+    const bounds = leafletMap ? leafletMap.getBounds().pad(0.3) : null;
+    const staticInView = bounds
+        ? POIS.filter(p => bounds.contains([p.lat, p.lng]))
+        : POIS;
+    const combined = [...staticInView, ..._osmPois];
     return combined.filter(p => {
         if (cats.length && !cats.includes(p.cat)) return false;
         if (q) {
@@ -1789,6 +1821,18 @@ function renderMap() {
             renderMapMarkers();
             scheduleOsmLoad();
         });
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                const movedFar = geoDistKm(loc.lat, loc.lng, state.userLocation.lat, state.userLocation.lng) > 0.5;
+                state.userLocation = loc;
+                saveState();
+                if (movedFar && leafletMap) {
+                    leafletMap.setView([loc.lat, loc.lng], 14, { animate: true });
+                    _osmLastBounds = null;
+                }
+            }, () => {}, { enableHighAccuracy: true, timeout: 10000 });
+        }
     }
 
     pruneCheckIns();
@@ -2116,8 +2160,12 @@ function renderMapSearchResults() {
     if (!q) { box.classList.add("hidden"); box.innerHTML = ""; return; }
 
     const results = [];
-    // POIs (local + OSM)
-    [...POIS, ..._osmPois].forEach(p => {
+    // POIs (viewport-aware + OSM)
+    const bounds = leafletMap ? leafletMap.getBounds().pad(0.5) : null;
+    const searchPois = bounds
+        ? [...POIS.filter(p => bounds.contains([p.lat, p.lng])), ..._osmPois]
+        : [...POIS, ..._osmPois];
+    searchPois.forEach(p => {
         const cat = getCategoryById(p.cat);
         const hay = (p.name + " " + (p.desc || "") + " " + (cat?.label || "")).toLowerCase();
         if (hay.includes(q)) results.push({ kind: "poi", item: p, cat });
@@ -2424,7 +2472,11 @@ function locateUser() {
             state.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
             saveState();
             updateMyMarker();
-            if (leafletMap) leafletMap.setView([state.userLocation.lat, state.userLocation.lng], 15, { animate: true });
+            if (leafletMap) {
+                leafletMap.setView([state.userLocation.lat, state.userLocation.lng], 15, { animate: true });
+                _osmLastBounds = null;
+                scheduleOsmLoad();
+            }
             if (btn) btn.textContent = "🎯";
             if (!_gpsTracking) toggleGpsTracking();
         },
