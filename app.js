@@ -1803,6 +1803,7 @@ function renderMap() {
 
     // Spot-Liste unterhalb (mit Check-In)
     const list = $("#spotList");
+    if (!list) return;
     list.innerHTML = "";
     MEETING_SPOTS.forEach(s => {
         const count = countCheckIns(s.id);
@@ -1841,6 +1842,7 @@ function renderMap() {
 
     // Gefahren-Liste
     const dList = $("#dangerList");
+    if (!dList) return;
     dList.innerHTML = "";
     if (state.dangers.length === 0) {
         dList.innerHTML = `<p class="empty-mini">Keine aktuellen Gefahren gemeldet. 🙏</p>`;
