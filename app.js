@@ -1581,6 +1581,7 @@ const OSM_TAG_MAP = {
     "leisure=park":            { cat: "park",   icon: "🌳" },
     "leisure=garden":          { cat: "park",   icon: "🌿" },
     "leisure=nature_reserve":  { cat: "park",   icon: "🌲" },
+    "leisure=playground":      { cat: "park",   icon: "🎠" },
     "shop=pet":                { cat: "shop",   icon: "🦴" },
     "shop=pet_grooming":       { cat: "groom",  icon: "💈" },
     "craft=dog_grooming":      { cat: "groom",  icon: "💈" },
@@ -1589,11 +1590,16 @@ const OSM_TAG_MAP = {
     "amenity=cafe":            { cat: "cafe",   icon: "☕" },
     "tourism=attraction":      { cat: "sight",  icon: "🏛️" },
     "tourism=viewpoint":       { cat: "sight",  icon: "🔭" },
-    "historic=monument":       { cat: "sight",  icon: "🗿" },
-    "historic=castle":         { cat: "sight",  icon: "🏰" },
-    "amenity=fountain":        { cat: "sight",  icon: "⛲" },
+    "tourism=artwork":         { cat: "sight",  icon: "🎨" },
     "tourism=museum":          { cat: "sight",  icon: "🏛️" },
+    "historic=monument":       { cat: "sight",  icon: "🗿" },
+    "historic=memorial":       { cat: "sight",  icon: "🕊️" },
+    "historic=castle":         { cat: "sight",  icon: "🏰" },
+    "historic=ruins":          { cat: "sight",  icon: "🏚️" },
+    "amenity=fountain":        { cat: "sight",  icon: "⛲" },
     "amenity=place_of_worship":{ cat: "sight",  icon: "⛪" },
+    "natural=water":           { cat: "swim",   icon: "💧" },
+    "waterway=river":          { cat: "swim",   icon: "🏊" },
 };
 
 async function fetchOsmPois(bounds) {
@@ -1604,24 +1610,29 @@ async function fetchOsmPois(bounds) {
     const bbox = `${s},${w},${n},${e}`;
 
     const query = `[out:json][timeout:15];(
-      nwr["amenity"="veterinary"](${bbox});
-      nwr["healthcare"="veterinary"](${bbox});
       nwr["leisure"="dog_park"](${bbox});
       nwr["leisure"="park"]["name"](${bbox});
+      nwr["leisure"="garden"]["name"](${bbox});
+      nwr["leisure"="nature_reserve"]["name"](${bbox});
+      nwr["leisure"="playground"]["name"](${bbox});
+      nwr["amenity"="veterinary"](${bbox});
+      nwr["healthcare"="veterinary"](${bbox});
       nwr["shop"="pet"](${bbox});
       nwr["shop"="pet_grooming"](${bbox});
       nwr["craft"="dog_grooming"](${bbox});
       nwr["amenity"="animal_shelter"](${bbox});
       nwr["amenity"="animal_boarding"](${bbox});
-      nwr["amenity"="cafe"]["dog"="yes"](${bbox});
-      nwr["amenity"="cafe"]["pets"="yes"](${bbox});
+      nwr["amenity"="cafe"]["outdoor_seating"](${bbox});
       nwr["tourism"="attraction"]["name"](${bbox});
       nwr["tourism"="viewpoint"]["name"](${bbox});
       nwr["tourism"="museum"]["name"](${bbox});
-      nwr["historic"="monument"]["name"](${bbox});
-      nwr["historic"="castle"]["name"](${bbox});
+      nwr["tourism"="artwork"]["name"](${bbox});
+      nwr["historic"~"monument|memorial|castle|ruins"]["name"](${bbox});
       nwr["amenity"="fountain"]["name"](${bbox});
-    );out center body qt 300;`;
+      nwr["amenity"="place_of_worship"]["name"](${bbox});
+      nwr["natural"="water"]["name"](${bbox});
+      nwr["waterway"="river"]["name"](${bbox});
+    );out center body qt 500;`;
 
     let data = null;
     try {
@@ -1802,12 +1813,7 @@ function getCategoryById(id) {
 function filteredPOIs() {
     const cats = state.mapFilter.cats;
     const q = (state.mapFilter.q || "").trim().toLowerCase();
-    const bounds = leafletMap ? leafletMap.getBounds().pad(0.3) : null;
-    const staticInView = bounds
-        ? POIS.filter(p => bounds.contains([p.lat, p.lng]))
-        : POIS;
-    const combined = [...staticInView, ..._osmPois];
-    return combined.filter(p => {
+    return _osmPois.filter(p => {
         if (cats.length && !cats.includes(p.cat)) return false;
         if (q) {
             const hay = (p.name + " " + p.desc + " " + (getCategoryById(p.cat)?.label || "")).toLowerCase();
@@ -2211,12 +2217,8 @@ function renderMapSearchResults() {
     if (!q) { box.classList.add("hidden"); box.innerHTML = ""; return; }
 
     const results = [];
-    // POIs (viewport-aware + OSM)
-    const bounds = leafletMap ? leafletMap.getBounds().pad(0.5) : null;
-    const searchPois = bounds
-        ? [...POIS.filter(p => bounds.contains([p.lat, p.lng])), ..._osmPois]
-        : [...POIS, ..._osmPois];
-    searchPois.forEach(p => {
+    // POIs (live OSM data)
+    _osmPois.forEach(p => {
         const cat = getCategoryById(p.cat);
         const hay = (p.name + " " + (p.desc || "") + " " + (cat?.label || "")).toLowerCase();
         if (hay.includes(q)) results.push({ kind: "poi", item: p, cat });
@@ -2464,7 +2466,7 @@ function checkNearbyPois() {
     _lastProximityCheck = now;
     const ul = state.userLocation;
     if (!ul || !ul.lat) return;
-    const allPois = [...POIS, ..._osmPois];
+    const allPois = _osmPois;
     let newNearby = false;
     allPois.forEach(p => {
         const dist = geoDistKm(ul.lat, ul.lng, p.lat, p.lng) * 1000;
