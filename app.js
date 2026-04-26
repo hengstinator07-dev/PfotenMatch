@@ -1581,26 +1581,17 @@ const OSM_TAG_MAP = {
     "leisure=park":            { cat: "park",   icon: "🌳" },
     "leisure=garden":          { cat: "park",   icon: "🌿" },
     "leisure=nature_reserve":  { cat: "park",   icon: "🌲" },
-    "natural=water":           { cat: "swim",   icon: "🏊" },
-    "leisure=swimming_area":   { cat: "swim",   icon: "🏊" },
     "shop=pet":                { cat: "shop",   icon: "🦴" },
     "shop=pet_grooming":       { cat: "groom",  icon: "💈" },
     "craft=dog_grooming":      { cat: "groom",  icon: "💈" },
-    "shop=dog_beauty":         { cat: "groom",  icon: "💈" },
     "amenity=animal_boarding": { cat: "shop",   icon: "🏠" },
     "amenity=animal_shelter":  { cat: "shop",   icon: "🐾" },
     "amenity=cafe":            { cat: "cafe",   icon: "☕" },
-    "amenity=restaurant":      { cat: "cafe",   icon: "🍽️" },
-    "amenity=dog_training":    { cat: "school", icon: "🎓" },
     "tourism=attraction":      { cat: "sight",  icon: "🏛️" },
     "tourism=viewpoint":       { cat: "sight",  icon: "🔭" },
     "historic=monument":       { cat: "sight",  icon: "🗿" },
-    "historic=memorial":       { cat: "sight",  icon: "🕊️" },
     "historic=castle":         { cat: "sight",  icon: "🏰" },
-    "historic=ruins":          { cat: "sight",  icon: "🏚️" },
-    "historic=church":         { cat: "sight",  icon: "⛪" },
     "amenity=fountain":        { cat: "sight",  icon: "⛲" },
-    "tourism=artwork":         { cat: "sight",  icon: "🎨" },
     "tourism=museum":          { cat: "sight",  icon: "🏛️" },
     "amenity=place_of_worship":{ cat: "sight",  icon: "⛪" },
 };
@@ -1612,46 +1603,52 @@ async function fetchOsmPois(bounds) {
     const e = bounds.getEast().toFixed(5);
     const bbox = `${s},${w},${n},${e}`;
 
-    const query = `[out:json][timeout:20];(
-      nwr["amenity"="veterinary"](${bbox});
-      nwr["healthcare"="veterinary"](${bbox});
-      nwr["leisure"="dog_park"](${bbox});
-      nwr["leisure"="park"]["name"](${bbox});
-      nwr["leisure"="garden"]["name"](${bbox});
-      nwr["leisure"="nature_reserve"]["name"](${bbox});
-      nwr["leisure"="swimming_area"]["name"](${bbox});
-      nwr["shop"="pet"](${bbox});
-      nwr["shop"="pet_grooming"](${bbox});
-      nwr["craft"="dog_grooming"](${bbox});
-      nwr["shop"="dog_beauty"](${bbox});
-      nwr["amenity"="animal_shelter"](${bbox});
-      nwr["amenity"="animal_boarding"](${bbox});
-      nwr["amenity"="dog_training"](${bbox});
-      nwr["amenity"="cafe"]["dog"="yes"](${bbox});
-      nwr["amenity"="cafe"]["pets"="yes"](${bbox});
-      nwr["amenity"="cafe"]["outdoor_seating"="yes"](${bbox});
-      nwr["amenity"="restaurant"]["dog"="yes"](${bbox});
-      nwr["amenity"="restaurant"]["pets"="yes"](${bbox});
-      nwr["tourism"="attraction"]["name"](${bbox});
-      nwr["tourism"="viewpoint"]["name"](${bbox});
-      nwr["tourism"="artwork"]["name"](${bbox});
-      nwr["tourism"="museum"]["name"](${bbox});
-      nwr["historic"="monument"]["name"](${bbox});
-      nwr["historic"="memorial"]["name"](${bbox});
-      nwr["historic"="castle"]["name"](${bbox});
-      nwr["historic"="ruins"]["name"](${bbox});
-      nwr["historic"="church"]["name"](${bbox});
-      nwr["amenity"="fountain"]["name"](${bbox});
-      nwr["amenity"="place_of_worship"]["name"](${bbox});
-    );out center body qt 500;`;
+    const query = `[out:json][timeout:12];(
+      node["amenity"="veterinary"](${bbox});
+      node["healthcare"="veterinary"](${bbox});
+      node["leisure"="dog_park"](${bbox});
+      way["leisure"="dog_park"](${bbox});
+      way["leisure"="park"]["name"](${bbox});
+      relation["leisure"="park"]["name"](${bbox});
+      way["leisure"="garden"]["name"](${bbox});
+      way["leisure"="nature_reserve"]["name"](${bbox});
+      node["shop"="pet"](${bbox});
+      node["shop"="pet_grooming"](${bbox});
+      node["craft"="dog_grooming"](${bbox});
+      node["amenity"="animal_shelter"](${bbox});
+      node["amenity"="animal_boarding"](${bbox});
+      node["amenity"="cafe"]["dog"="yes"](${bbox});
+      node["amenity"="cafe"]["pets"="yes"](${bbox});
+      node["tourism"="attraction"]["name"](${bbox});
+      node["tourism"="viewpoint"]["name"](${bbox});
+      node["tourism"="museum"]["name"](${bbox});
+      node["historic"="monument"]["name"](${bbox});
+      node["historic"="castle"]["name"](${bbox});
+      node["amenity"="fountain"]["name"](${bbox});
+      node["amenity"="place_of_worship"]["name"]["tourism"](${bbox});
+    );out center body qt 300;`;
 
-    const resp = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        body: "data=" + encodeURIComponent(query),
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }
-    });
-    if (!resp.ok) throw new Error("Overpass error");
-    const data = await resp.json();
+    const OVERPASS_SERVERS = [
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+    ];
+
+    let data = null;
+    for (const server of OVERPASS_SERVERS) {
+        try {
+            const resp = await fetch(server, {
+                method: "POST",
+                body: "data=" + encodeURIComponent(query),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            });
+            if (resp.ok) {
+                data = await resp.json();
+                break;
+            }
+        } catch (e) { /* try next server */ }
+    }
+    if (!data) throw new Error("All Overpass servers failed");
 
     const seen = new Set();
     return (data.elements || []).map(el => {
@@ -1701,25 +1698,17 @@ async function loadOsmForView() {
     _osmLoading = true;
     const status = $("#osmStatus");
     if (status) { status.textContent = "🔄 Lade Orte aus OpenStreetMap…"; status.classList.remove("hidden"); }
-    let retries = 2;
-    while (retries >= 0) {
-        try {
-            const padded = bounds.pad(0.3);
-            _osmPois = await fetchOsmPois(padded);
-            _osmLastBounds = padded;
-            renderMapMarkers();
-            break;
-        } catch (e) {
-            retries--;
-            if (retries < 0) {
-                if (status) { status.textContent = "⚠ Orte konnten nicht geladen werden – ziehe die Karte um es erneut zu versuchen"; status.classList.remove("hidden"); setTimeout(() => status.classList.add("hidden"), 4000); }
-            } else {
-                await new Promise(r => setTimeout(r, 1500));
-            }
-        }
+    try {
+        const padded = bounds.pad(0.3);
+        _osmPois = await fetchOsmPois(padded);
+        _osmLastBounds = padded;
+        renderMapMarkers();
+        if (status) status.classList.add("hidden");
+    } catch (e) {
+        console.warn("OSM POI load failed:", e);
+        if (status) { status.textContent = "⚠ Orte konnten nicht geladen werden – ziehe die Karte um es erneut zu versuchen"; status.classList.remove("hidden"); setTimeout(() => status.classList.add("hidden"), 5000); }
     }
     _osmLoading = false;
-    if (status && retries >= 0) status.classList.add("hidden");
 }
 
 // ---------- Nominatim city search ----------
