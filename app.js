@@ -1603,53 +1603,46 @@ async function fetchOsmPois(bounds) {
     const e = bounds.getEast().toFixed(5);
     const bbox = `${s},${w},${n},${e}`;
 
-    const query = `[out:json][timeout:12];(
-      node["amenity"="veterinary"](${bbox});
-      node["healthcare"="veterinary"](${bbox});
-      node["leisure"="dog_park"](${bbox});
-      way["leisure"="dog_park"](${bbox});
-      way["leisure"="park"]["name"](${bbox});
-      relation["leisure"="park"]["name"](${bbox});
-      way["leisure"="garden"]["name"](${bbox});
-      way["leisure"="nature_reserve"]["name"](${bbox});
-      node["shop"="pet"](${bbox});
-      node["shop"="pet_grooming"](${bbox});
-      node["craft"="dog_grooming"](${bbox});
-      node["amenity"="animal_shelter"](${bbox});
-      node["amenity"="animal_boarding"](${bbox});
-      node["amenity"="cafe"]["dog"="yes"](${bbox});
-      node["amenity"="cafe"]["pets"="yes"](${bbox});
-      node["tourism"="attraction"]["name"](${bbox});
-      node["tourism"="viewpoint"]["name"](${bbox});
-      node["tourism"="museum"]["name"](${bbox});
-      node["historic"="monument"]["name"](${bbox});
-      node["historic"="castle"]["name"](${bbox});
-      node["amenity"="fountain"]["name"](${bbox});
-      node["amenity"="place_of_worship"]["name"]["tourism"](${bbox});
-    );out center body qt 300;`;
+    const query = `[out:json][timeout:10];(`
+        + `node["leisure"="dog_park"](${bbox});`
+        + `way["leisure"="dog_park"](${bbox});`
+        + `way["leisure"="park"]["name"](${bbox});`
+        + `node["amenity"="veterinary"](${bbox});`
+        + `node["shop"="pet"](${bbox});`
+        + `node["tourism"="attraction"]["name"](${bbox});`
+        + `node["tourism"="museum"]["name"](${bbox});`
+        + `node["tourism"="viewpoint"]["name"](${bbox});`
+        + `node["historic"="monument"]["name"](${bbox});`
+        + `node["historic"="castle"]["name"](${bbox});`
+        + `node["amenity"="fountain"]["name"](${bbox});`
+        + `node["amenity"="cafe"]["dog"="yes"](${bbox});`
+        + `);out center body qt 200;`;
 
     const OVERPASS_SERVERS = [
         "https://overpass-api.de/api/interpreter",
-        "https://overpass.kumi.systems/api/interpreter",
-        "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+        "https://overpass.kumi.systems/api/interpreter"
     ];
 
     let data = null;
     for (const server of OVERPASS_SERVERS) {
         try {
-            const resp = await fetch(server, {
-                method: "POST",
-                body: "data=" + encodeURIComponent(query),
-                headers: { "Content-Type": "application/x-www-form-urlencoded" }
-            });
+            const url = server + "?data=" + encodeURIComponent(query);
+            const resp = await fetch(url);
             if (resp.ok) {
                 data = await resp.json();
                 break;
             }
         } catch (e) { /* try next server */ }
     }
-    if (!data) throw new Error("All Overpass servers failed");
 
+    if (!data) {
+        return await fetchPhotonPois(bounds);
+    }
+
+    return parseOverpassResults(data);
+}
+
+function parseOverpassResults(data) {
     const seen = new Set();
     return (data.elements || []).map(el => {
         const lat = el.lat || el.center?.lat;
@@ -1683,6 +1676,60 @@ async function fetchOsmPois(bounds) {
             isOsm: true
         };
     }).filter(Boolean);
+}
+
+const PHOTON_SEARCH_TERMS = [
+    { q: "park",       cat: "park",  icon: "🌳" },
+    { q: "dog park",   cat: "park",  icon: "🐕" },
+    { q: "tierarzt",   cat: "vet",   icon: "🏥" },
+    { q: "veterinary", cat: "vet",   icon: "🏥" },
+    { q: "zooladen",   cat: "shop",  icon: "🦴" },
+    { q: "pet shop",   cat: "shop",  icon: "🦴" },
+    { q: "museum",     cat: "sight", icon: "🏛️" },
+    { q: "monument",   cat: "sight", icon: "🗿" },
+    { q: "fountain",   cat: "sight", icon: "⛲" },
+    { q: "castle",     cat: "sight", icon: "🏰" },
+];
+
+async function fetchPhotonPois(bounds) {
+    const centerLat = (bounds.getSouth() + bounds.getNorth()) / 2;
+    const centerLng = (bounds.getWest() + bounds.getEast()) / 2;
+    const results = [];
+    const seen = new Set();
+
+    const fetches = PHOTON_SEARCH_TERMS.map(async (term) => {
+        try {
+            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(term.q)}&lat=${centerLat}&lon=${centerLng}&limit=15&lang=de`;
+            const resp = await fetch(url);
+            if (!resp.ok) return;
+            const data = await resp.json();
+            (data.features || []).forEach(f => {
+                const coords = f.geometry?.coordinates;
+                if (!coords) return;
+                const lng = coords[0], lat = coords[1];
+                if (!bounds.contains([lat, lng])) return;
+                const name = f.properties?.name;
+                if (!name) return;
+                const key = `${name}-${lat.toFixed(4)}-${lng.toFixed(4)}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                results.push({
+                    id: "ph_" + key,
+                    cat: term.cat,
+                    name: name,
+                    desc: f.properties?.street || f.properties?.city || "",
+                    lat, lng,
+                    rating: null,
+                    open: "",
+                    osmIcon: term.icon,
+                    isOsm: true
+                });
+            });
+        } catch (e) { /* skip this term */ }
+    });
+
+    await Promise.all(fetches);
+    return results;
 }
 
 function scheduleOsmLoad() {

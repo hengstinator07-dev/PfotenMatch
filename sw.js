@@ -1,4 +1,4 @@
-const CACHE_NAME = "pfotenmatch-v31";
+const CACHE_NAME = "pfotenmatch-v32";
 const ASSETS = [
     "/",
     "/index.html",
@@ -27,12 +27,17 @@ self.addEventListener("activate", (e) => {
     );
 });
 
-// Fetch — network-first for HTML/JS/CSS, cache-first for external assets
+const API_HOSTS = ["overpass-api.de", "overpass.kumi.systems", "photon.komoot.io", "nominatim.openstreetmap.org", "supabase.co"];
+
+// Fetch — network-first for HTML/JS/CSS, skip API calls, cache-first for CDN assets
 self.addEventListener("fetch", (e) => {
     const url = new URL(e.request.url);
 
-    // Skip non-GET and cross-origin API calls
+    // Skip non-GET requests
     if (e.request.method !== "GET") return;
+
+    // Never cache API calls — let them go to network directly
+    if (API_HOSTS.some(h => url.hostname.includes(h))) return;
 
     // Network-first for own assets (always get latest)
     if (url.origin === location.origin) {
