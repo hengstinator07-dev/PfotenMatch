@@ -4640,35 +4640,22 @@ async function handleEmailLogin() {
 
 async function handlePostLogin() {
     flashToast("Erfolgreich eingeloggt");
-    try {
-        const profile = await sbLoadProfile();
-        if (profile) {
-            Object.assign(state.myProfile, profile);
-            if (profile.lat && profile.lng) {
-                state.userLocation = { lat: profile.lat, lng: profile.lng };
-            }
-            state.onboarded = true;
-            await syncFromSupabase();
-            await loadRealProfiles();
-            saveState();
-            hideOnboarding();
-            applyFilters();
-            renderMatches();
-            renderProfile();
-        } else {
-            onbGoto(2);
+    const profile = await sbLoadProfile();
+    if (profile) {
+        Object.assign(state.myProfile, profile);
+        if (profile.lat && profile.lng) {
+            state.userLocation = { lat: profile.lat, lng: profile.lng };
         }
-    } catch (err) {
-        console.warn("Profil laden fehlgeschlagen:", err);
-        if (state.onboarded && state.myProfile.name) {
-            hideOnboarding();
-            applyFilters();
-            renderMatches();
-            renderProfile();
-            flashToast("Offline-Modus – lokales Profil geladen");
-        } else {
-            onbGoto(2);
-        }
+        state.onboarded = true;
+        await syncFromSupabase();
+        await loadRealProfiles();
+        saveState();
+        hideOnboarding();
+        applyFilters();
+        renderMatches();
+        renderProfile();
+    } else {
+        onbGoto(2);
     }
 }
 
@@ -4805,7 +4792,7 @@ function launchConfetti() {
     }
 }
 
-async function finishOnboarding() {
+function finishOnboarding() {
     const d = onb.draft;
     state.myProfile = {
         ...state.myProfile,
@@ -4824,8 +4811,21 @@ async function finishOnboarding() {
     };
     state.userLocation = d.location;
     state.onboarded = true;
+    try {
+        const raw = localStorage.getItem("pfotenMatch");
+        const existing = raw ? JSON.parse(raw) : {};
+        existing.onboarded = true;
+        localStorage.setItem("pfotenMatch", JSON.stringify(existing));
+    } catch (e) { /* ignore */ }
     saveState();
+    sbUpsertProfile({
+        ...state.myProfile,
+        city: d.city,
+        lat: d.location.lat,
+        lng: d.location.lng
+    }).then(() => sbGetMyFriendCode().catch(() => {})).catch(() => {});
     hideOnboarding();
+    loadRealProfiles().then(() => applyFilters()).catch(() => applyFilters());
     applyFilters();
     renderMatches();
     renderProfile();
@@ -4834,18 +4834,6 @@ async function finishOnboarding() {
         renderMap();
     }
     flashToast(`🐾 Willkommen, ${d.name}!`);
-    try {
-        await sbUpsertProfile({
-            ...state.myProfile,
-            lat: d.location.lat,
-            lng: d.location.lng
-        });
-        sbGetMyFriendCode().catch(() => {});
-    } catch (err) {
-        console.warn("Profil Supabase-Sync fehlgeschlagen:", err);
-        flashToast("Profil lokal gespeichert – Cloud-Sync fehlgeschlagen");
-    }
-    loadRealProfiles().then(() => applyFilters()).catch(() => applyFilters());
 }
 
 function bindOnboarding() {

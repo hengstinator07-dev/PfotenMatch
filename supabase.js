@@ -74,9 +74,9 @@ async function sbResendConfirmation(email) {
 // ---------- Dog Profile ----------
 
 async function sbUpsertProfile(profile) {
-    if (!_sbReady()) throw new Error("Supabase nicht verfügbar");
+    if (!_sbReady()) return null;
     const user = await sbGetUser();
-    if (!user) throw new Error("Nicht eingeloggt");
+    if (!user) return null;
     const row = {
         user_id: user.id,
         name: profile.name,
