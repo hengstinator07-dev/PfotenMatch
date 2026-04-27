@@ -373,6 +373,11 @@
                     <h2 class="view-title">Deine Matches</h2>
                     <button id="connectFriendBtn" class="btn-connect-friend">🔗 Freund verbinden</button>
                 </div>
+                <div class="match-search-bar">
+                    <span class="match-search-icon">🔍</span>
+                    <input type="text" id="matchSearchInput" placeholder="Match suchen…" autocomplete="off" />
+                    <button id="matchSearchClear" class="match-search-clear hidden" title="Löschen">✕</button>
+                </div>
                 <div id="matchesList" class="matches-list">
                     <p class="empty-state">Noch keine Matches – swipe los!</p>
                 </div>
@@ -1339,30 +1344,50 @@
 
     <!-- Other user profile modal -->
     <div id="otherProfileModal" class="modal hidden">
-        <div class="modal-content other-profile-modal">
-            <button id="otherProfileClose" class="modal-close-btn">✕</button>
-            <div class="op-header">
-                <div id="opAvatar" class="op-avatar">🐕</div>
-                <div class="op-identity">
+        <div class="modal-content op-fullscreen">
+            <header class="op-topbar">
+                <button id="otherProfileClose" class="op-back-btn">← Zurück</button>
+                <span id="opTopName" class="op-topbar-name"></span>
+                <span></span>
+            </header>
+            <div class="op-scroll">
+                <div class="profile-header">
+                    <div class="profile-avatar-wrap">
+                        <button id="opAvatarBtn" class="profile-avatar-btn">
+                            <div id="opAvatar" class="profile-avatar">🐕</div>
+                            <span class="avatar-ring"></span>
+                        </button>
+                    </div>
+                    <div class="profile-stats">
+                        <div class="stat"><strong id="opStatPhotos">0</strong><span>Fotos</span></div>
+                        <div class="stat"><strong id="opStatPaws">—</strong><span>Pfoten</span></div>
+                        <div class="stat"><strong id="opStatKm">—</strong><span>km</span></div>
+                    </div>
+                </div>
+                <div class="profile-identity">
                     <h2 id="opName">Name</h2>
-                    <p id="opHandle" class="op-handle">@name · Rasse · 3 J.</p>
+                    <p class="handle" id="opHandle">@name · Rasse · 3 J.</p>
+                    <p class="bio" id="opBio"></p>
+                    <div class="profile-chips" id="opChips"></div>
+                </div>
+                <div class="profile-actions">
+                    <button class="btn-primary full" id="opMessageBtn">💬 Nachricht</button>
+                    <button class="btn-ghost full" id="opMeetBtn">📍 Treffen planen</button>
+                </div>
+                <div class="profile-tabs" role="tablist">
+                    <button class="profile-tab active" data-optab="photos">🏞️ Fotos</button>
+                    <button class="profile-tab" data-optab="info">ℹ Info</button>
+                </div>
+                <div id="opPhotos" class="profile-photos op-photo-grid"></div>
+                <div id="opInfo" class="profile-info hidden">
+                    <div class="info-row"><span>🐾 Rasse</span><strong id="opBreed">—</strong></div>
+                    <div class="info-row"><span>🎂 Alter</span><strong id="opAge">—</strong></div>
+                    <div class="info-row"><span>📏 Größe</span><strong id="opSize">—</strong></div>
+                    <div class="info-row"><span>✂ Kastriert</span><strong id="opNeutered">—</strong></div>
+                    <div class="info-row"><span>⚡ Energie</span><strong id="opEnergy">—</strong></div>
+                    <div class="info-row"><span>🎾 Spielstil</span><strong id="opPlay">—</strong></div>
                 </div>
             </div>
-            <div class="op-stats-row">
-                <div class="op-stat"><strong id="opStatPhotos">0</strong><small>Fotos</small></div>
-                <div class="op-stat"><strong id="opStatPaws">0</strong><small>Pfoten</small></div>
-                <div class="op-stat"><strong id="opStatKm">0</strong><small>km</small></div>
-            </div>
-            <p id="opBio" class="op-bio"></p>
-            <div id="opChips" class="op-chips"></div>
-            <div class="op-info">
-                <div class="info-row"><span>📏 Größe</span><strong id="opSize">—</strong></div>
-                <div class="info-row"><span>⚡ Energie</span><strong id="opEnergy">—</strong></div>
-                <div class="info-row"><span>🎾 Spielstil</span><strong id="opPlay">—</strong></div>
-                <div class="info-row"><span>✂ Kastriert</span><strong id="opNeutered">—</strong></div>
-            </div>
-            <h3 class="op-section">🏞️ Fotos</h3>
-            <div id="opPhotos" class="op-photos"></div>
         </div>
     </div>
 

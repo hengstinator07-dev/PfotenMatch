@@ -787,15 +787,26 @@ function launchMatchConfetti() {
 }
 
 // ---------- Matches list ----------
-function renderMatches() {
+function renderMatches(searchQuery) {
     updateMatchesNavBadge();
     const list = $("#matchesList");
     if (state.matches.length === 0) {
         list.innerHTML = `<p class="empty-state">Noch keine Matches – swipe los! 🐾</p>`;
         return;
     }
+    const q = (searchQuery || "").toLowerCase();
+    const filtered = q
+        ? state.matches.filter(m => {
+            const hay = (m.profile.name + " " + m.profile.breed + " " + (m.profile.owner || "")).toLowerCase();
+            return hay.includes(q);
+        })
+        : state.matches;
     list.innerHTML = "";
-    state.matches.forEach(m => {
+    if (q && filtered.length === 0) {
+        list.innerHTML = `<p class="empty-state">Kein Match für "${escapeHtml(searchQuery)}" gefunden</p>`;
+        return;
+    }
+    filtered.forEach(m => {
         const lastMsg = m.messages[m.messages.length - 1];
         const unread = chatUi.unread[m.profile.id] || 0;
         const item = document.createElement("div");
@@ -3048,11 +3059,21 @@ function openOtherProfile(dogId) {
 
     const avEl = $("#opAvatar");
     if (dog.avatarImage) {
-        avEl.innerHTML = `<img src="${dog.avatarImage}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`;
+        avEl.innerHTML = `<img src="${dog.avatarImage}" alt="" />`;
     } else {
         avEl.innerHTML = "";
         avEl.textContent = dog.emoji || "🐕";
     }
+
+    const dogStories = getOwnerStories(dogId);
+    const hasStory = dogStories.length > 0;
+    const allViewed = hasStory && dogStories.every(s => s.viewed);
+    const avBtn = $("#opAvatarBtn");
+    avBtn.classList.toggle("has-story", hasStory);
+    avBtn.classList.toggle("viewed", allViewed);
+    avBtn.onclick = hasStory ? () => openStoryViewer(dogId) : null;
+
+    $("#opTopName").textContent = dog.name || "";
     $("#opName").textContent = dog.name || "Unbekannt";
     const handle = "@" + (dog.name || "hund").toLowerCase().replace(/[^a-z0-9]+/g, "");
     $("#opHandle").textContent = `${handle} · ${dog.breed || "Mischling"} · ${dog.age || 0} J.`;
@@ -3060,6 +3081,8 @@ function openOtherProfile(dogId) {
     $("#opStatPhotos").textContent = (dog.photos || []).length;
     $("#opStatPaws").textContent = "—";
     $("#opStatKm").textContent = "—";
+    $("#opBreed").textContent = dog.breed || "—";
+    $("#opAge").textContent = (dog.age || 0) + " Jahre";
     $("#opSize").textContent = dog.size || "—";
     $("#opEnergy").textContent = dog.energy || "—";
     $("#opPlay").textContent = dog.playStyle || "—";
@@ -3067,19 +3090,39 @@ function openOtherProfile(dogId) {
 
     const chipsEl = $("#opChips");
     chipsEl.innerHTML = "";
-    const chips = [];
-    if (dog.size) chips.push("📏 " + dog.size);
-    if (dog.energy) chips.push("⚡ " + dog.energy);
-    if (dog.playStyle) chips.push("🎾 " + dog.playStyle);
-    chips.forEach(t => {
+    const chipList = [];
+    if (dog.size)      chipList.push({ text: "📏 " + dog.size });
+    if (dog.energy)    chipList.push({ text: "⚡ " + dog.energy });
+    if (dog.playStyle) chipList.push({ text: "🎾 " + dog.playStyle });
+    if (dog.neutered === "Ja" || dog.neutered === true) chipList.push({ text: "✂ kastriert" });
+    chipList.forEach(c => {
         const s = document.createElement("span");
         s.className = "chip";
-        s.textContent = t;
+        s.textContent = c.text;
         chipsEl.appendChild(s);
     });
 
+    $("#opMessageBtn").onclick = () => {
+        $("#otherProfileModal").classList.add("hidden");
+        openChat(dogId);
+    };
+    $("#opMeetBtn").onclick = () => {
+        $("#otherProfileModal").classList.add("hidden");
+        openMeetPlanner(dog);
+    };
+
+    switchOtherProfileTab("photos");
     renderOtherPhotos(dog);
     $("#otherProfileModal").classList.remove("hidden");
+
+    const scroll = $(".op-scroll");
+    if (scroll) scroll.scrollTop = 0;
+}
+
+function switchOtherProfileTab(name) {
+    $$("[data-optab]").forEach(b => b.classList.toggle("active", b.dataset.optab === name));
+    $("#opPhotos").classList.toggle("hidden", name !== "photos");
+    $("#opInfo").classList.toggle("hidden", name !== "info");
 }
 
 function renderOtherPhotos(dog) {
@@ -3087,13 +3130,13 @@ function renderOtherPhotos(dog) {
     grid.innerHTML = "";
     const photos = dog.photos || [];
     if (photos.length === 0) {
-        grid.innerHTML = `<p class="op-no-photos">Noch keine Fotos</p>`;
+        grid.innerHTML = `<p class="op-empty-photos">Noch keine Fotos</p>`;
         return;
     }
     photos.forEach(photo => {
         const pd = getPhotoData(photo.id);
-        const cell = document.createElement("div");
-        cell.className = "op-photo-cell";
+        const cell = document.createElement("button");
+        cell.className = "photo-cell";
         cell.innerHTML =
             `<img src="${photo.src}" alt="" />` +
             `<div class="op-photo-overlay">` +
@@ -4415,6 +4458,23 @@ function bindEvents() {
         if (v.length > 4) v = v.slice(0, 4) + "-" + v.slice(4, 8);
         e.target.value = v;
     });
+    // Match search
+    const matchInp = $("#matchSearchInput");
+    const matchClear = $("#matchSearchClear");
+    if (matchInp) {
+        matchInp.addEventListener("input", () => {
+            matchClear.classList.toggle("hidden", !matchInp.value);
+            renderMatches(matchInp.value.trim());
+        });
+    }
+    if (matchClear) {
+        matchClear.addEventListener("click", () => {
+            matchInp.value = "";
+            matchClear.classList.add("hidden");
+            renderMatches();
+            matchInp.focus();
+        });
+    }
     $("#cancelEditProfileBtn").addEventListener("click", () => {
         $("#editProfileModal").classList.add("hidden");
     });
@@ -4451,6 +4511,9 @@ function bindEvents() {
     $("#photoViewerDelete").addEventListener("click", deleteCurrentPhoto);
     // Other profile
     $("#otherProfileClose").addEventListener("click", () => $("#otherProfileModal").classList.add("hidden"));
+    $$("[data-optab]").forEach(b => {
+        b.addEventListener("click", () => switchOtherProfileTab(b.dataset.optab));
+    });
     $("#photoDetailClose").addEventListener("click", () => $("#photoDetailModal").classList.add("hidden"));
     $("#photoLikeBtn").addEventListener("click", togglePhotoLike);
     $("#photoCommentSend").addEventListener("click", addPhotoComment);
