@@ -36,6 +36,8 @@ serve(async (req: Request) => {
 
   try {
     switch (event.type) {
+      // ===== Stripe Checkout (Sitter Premium Subscription) =====
+
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.user_id;
@@ -117,6 +119,60 @@ serve(async (req: Request) => {
             updated_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", subscription.id);
+        break;
+      }
+
+      // ===== Stripe Identity (Sitter ID Verification) =====
+
+      case "identity.verification_session.verified": {
+        const session = event.data.object as any;
+        const userId = session.metadata?.user_id;
+        const sessionId = session.id;
+
+        await supabase
+          .from("identity_verifications")
+          .update({
+            status: "verified",
+            verified_at: new Date().toISOString(),
+          })
+          .eq("stripe_session_id", sessionId);
+
+        if (userId) {
+          await supabase
+            .from("sitter_profiles")
+            .update({
+              identity_verified: true,
+              phone_verified: true,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("user_id", userId);
+        }
+
+        console.log(`Identity verified for user ${userId}`);
+        break;
+      }
+
+      case "identity.verification_session.requires_input": {
+        const session = event.data.object as any;
+        const sessionId = session.id;
+
+        await supabase
+          .from("identity_verifications")
+          .update({ status: "requires_input" })
+          .eq("stripe_session_id", sessionId);
+
+        console.log(`Identity requires input for session ${sessionId}`);
+        break;
+      }
+
+      case "identity.verification_session.processing": {
+        const session = event.data.object as any;
+        const sessionId = session.id;
+
+        await supabase
+          .from("identity_verifications")
+          .update({ status: "processing" })
+          .eq("stripe_session_id", sessionId);
         break;
       }
     }
