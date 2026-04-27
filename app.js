@@ -3300,8 +3300,8 @@ function flashToast(text) {
 // SITTER – Hundesitter finden & buchen
 // ============================================================
 let _remoteSitters = [];
-let _sitterPhoneVerified = false;
-let _sitterPhone = "";
+let _sitterIdentityVerified = false;
+let _sitterIdentityStatus = "not_started"; // not_started | pending | verified | failed
 
 const sitterUi = {
     mode: "discover",
@@ -3395,7 +3395,7 @@ function renderSitters() {
         else priceDisplay = `ab CHF ${s.priceNight}/Nacht`;
         const meBadge = isMe ? '<span class="me-badge">Du</span>' : '';
         card.innerHTML = `
-            <div class="sc-av">${s.avatar}${s.verified ? '<span class="verified-dot">✓</span>' : ''}</div>
+            <div class="sc-av">${s.avatar}${s.verified || s.identityVerified ? '<span class="verified-dot">🛡️</span>' : ''}</div>
             <div class="sc-body">
                 <div class="sc-head">
                     <strong>${escapeHtml(s.name)}${meBadge}</strong>
@@ -3672,7 +3672,7 @@ function bindSitterRegistration() {
     $("#dashDeleteBtn")?.addEventListener("click", deleteMySitterProfile);
     $("#sitterUpgradeBtn")?.addEventListener("click", openSitterCheckout);
     bindSitterLocationSearch();
-    bindPhoneVerification();
+    bindIdentityVerification();
 }
 
 function saveMySitterProfile() {
@@ -3718,8 +3718,9 @@ function saveMySitterProfile() {
         services,
         bio,
         experience,
-        verified: _sitterPhoneVerified,
-        phoneVerified: _sitterPhoneVerified,
+        verified: _sitterIdentityVerified,
+        identityVerified: _sitterIdentityVerified,
+        identityStatus: _sitterIdentityStatus,
         acceptedSizes: [...sitterForm.selectedSizes],
         responseTime,
         availability,
@@ -3735,7 +3736,7 @@ function saveMySitterProfile() {
         acceptedSizes: sitterForm.selectedSizes,
         priceHour, priceDay, priceNight,
         lat, lng, city,
-        phoneVerified: _sitterPhoneVerified
+        phoneVerified: _sitterIdentityVerified
     }).catch(e => console.warn("Sitter sync failed:", e));
 
     if (isNew) {
@@ -3766,8 +3767,9 @@ function editMySitterProfile() {
     $("#msExperience").value = p.experience;
     $("#msResponse").value = p.responseTime;
     $("#msAvailability").value = p.availability;
-    _sitterPhoneVerified = !!p.verified || !!p.phoneVerified;
-    updatePhoneVerifyUi();
+    _sitterIdentityVerified = !!p.verified || !!p.identityVerified;
+    _sitterIdentityStatus = p.identityStatus || (_sitterIdentityVerified ? "verified" : "not_started");
+    updateIdentityVerifyUi();
     $("#msPriceHour").value  = p.priceHour  || "";
     $("#msPriceDay").value   = p.priceDay   || "";
     $("#msPriceNight").value = p.priceNight || "";
@@ -3783,23 +3785,26 @@ function editMySitterProfile() {
     $("#sitterRegisterWrap").scrollIntoView({ behavior: "smooth" });
 }
 
-function updatePhoneVerifyUi() {
-    if (_sitterPhoneVerified) {
-        $("#phoneStep1")?.classList.add("hidden");
-        $("#phoneStep2")?.classList.add("hidden");
-        $("#phoneVerified")?.classList.remove("hidden");
-    } else {
-        $("#phoneStep1")?.classList.remove("hidden");
-        $("#phoneStep2")?.classList.add("hidden");
-        $("#phoneVerified")?.classList.add("hidden");
-    }
+function updateIdentityVerifyUi() {
+    const states = ["identityNotStarted", "identityPending", "identityVerified", "identityFailed"];
+    const show = {
+        not_started: "identityNotStarted",
+        pending: "identityPending",
+        verified: "identityVerified",
+        failed: "identityFailed"
+    }[_sitterIdentityStatus] || "identityNotStarted";
+    states.forEach(id => {
+        const el = $("#" + id);
+        if (el) el.classList.toggle("hidden", id !== show);
+    });
 }
 
 function deleteMySitterProfile() {
     if (!confirm("Sitter-Profil wirklich löschen? Alle offenen Anfragen gehen verloren.")) return;
     state.mySitterProfile = null;
     state.sitterRequests = [];
-    _sitterPhoneVerified = false;
+    _sitterIdentityVerified = false;
+    _sitterIdentityStatus = "not_started";
     sitterForm.selectedAvatar = "👩";
     sitterForm.selectedSizes = [];
     const form = $("#sitterForm");
@@ -3867,8 +3872,20 @@ function renderSitterDashboard() {
     $("#dashAv").textContent = p.avatar;
     $("#dashName").textContent = p.name;
     $("#dashHood").textContent = `${p.city || p.neighborhood} · ${p.services.length} Services`;
-    $("#dashVerified").classList.toggle("hidden", !p.verified && !p.phoneVerified);
+    const isVerified = p.verified || p.identityVerified;
+    $("#dashVerified").classList.toggle("hidden", !isVerified);
     $("#dashRating").textContent = (p.rating || 5.0).toFixed(1);
+
+    const trustBar = $("#dashTrustBar");
+    if (trustBar) {
+        const subActive = (p.subscriptionStatus || "inactive") === "active";
+        const hasReviews = (p.reviewCount || 0) > 0;
+        trustBar.innerHTML = `
+            <div class="trust-item${isVerified ? " done" : ""}"><span>🛡️</span> ID geprüft</div>
+            <div class="trust-item${subActive ? " done" : ""}"><span>⭐</span> Premium</div>
+            <div class="trust-item${hasReviews ? " done" : ""}"><span>💬</span> ${(p.reviewCount || 0)} Bewertung${(p.reviewCount || 0) !== 1 ? "en" : ""}</div>
+        `;
+    }
 
     const subStatus = p.subscriptionStatus || "inactive";
     const subEl = $("#dashSubStatus");
@@ -4074,51 +4091,70 @@ function bindSitterLocationSearch() {
     }
 }
 
-// ---------- Phone Verification ----------
-function bindPhoneVerification() {
-    const sendBtn = $("#sendOtpBtn");
-    const verifyBtn = $("#verifyOtpBtn");
+// ---------- Stripe Identity Verification ----------
+function bindIdentityVerification() {
+    const startBtn = $("#startIdentityBtn");
+    const checkBtn = $("#checkIdentityBtn");
+    const retryBtn = $("#retryIdentityBtn");
 
-    if (sendBtn) {
-        sendBtn.addEventListener("click", async () => {
-            const phone = $("#msPhone").value.trim();
-            if (!phone || phone.length < 8) { flashToast("Bitte gültige Telefonnummer eingeben"); return; }
-            _sitterPhone = phone;
-            sendBtn.textContent = "⏳";
-            sendBtn.disabled = true;
-            try {
-                await sbSendPhoneOtp(phone);
-                $("#phoneStep1").classList.add("hidden");
-                $("#phoneStep2").classList.remove("hidden");
-                flashToast("📱 SMS-Code wurde gesendet");
-            } catch (e) {
-                flashToast("Fehler: " + (e.message || "SMS konnte nicht gesendet werden"));
-            } finally {
-                sendBtn.textContent = "SMS senden";
-                sendBtn.disabled = false;
+    async function startVerification() {
+        const btn = startBtn || retryBtn;
+        if (btn) { btn.textContent = "⏳ Wird gestartet…"; btn.disabled = true; }
+        try {
+            const session = await sbCreateIdentitySession();
+            if (session?.url) {
+                _sitterIdentityStatus = "pending";
+                updateIdentityVerifyUi();
+                window.open(session.url, "_blank");
+                flashToast("🛡️ Stripe Identity wird geöffnet…");
+            } else {
+                _sitterIdentityStatus = "pending";
+                updateIdentityVerifyUi();
+                flashToast("🛡️ Verifizierung gestartet – prüfe den Status in wenigen Minuten");
             }
+        } catch (e) {
+            flashToast("Fehler: " + (e.message || "Verifizierung konnte nicht gestartet werden"));
+        } finally {
+            if (btn) { btn.textContent = "🛡️ Jetzt Identität verifizieren"; btn.disabled = false; }
+        }
+    }
+
+    if (startBtn) startBtn.addEventListener("click", startVerification);
+    if (retryBtn) retryBtn.addEventListener("click", startVerification);
+
+    if (checkBtn) {
+        checkBtn.addEventListener("click", async () => {
+            checkBtn.textContent = "⏳ Prüfe…";
+            checkBtn.disabled = true;
+            try {
+                const status = await sbCheckIdentityStatus();
+                if (status?.status === "verified") {
+                    _sitterIdentityVerified = true;
+                    _sitterIdentityStatus = "verified";
+                    if (state.mySitterProfile) {
+                        state.mySitterProfile.verified = true;
+                        state.mySitterProfile.identityVerified = true;
+                        state.mySitterProfile.identityStatus = "verified";
+                        saveState();
+                    }
+                    flashToast("✅ Identität erfolgreich verifiziert!");
+                } else if (status?.status === "requires_input") {
+                    _sitterIdentityStatus = "failed";
+                    flashToast("❌ Verifizierung fehlgeschlagen – bitte erneut versuchen");
+                } else {
+                    flashToast("⏳ Verifizierung wird noch geprüft…");
+                }
+            } catch (e) {
+                flashToast("Status konnte nicht geprüft werden");
+            } finally {
+                checkBtn.textContent = "Status prüfen";
+                checkBtn.disabled = false;
+            }
+            updateIdentityVerifyUi();
         });
     }
 
-    if (verifyBtn) {
-        verifyBtn.addEventListener("click", async () => {
-            const code = $("#msOtpCode").value.trim();
-            if (!code || code.length < 6) { flashToast("Bitte 6-stelligen Code eingeben"); return; }
-            verifyBtn.textContent = "⏳";
-            verifyBtn.disabled = true;
-            try {
-                await sbVerifyPhoneOtp(_sitterPhone, code);
-                _sitterPhoneVerified = true;
-                updatePhoneVerifyUi();
-                flashToast("✅ Telefon erfolgreich verifiziert!");
-            } catch (e) {
-                flashToast("❌ Code ungültig: " + (e.message || "Bitte erneut versuchen"));
-            } finally {
-                verifyBtn.textContent = "Bestätigen";
-                verifyBtn.disabled = false;
-            }
-        });
-    }
+    updateIdentityVerifyUi();
 }
 
 // ---------- Stripe Checkout for Sitter Premium ----------

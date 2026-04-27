@@ -10,6 +10,7 @@
 -- ============================================================
 -- 0. CLEANUP – Alle alten Tabellen entfernen (in FK-Reihenfolge)
 -- ============================================================
+DROP TABLE IF EXISTS identity_verifications CASCADE;
 DROP TABLE IF EXISTS sitter_reviews   CASCADE;
 DROP TABLE IF EXISTS sitter_bookings  CASCADE;
 DROP TABLE IF EXISTS sitter_requests  CASCADE;
@@ -201,6 +202,8 @@ CREATE TABLE sitter_profiles (
     lng                    DOUBLE PRECISION,
     city                   TEXT DEFAULT '',
     phone_verified         BOOLEAN DEFAULT FALSE,
+    identity_verified      BOOLEAN DEFAULT FALSE,
+    identity_session_id    TEXT,
     subscription_status    TEXT DEFAULT 'inactive'
         CHECK (subscription_status IN ('active', 'inactive', 'past_due', 'canceled')),
     stripe_customer_id     TEXT,
@@ -334,6 +337,31 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_update_sitter_rating
     AFTER INSERT ON sitter_reviews
     FOR EACH ROW EXECUTE FUNCTION update_sitter_rating();
+
+-- ============================================================
+-- 8b. IDENTITY VERIFICATIONS (Stripe Identity)
+-- ============================================================
+CREATE TABLE identity_verifications (
+    id                UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id           UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    stripe_session_id TEXT,
+    status            TEXT DEFAULT 'pending'
+        CHECK (status IN ('pending', 'processing', 'verified', 'requires_input')),
+    verified_at       TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_identity_user ON identity_verifications(user_id);
+
+ALTER TABLE identity_verifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "identity_select_own"
+    ON identity_verifications FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "identity_insert_own"
+    ON identity_verifications FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
 
 -- ============================================================
 -- 9. RPC: find_sitters_nearby (Haversine, Privacy-safe)

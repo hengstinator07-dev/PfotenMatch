@@ -585,21 +585,30 @@ async function sbGetSitterSubscriptionStatus() {
     return data?.subscription_status || "inactive";
 }
 
-// ---------- Phone Verification via Supabase Auth ----------
+// ---------- Stripe Identity Verification ----------
 
-async function sbSendPhoneOtp(phone) {
+async function sbCreateIdentitySession() {
     if (!_sbReady()) throw new Error("Supabase nicht verfügbar");
-    const { error } = await sb.auth.signInWithOtp({ phone });
-    if (error) throw error;
-}
-
-async function sbVerifyPhoneOtp(phone, token) {
-    if (!_sbReady()) throw new Error("Supabase nicht verfügbar");
-    const { data, error } = await sb.auth.verifyOtp({
-        phone,
-        token,
-        type: "sms"
+    const user = await sbGetUser();
+    if (!user) throw new Error("Nicht angemeldet");
+    const { data, error } = await sb.functions.invoke("create-identity-session", {
+        body: { user_id: user.id, email: user.email }
     });
     if (error) throw error;
+    return data;
+}
+
+async function sbCheckIdentityStatus() {
+    if (!_sbReady()) return null;
+    const user = await sbGetUser();
+    if (!user) return null;
+    const { data, error } = await sb
+        .from("identity_verifications")
+        .select("status, verified_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+    if (error) return null;
     return data;
 }

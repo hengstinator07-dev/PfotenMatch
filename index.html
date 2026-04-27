@@ -563,10 +563,15 @@
                             <ul class="sitter-perks">
                                 <li>💰 <strong>Du bestimmst</strong> die Preise</li>
                                 <li>📅 <strong>Volle Flexibilität</strong> bei der Verfügbarkeit</li>
-                                <li>✓ <strong>Verifizierungs-Badge</strong> nach SMS-Verifizierung</li>
+                                <li>🛡️ <strong>Stripe Identity</strong> Verifizierung für Vertrauen</li>
                                 <li>🗺️ <strong>Standortbasiert</strong> – überall einsetzbar</li>
                                 <li>⭐ <strong>Premium Sitter-Abo</strong> zum Veröffentlichen</li>
                             </ul>
+                            <div class="sitter-trust-badges">
+                                <div class="trust-badge"><span>🛡️</span> ID-geprüft</div>
+                                <div class="trust-badge"><span>🔒</span> Verschlüsselt</div>
+                                <div class="trust-badge"><span>⭐</span> Bewertungen</div>
+                            </div>
                             <div id="sitterPremiumGate" class="sitter-premium-gate hidden">
                                 <div class="premium-gate-card">
                                     <h4>⭐ Sitter Premium erforderlich</h4>
@@ -673,24 +678,62 @@
                             </label>
 
                             <div class="ms-verify">
-                                <h4>📱 Telefon-Verifizierung</h4>
-                                <p class="form-hint">Verifiziere deine Telefonnummer für das ✓-Badge. Mehr Vertrauen = mehr Buchungen.</p>
-                                <div id="phoneVerifySection">
-                                    <div id="phoneStep1">
-                                        <div class="phone-input-row">
-                                            <input type="tel" id="msPhone" placeholder="+41 79 123 45 67" />
-                                            <button type="button" id="sendOtpBtn" class="btn-ghost-sm">SMS senden</button>
+                                <h4>🛡️ Identitätsverifizierung</h4>
+                                <p class="form-hint">Verifiziere deine Identität mit einem Ausweisdokument via Stripe Identity. Hundebesitzer vertrauen verifizierten Sittern deutlich mehr.</p>
+                                <div id="identityVerifySection">
+                                    <div id="identityNotStarted">
+                                        <div class="id-verify-card">
+                                            <div class="id-verify-steps">
+                                                <div class="id-step">
+                                                    <span class="id-step-num">1</span>
+                                                    <div>
+                                                        <strong>Ausweis fotografieren</strong>
+                                                        <small>Pass, ID oder Führerschein</small>
+                                                    </div>
+                                                </div>
+                                                <div class="id-step">
+                                                    <span class="id-step-num">2</span>
+                                                    <div>
+                                                        <strong>Selfie aufnehmen</strong>
+                                                        <small>Automatischer Abgleich</small>
+                                                    </div>
+                                                </div>
+                                                <div class="id-step">
+                                                    <span class="id-step-num">3</span>
+                                                    <div>
+                                                        <strong>Verifiziert</strong>
+                                                        <small>Badge sofort sichtbar</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button type="button" id="startIdentityBtn" class="btn-primary full">🛡️ Jetzt Identität verifizieren</button>
+                                            <div class="id-powered-by">
+                                                <small class="muted">Powered by <strong>Stripe Identity</strong> · Deine Daten sind sicher verschlüsselt</small>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div id="phoneStep2" class="hidden">
-                                        <div class="phone-input-row">
-                                            <input type="text" id="msOtpCode" placeholder="6-stelliger Code" maxlength="6" />
-                                            <button type="button" id="verifyOtpBtn" class="btn-ghost-sm">Bestätigen</button>
+                                    <div id="identityPending" class="hidden">
+                                        <div class="id-status-card pending">
+                                            <div class="id-status-icon">⏳</div>
+                                            <strong>Verifizierung wird geprüft</strong>
+                                            <p>Dies dauert normalerweise nur wenige Minuten.</p>
+                                            <button type="button" id="checkIdentityBtn" class="btn-ghost">Status prüfen</button>
                                         </div>
-                                        <small class="muted">Code wurde per SMS gesendet.</small>
                                     </div>
-                                    <div id="phoneVerified" class="hidden">
-                                        <span class="verified-success">✅ Telefon verifiziert</span>
+                                    <div id="identityVerified" class="hidden">
+                                        <div class="id-status-card verified">
+                                            <div class="id-status-icon">✅</div>
+                                            <strong>Identität verifiziert</strong>
+                                            <p>Dein Profil zeigt das Verifizierungs-Badge 🛡️</p>
+                                        </div>
+                                    </div>
+                                    <div id="identityFailed" class="hidden">
+                                        <div class="id-status-card failed">
+                                            <div class="id-status-icon">❌</div>
+                                            <strong>Verifizierung fehlgeschlagen</strong>
+                                            <p>Bitte versuche es erneut mit einem gültigen Ausweisdokument.</p>
+                                            <button type="button" id="retryIdentityBtn" class="btn-primary full">Erneut versuchen</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -709,7 +752,12 @@
                                     <strong id="dashName">Du</strong>
                                     <small id="dashHood">Quartier</small>
                                 </div>
-                                <span id="dashVerified" class="verified-tag hidden">✓ Verifiziert</span>
+                                <span id="dashVerified" class="verified-tag hidden">🛡️ Verifiziert</span>
+                            </div>
+                            <div class="sd-trust-bar" id="dashTrustBar">
+                                <div class="trust-item done"><span>🛡️</span> ID geprüft</div>
+                                <div class="trust-item"><span>⭐</span> Premium</div>
+                                <div class="trust-item"><span>💬</span> Bewertungen</div>
                             </div>
                             <div class="sd-stats">
                                 <div class="sd-stat">
@@ -1109,7 +1157,7 @@
                 <div class="sh-rating-row">
                     <span class="sh-rating" id="sdRating">⭐ 4.9</span>
                     <span id="sdReviews">(47 Bewertungen)</span>
-                    <span id="sdVerified" class="sh-verified hidden">✓ Verifiziert</span>
+                    <span id="sdVerified" class="sh-verified hidden">🛡️ ID Verifiziert</span>
                 </div>
             </div>
             <p id="sdBio" class="sd-bio"></p>

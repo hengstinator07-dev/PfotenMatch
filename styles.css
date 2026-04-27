@@ -4332,10 +4332,10 @@ button { font-family: inherit; }
     position: absolute;
     bottom: -2px;
     right: -2px;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: #4ecdc4;
+    background: linear-gradient(135deg, #4ecdc4, #26a69a);
     color: white;
     font-size: 12px;
     font-weight: 700;
@@ -4343,6 +4343,7 @@ button { font-family: inherit; }
     align-items: center;
     justify-content: center;
     border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(78,205,196,0.4);
 }
 .sc-body {
     flex: 1;
@@ -4837,28 +4838,149 @@ button { font-family: inherit; }
     box-shadow: 0 3px 10px rgba(255, 107, 107, 0.2);
 }
 
-/* Phone verification */
-.ms-verify {
-    background: #f9f9f9;
-    border-radius: 12px;
-    padding: 14px;
-    margin-top: 4px;
-}
-.ms-verify h4 { margin: 0 0 4px; font-size: 14px; }
-.ms-verify .form-hint { margin: 0 0 10px; font-size: 12px; color: #888; }
-.phone-input-row {
+/* Trust badges in hero */
+.sitter-trust-badges {
     display: flex;
+    justify-content: center;
     gap: 8px;
+    margin-top: 14px;
+}
+.trust-badge {
+    display: flex;
     align-items: center;
-}
-.phone-input-row input {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
+    gap: 4px;
+    background: rgba(255,255,255,0.7);
+    padding: 5px 10px;
     border-radius: 10px;
-    font-size: 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #555;
 }
-.phone-input-row input:focus { border-color: var(--brand); outline: none; }
+.trust-badge span { font-size: 13px; }
+
+/* Identity verification section */
+.ms-verify {
+    background: linear-gradient(135deg, #f5f7fa, #eef1f5);
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 4px;
+    border: 1px solid #e3e8ef;
+}
+.ms-verify h4 { margin: 0 0 4px; font-size: 15px; font-weight: 800; }
+.ms-verify .form-hint { margin: 0 0 12px; font-size: 12px; color: #666; line-height: 1.5; }
+
+.id-verify-card {
+    background: white;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+.id-verify-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.id-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.id-step-num {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), #ff8e8e);
+    color: white;
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.id-step strong {
+    display: block;
+    font-size: 13px;
+    color: var(--text);
+}
+.id-step small {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    margin-top: 1px;
+}
+.id-powered-by {
+    text-align: center;
+    margin-top: 10px;
+}
+.id-powered-by small { font-size: 11px; }
+
+/* Identity status cards */
+.id-status-card {
+    text-align: center;
+    padding: 20px 16px;
+    border-radius: 14px;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+.id-status-icon {
+    font-size: 36px;
+    margin-bottom: 8px;
+}
+.id-status-card strong {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+.id-status-card p {
+    font-size: 13px;
+    color: #666;
+    margin: 0 0 12px;
+    line-height: 1.4;
+}
+.id-status-card.pending {
+    border: 2px solid #f39c12;
+    background: #fffdf5;
+}
+.id-status-card.verified {
+    border: 2px solid #2ecc71;
+    background: #f0fdf4;
+}
+.id-status-card.failed {
+    border: 2px solid #e74c3c;
+    background: #fef2f2;
+}
+
+/* Trust bar in dashboard */
+.sd-trust-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    padding: 10px 8px;
+    background: rgba(255,255,255,0.6);
+    border-radius: 12px;
+}
+.trust-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #aaa;
+    padding: 6px 4px;
+    border-radius: 8px;
+    background: #f5f5f5;
+    transition: all 0.2s;
+}
+.trust-item span { font-size: 13px; }
+.trust-item.done {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    color: #2e7d32;
+}
+
 .btn-ghost-sm {
     padding: 8px 14px;
     border: 1px solid #ddd;
@@ -4867,15 +4989,9 @@ button { font-family: inherit; }
     font-size: 13px;
     cursor: pointer;
     white-space: nowrap;
+    font-family: inherit;
 }
 .btn-ghost-sm:hover { border-color: var(--brand); }
-.verified-success {
-    display: inline-block;
-    color: #2ecc71;
-    font-weight: 700;
-    font-size: 14px;
-    padding: 8px 0;
-}
 
 /* Sitter location search */
 .sitter-location-search {
