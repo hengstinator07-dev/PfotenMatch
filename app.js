@@ -1573,6 +1573,57 @@ let _osmPois = [];
 let _osmLoading = false;
 let _osmTimer = null;
 let _osmLastBounds = null;
+let _osmPhase2Id = 0;
+
+function overpassCoreParts(bbox) {
+    return [
+        `nw["leisure"="dog_park"](${bbox});`,
+        `nw["leisure"="park"]["name"](${bbox});`,
+        `node["amenity"="veterinary"](${bbox});`,
+        `node["healthcare"="veterinary"](${bbox});`,
+        `node["shop"="pet"](${bbox});`,
+        `node["shop"="pet_grooming"](${bbox});`,
+        `node["craft"="dog_grooming"](${bbox});`,
+        `node["amenity"="animal_shelter"](${bbox});`,
+        `node["amenity"="animal_boarding"](${bbox});`,
+    ];
+}
+function overpassExtraParts(bbox) {
+    return [
+        `nw["leisure"="garden"]["name"](${bbox});`,
+        `nw["leisure"="nature_reserve"]["name"](${bbox});`,
+        `nw["leisure"="playground"]["name"](${bbox});`,
+        `node["amenity"="cafe"]["outdoor_seating"](${bbox});`,
+        `nwr["tourism"="attraction"]["name"](${bbox});`,
+        `nwr["tourism"="viewpoint"]["name"](${bbox});`,
+        `nwr["tourism"="museum"]["name"](${bbox});`,
+        `nwr["tourism"="artwork"]["name"](${bbox});`,
+        `nwr["historic"~"monument|memorial|castle|ruins"]["name"](${bbox});`,
+        `node["amenity"="fountain"]["name"](${bbox});`,
+        `nwr["amenity"="place_of_worship"]["name"](${bbox});`,
+        `nw["natural"="water"]["name"](${bbox});`,
+        `nw["waterway"="river"]["name"](${bbox});`,
+    ];
+}
+
+function showMapLoading(on) {
+    const el = $("#mapLoadingOverlay");
+    if (el) el.classList.toggle("hidden", !on);
+}
+function updatePoiCount(count, loading) {
+    const el = $("#osmStatus");
+    if (!el) return;
+    if (loading) {
+        el.textContent = count > 0 ? `🔄 ${count} Orte geladen, lade weitere…` : "🔄 Lade Orte…";
+        el.classList.remove("hidden");
+    } else if (count > 0) {
+        el.textContent = `✅ ${count} Orte geladen`;
+        el.classList.remove("hidden");
+        setTimeout(() => el.classList.add("hidden"), 3000);
+    } else {
+        el.classList.add("hidden");
+    }
+}
 
 const OSM_TAG_MAP = {
     "amenity=veterinary":      { cat: "vet",    icon: "🏥" },
@@ -1602,37 +1653,14 @@ const OSM_TAG_MAP = {
     "waterway=river":          { cat: "swim",   icon: "🏊" },
 };
 
-async function fetchOsmPois(bounds) {
+async function fetchOsmPois(bounds, queryParts) {
     const s = bounds.getSouth().toFixed(5);
     const w = bounds.getWest().toFixed(5);
     const n = bounds.getNorth().toFixed(5);
     const e = bounds.getEast().toFixed(5);
     const bbox = `${s},${w},${n},${e}`;
-
-    const query = `[out:json][timeout:15];(
-      nwr["leisure"="dog_park"](${bbox});
-      nwr["leisure"="park"]["name"](${bbox});
-      nwr["leisure"="garden"]["name"](${bbox});
-      nwr["leisure"="nature_reserve"]["name"](${bbox});
-      nwr["leisure"="playground"]["name"](${bbox});
-      nwr["amenity"="veterinary"](${bbox});
-      nwr["healthcare"="veterinary"](${bbox});
-      nwr["shop"="pet"](${bbox});
-      nwr["shop"="pet_grooming"](${bbox});
-      nwr["craft"="dog_grooming"](${bbox});
-      nwr["amenity"="animal_shelter"](${bbox});
-      nwr["amenity"="animal_boarding"](${bbox});
-      nwr["amenity"="cafe"]["outdoor_seating"](${bbox});
-      nwr["tourism"="attraction"]["name"](${bbox});
-      nwr["tourism"="viewpoint"]["name"](${bbox});
-      nwr["tourism"="museum"]["name"](${bbox});
-      nwr["tourism"="artwork"]["name"](${bbox});
-      nwr["historic"~"monument|memorial|castle|ruins"]["name"](${bbox});
-      nwr["amenity"="fountain"]["name"](${bbox});
-      nwr["amenity"="place_of_worship"]["name"](${bbox});
-      nwr["natural"="water"]["name"](${bbox});
-      nwr["waterway"="river"]["name"](${bbox});
-    );out center body qt 500;`;
+    const parts = queryParts || [...overpassCoreParts(bbox), ...overpassExtraParts(bbox)];
+    const query = `[out:json][timeout:12];(\n${parts.join("\n")}\n);out center body qt 500;`;
 
     let data = null;
     try {
@@ -1655,10 +1683,7 @@ async function fetchOsmPois(bounds) {
         } catch (e) { /* fallback server failed */ }
     }
 
-    if (!data) {
-        return await fetchPhotonPois(bounds);
-    }
-
+    if (!data) return null;
     return parseOverpassResults(data);
 }
 
@@ -1760,7 +1785,7 @@ async function fetchPhotonPois(bounds) {
 
 function scheduleOsmLoad() {
     if (_osmTimer) clearTimeout(_osmTimer);
-    _osmTimer = setTimeout(loadOsmForView, 600);
+    _osmTimer = setTimeout(loadOsmForView, 300);
 }
 
 async function loadOsmForView() {
@@ -1769,17 +1794,46 @@ async function loadOsmForView() {
     if (_osmLastBounds && _osmLastBounds.contains(bounds)) return;
 
     _osmLoading = true;
-    const status = $("#osmStatus");
-    if (status) { status.textContent = "🔄 Lade Orte aus OpenStreetMap…"; status.classList.remove("hidden"); }
+    const loadId = ++_osmPhase2Id;
+    showMapLoading(true);
+
+    const padded = bounds.pad(0.3);
+    const s = padded.getSouth().toFixed(5), w = padded.getWest().toFixed(5);
+    const n = padded.getNorth().toFixed(5), e = padded.getEast().toFixed(5);
+    const bbox = `${s},${w},${n},${e}`;
+
     try {
-        const padded = bounds.pad(0.3);
-        _osmPois = await fetchOsmPois(padded);
-        _osmLastBounds = padded;
-        renderMapMarkers();
-        if (status) status.classList.add("hidden");
-    } catch (e) {
-        console.warn("OSM POI load failed:", e);
-        if (status) { status.textContent = "⚠ Orte konnten nicht geladen werden – ziehe die Karte um es erneut zu versuchen"; status.classList.remove("hidden"); setTimeout(() => status.classList.add("hidden"), 5000); }
+        const core = await fetchOsmPois(padded, overpassCoreParts(bbox));
+        if (core) {
+            _osmPois = core;
+            _osmLastBounds = padded;
+            renderMapMarkers();
+            updatePoiCount(core.length, true);
+        }
+
+        fetchOsmPois(padded, overpassExtraParts(bbox)).then(extra => {
+            if (extra && loadId === _osmPhase2Id) {
+                const ids = new Set(_osmPois.map(p => p.id));
+                _osmPois = [..._osmPois, ...extra.filter(p => !ids.has(p.id))];
+                renderMapMarkers();
+                updatePoiCount(_osmPois.length, false);
+            }
+            if (loadId === _osmPhase2Id) showMapLoading(false);
+        }).catch(() => { if (loadId === _osmPhase2Id) showMapLoading(false); });
+
+        if (!core) {
+            const photon = await fetchPhotonPois(padded);
+            _osmPois = photon;
+            _osmLastBounds = padded;
+            renderMapMarkers();
+            updatePoiCount(photon.length, false);
+            showMapLoading(false);
+        }
+    } catch (err) {
+        console.warn("OSM POI load failed:", err);
+        const status = $("#osmStatus");
+        if (status) { status.textContent = "⚠ Orte konnten nicht geladen werden"; status.classList.remove("hidden"); setTimeout(() => status.classList.add("hidden"), 4000); }
+        showMapLoading(false);
     }
     _osmLoading = false;
 }
@@ -2237,7 +2291,9 @@ function renderMapSearchResults() {
     }
 
     if (results.length === 0) {
-        box.innerHTML = `<div class="msr-empty">Keine Treffer für "${escapeHtml(q)}"</div>`;
+        box.innerHTML = _osmLoading
+            ? '<div class="msr-empty">🔄 Orte werden geladen…</div>'
+            : `<div class="msr-empty">Keine Treffer für "${escapeHtml(q)}"</div>`;
         box.classList.remove("hidden");
         return;
     }

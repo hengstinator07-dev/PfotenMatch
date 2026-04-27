@@ -843,13 +843,13 @@ button { font-family: inherit; }
     border: 1.5px solid var(--border);
     border-radius: 14px;
     padding: 0 12px;
-    margin: 4px 0 10px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-    transition: border-color 0.15s, box-shadow 0.15s;
+    margin: 4px 0 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 .map-searchbar:focus-within {
     border-color: var(--brand);
-    box-shadow: 0 4px 18px rgba(255, 107, 107, 0.2);
+    box-shadow: 0 4px 18px rgba(255, 107, 107, 0.18);
 }
 .map-search-icon {
     font-size: 16px;
@@ -867,15 +867,52 @@ button { font-family: inherit; }
     color: var(--text);
 }
 .city-search { margin-bottom: 4px; }
+.city-search .map-search-icon { font-size: 14px; }
+.city-search input { font-size: 13px; padding: 10px 0; }
 .osm-status {
     text-align: center;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--muted);
-    padding: 4px 0;
-    animation: pulse 1.2s ease-in-out infinite;
+    padding: 6px 12px;
+    border-radius: 10px;
+    background: var(--bg);
+    margin: 0 0 6px;
+    transition: opacity 0.3s;
 }
 .osm-status.hidden { display: none; }
-@keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+
+/* Loading overlay on map */
+.map-loading-overlay {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(6px);
+    padding: 8px 18px;
+    border-radius: 999px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    pointer-events: none;
+    animation: fadeInDown 0.25s ease;
+}
+.map-loading-overlay.hidden { display: none; }
+.map-loading-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--brand);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeInDown { from { opacity:0; transform: translateX(-50%) translateY(-8px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
 .osm-badge {
     display: inline-block;
     background: #e8f5e9;
@@ -903,11 +940,12 @@ button { font-family: inherit; }
     border: 1px solid var(--border);
     border-radius: 14px;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-    margin-top: -4px;
-    margin-bottom: 10px;
+    margin-top: -2px;
+    margin-bottom: 8px;
     overflow: hidden;
-    max-height: 320px;
+    max-height: 280px;
     overflow-y: auto;
+    animation: fadeInDown 0.15s ease;
 }
 .map-search-results.hidden { display: none; }
 .msr-item {
@@ -938,9 +976,9 @@ button { font-family: inherit; }
 /* ---------- Map Category Chips ---------- */
 .map-cat-chips {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
-    padding: 2px 2px 12px;
+    padding: 2px 2px 10px;
     margin: 0 -2px;
     scrollbar-width: none;
 }
@@ -950,24 +988,25 @@ button { font-family: inherit; }
     background: white;
     border: 1.5px solid var(--border);
     border-radius: 999px;
-    padding: 7px 14px;
+    padding: 6px 12px;
     font-size: 12px;
     font-weight: 600;
     color: var(--text);
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.15s;
+    transition: all 0.2s ease;
     font-family: inherit;
 }
 .map-chip:hover {
     border-color: var(--brand);
-    transform: translateY(-1px);
+    background: #fff5f5;
 }
+.map-chip:active { transform: scale(0.95); }
 .map-chip.active {
     background: linear-gradient(135deg, var(--brand), #ff8e8e);
     color: white;
     border-color: var(--brand);
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.35);
+    box-shadow: 0 3px 10px rgba(255, 107, 107, 0.3);
 }
 
 /* ---------- Cluster Marker ---------- */
