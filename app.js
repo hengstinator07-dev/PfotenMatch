@@ -1794,6 +1794,24 @@ async function fetchPhotonPois(bounds) {
     return results;
 }
 
+function showSearchAreaBtn() {
+    const btn = $("#searchAreaBtn");
+    if (!btn || !leafletMap) return;
+    const bounds = leafletMap.getBounds();
+    if (_osmLastBounds && _osmLastBounds.contains(bounds)) {
+        btn.classList.add("hidden");
+    } else {
+        btn.classList.remove("hidden");
+    }
+}
+
+function triggerAreaSearch() {
+    const btn = $("#searchAreaBtn");
+    if (btn) btn.classList.add("hidden");
+    _osmLastBounds = null;
+    loadOsmForView();
+}
+
 function scheduleOsmLoad() {
     if (_osmTimer) clearTimeout(_osmTimer);
     _osmTimer = setTimeout(loadOsmForView, 300);
@@ -1806,7 +1824,11 @@ async function loadOsmForView() {
 
     _osmLoading = true;
     const loadId = ++_osmPhase2Id;
+    const btn = $("#searchAreaBtn");
+    if (btn) btn.classList.add("hidden");
     showMapLoading(true);
+    _osmPois = [];
+    renderMapMarkers();
 
     const padded = bounds.pad(0.3);
     const s = padded.getSouth().toFixed(5), w = padded.getWest().toFixed(5);
@@ -1941,7 +1963,7 @@ function renderMap() {
         }).addTo(leafletMap);
         leafletMap.on("zoomend moveend", () => {
             renderMapMarkers();
-            scheduleOsmLoad();
+            showSearchAreaBtn();
         });
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((pos) => {
@@ -2389,6 +2411,8 @@ function bindMapControls() {
                                 if (leafletMap) {
                                     leafletMap.setView([lat, lng], 14, { animate: true });
                                     _osmLastBounds = null;
+                                    _osmPois = [];
+                                    renderMapMarkers();
                                     scheduleOsmLoad();
                                 }
                                 cityInp.value = r.display_name.split(",")[0];
@@ -4276,6 +4300,7 @@ function bindEvents() {
     // Locate & GPS toggle buttons
     $("#locateBtn")?.addEventListener("click", locateUser);
     $("#gpsToggleBtn")?.addEventListener("click", toggleGpsTracking);
+    $("#searchAreaBtn")?.addEventListener("click", triggerAreaSearch);
     // --- Filter Bottom-Sheet ---
     bindFilterSheet();
     // Match modal
