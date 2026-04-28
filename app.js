@@ -3403,7 +3403,7 @@ function renderSitterView() {
 
 function switchSitterTab(mode) {
     sitterUi.mode = mode;
-    $$(".sitter-tab").forEach(t => t.classList.toggle("active", t.dataset.stab === mode));
+    $$(".rv-tab").forEach(t => t.classList.toggle("active", t.dataset.stab === mode));
     $("#sitterDiscover").classList.toggle("hidden", mode !== "discover");
     $("#sitterBookings").classList.toggle("hidden", mode !== "bookings");
     $("#sitterBecome").classList.toggle("hidden", mode !== "become");
@@ -3428,10 +3428,11 @@ function renderSitters() {
     list.innerHTML = "";
     const all = [...DOG_SITTERS];
     if (state.mySitterProfile) all.unshift(state.mySitterProfile);
-    // Add real sitters from Supabase
     _remoteSitters.forEach(rs => {
         if (!all.some(s => s.remoteId === rs.id)) all.push(rs);
     });
+
+    const sortBy = ($("#sitterSort") || {}).value || "distance";
 
     const filtered = all
         .filter(s => !sitterUi.service || s.services.includes(sitterUi.service))
@@ -3441,8 +3442,14 @@ function renderSitters() {
         .sort((a, b) => {
             if (a.id === "me") return -1;
             if (b.id === "me") return 1;
+            if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
+            if (sortBy === "price") return (a.priceHour || a.priceDay || a.priceNight || 999) - (b.priceHour || b.priceDay || b.priceNight || 999);
+            if (sortBy === "reviews") return (b.reviewCount || 0) - (a.reviewCount || 0);
             return a.distance - b.distance;
         });
+
+    const countEl = $("#sitterResultCount");
+    if (countEl) countEl.textContent = `${filtered.length} Sitter in deiner Nähe`;
 
     if (filtered.length === 0) {
         list.innerHTML = `<p class="empty-state">Keine Sitter mit diesen Filtern gefunden 🐾</p>`;
@@ -3452,7 +3459,7 @@ function renderSitters() {
     filtered.forEach(s => {
         const isMe = s.id === "me";
         const card = document.createElement("div");
-        card.className = "sitter-card" + (isMe ? " me-sitter" : "");
+        card.className = "rv-card";
         const svcChips = s.services
             .map(svc => `<span class="svc-chip">${serviceIcon(svc)} ${serviceLabel(svc)}</span>`)
             .join("");
@@ -3461,22 +3468,26 @@ function renderSitters() {
         else if (s.priceDay) priceDisplay = `ab CHF ${s.priceDay}/Tag`;
         else priceDisplay = `ab CHF ${s.priceNight}/Nacht`;
         const meBadge = isMe ? '<span class="me-badge">Du</span>' : '';
-        const avContent = s.avatarImage
+        const photoHtml = s.avatarImage
             ? `<img src="${s.avatarImage}" alt="${escapeHtml(s.name)}" />`
-            : s.avatar;
+            : `<div class="rv-photo-fallback">${s.avatar || "🐾"}</div>`;
+        const verifiedBadge = (s.verified || s.identityVerified)
+            ? `<span class="rv-badge verified">🛡️ Verifiziert</span>` : '';
         card.innerHTML = `
-            <div class="sc-av">${avContent}${s.verified || s.identityVerified ? '<span class="verified-dot">🛡️</span>' : ''}</div>
-            <div class="sc-body">
-                <div class="sc-head">
-                    <strong>${escapeHtml(s.name)}${meBadge}</strong>
-                    <span class="sc-rating">⭐ ${s.rating.toFixed(1)}</span>
+            <div class="rv-card-photo">
+                ${photoHtml}
+                <div class="rv-card-badges">
+                    ${verifiedBadge}
                 </div>
-                <div class="sc-sub">${escapeHtml(s.neighborhood)} · ${s.distance.toFixed(1)} km · ⏱ ${s.responseTime}</div>
-                <div class="sc-chips">${svcChips}</div>
-                <p class="sc-bio">${escapeHtml(s.bio)}</p>
-                <div class="sc-foot">
-                    <span class="sc-price">${priceDisplay}</span>
-                    <span class="sc-reviews">${s.reviewCount} Bew.</span>
+            </div>
+            <div class="rv-card-body">
+                <h4>${escapeHtml(s.name)}${meBadge}</h4>
+                <div class="rv-card-meta"><span class="rv-rating">⭐ ${s.rating.toFixed(1)}</span> (${s.reviewCount}) · ${escapeHtml(s.neighborhood)} · ${s.distance.toFixed(1)} km</div>
+                <p class="rv-card-bio">${escapeHtml(s.bio)}</p>
+                <div class="rv-card-chips">${svcChips}</div>
+                <div class="rv-card-footer">
+                    <span class="rv-card-price">${priceDisplay}</span>
+                    <span class="rv-card-response">⏱ ${s.responseTime}</span>
                 </div>
             </div>
         `;
@@ -3497,9 +3508,19 @@ function openSitterDetail(id) {
     if (!s) return;
     sitterUi.detailId = id;
 
-    // Top bar name
     const topName = $("#sdTopName");
     if (topName) topName.textContent = s.name;
+
+    // Cover photo
+    const cover = $("#sdCover");
+    if (cover) {
+        const coverSrc = (s.photos && s.photos[0]) || s.avatarImage;
+        if (coverSrc) {
+            cover.innerHTML = `<img src="${coverSrc}" alt="Cover" />`;
+        } else {
+            cover.innerHTML = "";
+        }
+    }
 
     // Avatar
     const avEl = $("#sdAvatar");
@@ -3530,6 +3551,24 @@ function openSitterDetail(id) {
     $("#sdAvailability").textContent = s.availability || "—";
     $("#sdAbout").textContent = s.about || s.bio || "—";
 
+    // Home details
+    const hdWrap = $("#sdHomeDetailsWrap");
+    if (hdWrap) {
+        const hd = s.homeDetails;
+        if (hd) {
+            hdWrap.innerHTML = `
+                <h4 style="margin:16px 0 8px;font-size:14px;font-weight:700">Über das Zuhause</h4>
+                <div class="sd-home-grid">
+                    <div class="sd-home-item"><span>🌳</span>${hd.yard ? "Garten vorhanden" : "Kein Garten"}</div>
+                    <div class="sd-home-item"><span>🐾</span>${hd.otherPets || "Keine Tiere"}</div>
+                    <div class="sd-home-item"><span>👶</span>${hd.children ? "Kinder im Haushalt" : "Keine Kinder"}</div>
+                    <div class="sd-home-item"><span>🚭</span>${hd.smokeFree ? "Rauchfrei" : "Raucher-Haushalt"}</div>
+                </div>`;
+        } else {
+            hdWrap.innerHTML = "";
+        }
+    }
+
     // Prices
     const prices = $("#sdPrices");
     prices.innerHTML = "";
@@ -3544,6 +3583,14 @@ function openSitterDetail(id) {
         row.innerHTML = `<span>${icon} ${label}</span><strong>${p}</strong>`;
         prices.appendChild(row);
     });
+
+    // Sticky CTA price
+    const ctaPrice = $("#sdCtaPrice");
+    if (ctaPrice) {
+        if (s.priceHour) ctaPrice.innerHTML = `ab CHF ${s.priceHour}<small>/Std</small>`;
+        else if (s.priceDay) ctaPrice.innerHTML = `ab CHF ${s.priceDay}<small>/Tag</small>`;
+        else if (s.priceNight) ctaPrice.innerHTML = `ab CHF ${s.priceNight}<small>/Nacht</small>`;
+    }
 
     // Photos tab
     const photosEl = $("#sdPhotos");
@@ -3563,8 +3610,8 @@ function openSitterDetail(id) {
     // Reviews tab
     renderSitterReviews(s);
 
-    // Default to photos tab
-    switchSitterDetailTab("photos");
+    // Default to info tab
+    switchSitterDetailTab("info");
 
     $("#sitterDetailModal").classList.remove("hidden");
 }
@@ -3573,7 +3620,8 @@ function switchSitterDetailTab(name) {
     $$("[data-sdtab]").forEach(t => t.classList.toggle("active", t.dataset.sdtab === name));
     $("#sdPhotos").classList.toggle("hidden", name !== "photos");
     $("#sdInfo").classList.toggle("hidden", name !== "info");
-    $("#sdPricesWrap").classList.toggle("hidden", name !== "info");
+    const pw = $("#sdPricesWrap");
+    if (pw) pw.classList.toggle("hidden", name !== "info");
     $("#sdReviewsList").classList.toggle("hidden", name !== "reviews");
 }
 
@@ -3586,12 +3634,25 @@ function renderSitterReviews(s) {
     const rating = s.rating || 5.0;
     const count = s.reviewCount || reviews.length;
 
-    // Summary
     const fullStars = Math.floor(rating);
     const halfStar = (rating - fullStars) >= 0.5;
     let starsHtml = "★".repeat(fullStars);
     if (halfStar) starsHtml += "½";
     starsHtml += "☆".repeat(5 - fullStars - (halfStar ? 1 : 0));
+
+    // Star distribution
+    const dist = [0, 0, 0, 0, 0];
+    reviews.forEach(r => { if (r.rating >= 1 && r.rating <= 5) dist[r.rating - 1]++; });
+    let breakdownHtml = '<div class="star-breakdown">';
+    for (let i = 5; i >= 1; i--) {
+        const pct = count > 0 ? Math.round((dist[i - 1] / count) * 100) : 0;
+        breakdownHtml += `<div class="star-bar-row">
+            <span class="star-label">${i}</span>
+            <div class="star-bar-track"><div class="star-bar-fill" style="width:${pct}%"></div></div>
+            <span class="star-count">${dist[i - 1]}</span>
+        </div>`;
+    }
+    breakdownHtml += '</div>';
 
     const summary = document.createElement("div");
     summary.className = "reviews-summary";
@@ -3599,6 +3660,7 @@ function renderSitterReviews(s) {
         <div class="big-rating">${rating.toFixed(1)}</div>
         <div class="star-display">${starsHtml}</div>
         <small>${count} Bewertung${count !== 1 ? "en" : ""}</small>
+        ${breakdownHtml}
     `;
     container.appendChild(summary);
 
@@ -3801,10 +3863,13 @@ function renderMyBookings() {
         const detail = b.service === "Gassi"
             ? `${b.hours} Std am ${b.dateFrom}`
             : (b.dateFrom === b.dateTo ? b.dateFrom : `${b.dateFrom} – ${b.dateTo}`);
+        const avHtml = s.avatarImage
+            ? `<img src="${s.avatarImage}" alt="${escapeHtml(s.name)}" />`
+            : s.avatar;
         const card = document.createElement("div");
         card.className = `booking-card status-${b.status}`;
         card.innerHTML = `
-            <div class="bc-av">${s.avatar}</div>
+            <div class="bc-av">${avHtml}</div>
             <div class="bc-body">
                 <div class="bc-head">
                     <strong>${escapeHtml(s.name)}</strong>
@@ -4785,12 +4850,12 @@ function bindEvents() {
     // Ad close
     $("#adClose").addEventListener("click", () => $("#adBanner").classList.add("hidden"));
     // --- Sitter tab ---
-    $$(".sitter-tab").forEach(t => {
+    $$(".rv-tab").forEach(t => {
         t.addEventListener("click", () => switchSitterTab(t.dataset.stab));
     });
-    $$("#serviceChips .chip").forEach(c => {
+    $$("#serviceChips .rv-svc-card").forEach(c => {
         c.addEventListener("click", () => {
-            $$("#serviceChips .chip").forEach(x => x.classList.remove("active"));
+            $$("#serviceChips .rv-svc-card").forEach(x => x.classList.remove("active"));
             c.classList.add("active");
             sitterUi.service = c.dataset.svc || "";
             renderSitters();
@@ -4807,6 +4872,7 @@ function bindEvents() {
         renderSitters();
         loadRemoteSitters().catch(() => {});
     });
+    $("#sitterSort")?.addEventListener("change", () => renderSitters());
     $("#sitterDetailClose").addEventListener("click", () =>
         $("#sitterDetailModal").classList.add("hidden"));
     $$("[data-sdtab]").forEach(t => {

@@ -312,6 +312,7 @@ const DOG_SITTERS = [
         responseTime: "~1 Std",
         availability: "Mo–Fr ganztägig, WE nach Absprache",
         about: "Ich lebe in einer großen Altbauwohnung mit Garten in Kleinbasel. Keine Kinder, keine anderen Haustiere — dein Hund hat meine volle Aufmerksamkeit. Ich bin ausgebildete Hundetrainerin.",
+        homeDetails: { yard: true, otherPets: "Keine", children: false, smokeFree: true },
         reviews: [
             { id: "r1", reviewer: "Lisa M.", dogName: "Mochi", rating: 5, text: "Sophie ist fantastisch! Mochi war super glücklich und hat sogar neue Tricks gelernt.", ts: Date.now() - 86400000 * 3 },
             { id: "r2", reviewer: "Tim K.", dogName: "Buddy", rating: 5, text: "Zuverlässig, liebevoll und professionell. Buddy will immer wieder zu Sophie!", ts: Date.now() - 86400000 * 12 },
@@ -332,6 +333,7 @@ const DOG_SITTERS = [
         responseTime: "~30 Min",
         availability: "Täglich 6–9 Uhr und 17–20 Uhr",
         about: "Ich bin leidenschaftlicher Läufer und nehme deinen Hund gerne auf meine Joggingrunden mit. Die Langen Erlen sind mein Revier.",
+        homeDetails: { yard: false, otherPets: "Keine", children: false, smokeFree: true },
         reviews: [
             { id: "r4", reviewer: "Andrea W.", dogName: "Rex", rating: 5, text: "Marco hat Rex richtig ausgepowert — kam total glücklich zurück!", ts: Date.now() - 86400000 * 5 },
             { id: "r5", reviewer: "Jan D.", dogName: "Thor", rating: 4, text: "Super Gassi-Service, pünktlich und Thor liebt ihn.", ts: Date.now() - 86400000 * 18 }
@@ -351,6 +353,7 @@ const DOG_SITTERS = [
         responseTime: "~2 Std",
         availability: "Flexibel, am liebsten Tagsüber",
         about: "Als pensionierte Tierärztin bringe ich 30 Jahre medizinisches Wissen mit. Ich kümmere mich besonders gerne um ältere Hunde oder solche mit speziellen Bedürfnissen.",
+        homeDetails: { yard: true, otherPets: "Keine", children: false, smokeFree: true },
         reviews: [
             { id: "r6", reviewer: "Monika H.", dogName: "Benny", rating: 5, text: "Benny braucht täglich Medikamente — Claudia macht das perfekt. Absolute Vertrauensperson!", ts: Date.now() - 86400000 * 2 },
             { id: "r7", reviewer: "Peter S.", dogName: "Max", rating: 5, text: "Goldene Hände, goldenes Herz. Max hat sich bei ihr richtig erholt nach der OP.", ts: Date.now() - 86400000 * 10 },
@@ -371,6 +374,7 @@ const DOG_SITTERS = [
         responseTime: "~2 Std",
         availability: "Mo, Mi, Fr ganztägig",
         about: "Ich studiere Biologie an der Uni Basel und liebe Tiere. Meine WG-Mitbewohner sind auch alle hundefreundlich.",
+        homeDetails: { yard: false, otherPets: "Keine", children: false, smokeFree: false },
         reviews: [
             { id: "r9", reviewer: "Karin F.", dogName: "Fifi", rating: 5, text: "Jonas ist super lieb zu Fifi. Faire Preise und sehr zuverlässig.", ts: Date.now() - 86400000 * 8 }
         ]
@@ -389,6 +393,7 @@ const DOG_SITTERS = [
         responseTime: "~45 Min",
         availability: "Täglich, auch kurzfristig",
         about: "Ich habe zwei Golden Retriever (Sunny & Goldie) und einen großen umzäunten Garten. Dein Hund hat sofort Spielkameraden und viel Platz.",
+        homeDetails: { yard: true, otherPets: "2 Golden Retriever", children: false, smokeFree: true },
         reviews: [
             { id: "r10", reviewer: "Lena W.", dogName: "Pepper", rating: 5, text: "Pepper und die Golden Retriever sind beste Freunde geworden! Fatima schickt immer Fotos.", ts: Date.now() - 86400000 * 4 },
             { id: "r11", reviewer: "David M.", dogName: "Rocky", rating: 5, text: "Kurzfristig eingesprungen und alles war perfekt organisiert. Top!", ts: Date.now() - 86400000 * 15 },
@@ -409,6 +414,7 @@ const DOG_SITTERS = [
         responseTime: "~3 Std",
         availability: "Ganztägig, außer Dienstag",
         about: "Seit ich meine Berner Sennenhunde verloren habe, betreue ich leidenschaftlich gerne andere Hunde. Ruhiges Haus mit Garten am Dorfrand von Riehen.",
+        homeDetails: { yard: true, otherPets: "Keine", children: false, smokeFree: true },
         reviews: [
             { id: "r13", reviewer: "Michael T.", dogName: "Zeus", rating: 5, text: "Peter ist ein Schatz. Zeus fühlt sich bei ihm wie zuhause.", ts: Date.now() - 86400000 * 6 },
             { id: "r14", reviewer: "Sarah K.", dogName: "Bella", rating: 5, text: "Wir lassen Bella jedes Mal bei Peter wenn wir in Urlaub sind. Absolute Empfehlung!", ts: Date.now() - 86400000 * 20 }
@@ -428,6 +434,7 @@ const DOG_SITTERS = [
         responseTime: "~4 Std",
         availability: "Wochenenden und Abende",
         about: "Ich mache gerade meine Ausbildung zur Tierpflegerin und möchte nebenbei praktische Erfahrung sammeln.",
+        homeDetails: { yard: false, otherPets: "1 Katze", children: false, smokeFree: true },
         reviews: [
             { id: "r15", reviewer: "Anna L.", dogName: "Cookie", rating: 5, text: "Lea ist super engagiert und Cookie liebt sie!", ts: Date.now() - 86400000 * 7 }
         ]
@@ -446,6 +453,7 @@ const DOG_SITTERS = [
         responseTime: "~1 Std",
         availability: "Di–Sa, So auf Anfrage",
         about: "Als zertifizierter Hundetrainer biete ich mehr als nur Betreuung: leichtes Training inklusive. Meine Praxis ist in der Breite.",
+        homeDetails: { yard: true, otherPets: "Keine", children: false, smokeFree: true },
         reviews: [
             { id: "r16", reviewer: "Mark B.", dogName: "Bruno", rating: 5, text: "Bruno hat bei Tobias das Sitz und Platz gelernt — während der Betreuung! Genial.", ts: Date.now() - 86400000 * 3 },
             { id: "r17", reviewer: "Stefanie H.", dogName: "Lilly", rating: 5, text: "Professionell, kompetent und liebevoll. Lilly zieht nicht mehr an der Leine!", ts: Date.now() - 86400000 * 14 },

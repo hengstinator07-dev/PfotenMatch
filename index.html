@@ -518,74 +518,153 @@
 
             <!-- ============ SITTER VIEW ============ -->
             <section id="view-sitter" class="view">
-                <header class="sitter-page-header">
-                    <h2>🏡 Hundesitter finden</h2>
-                    <p class="sub">Verlässliche Betreuung in deiner Nähe</p>
-                </header>
-                <div class="sitter-tabs">
-                    <button class="sitter-tab active" data-stab="discover">🔍 Entdecken</button>
-                    <button class="sitter-tab" data-stab="bookings">
-                        📅 Meine Buchungen
-                        <span id="bookingsBadge" class="bk-badge hidden">0</span>
+                <div class="rv-tabs">
+                    <button class="rv-tab active" data-stab="discover">Entdecken</button>
+                    <button class="rv-tab" data-stab="bookings">
+                        Buchungen
+                        <span id="bookingsBadge" class="rv-tab-badge hidden">0</span>
                     </button>
-                    <button class="sitter-tab" data-stab="become">
-                        🐾 Sitter werden
-                        <span id="sitterRequestsBadge" class="bk-badge hidden">0</span>
+                    <button class="rv-tab" data-stab="become">
+                        Sitter werden
+                        <span id="sitterRequestsBadge" class="rv-tab-badge hidden">0</span>
                     </button>
                 </div>
 
                 <div id="sitterDiscover">
-                    <div class="sitter-filters">
-                        <div class="chip-row" id="serviceChips">
-                            <button class="chip active" data-svc="">Alle</button>
-                            <button class="chip" data-svc="Gassi">🚶 Gassi</button>
-                            <button class="chip" data-svc="Tag">☀ Tag</button>
-                            <button class="chip" data-svc="Nacht">🌙 Nacht</button>
-                            <button class="chip" data-svc="Urlaub">✈ Urlaub</button>
+                    <!-- Search Hero -->
+                    <div class="rv-hero">
+                        <h1 class="rv-hero-title">Hundebetreuung</h1>
+                        <p class="rv-hero-sub">Vertrauensvolle Sitter in deiner Nähe</p>
+                        <div class="rv-service-grid" id="serviceChips">
+                            <button class="rv-svc-card active" data-svc="">
+                                <span class="rv-svc-icon">🐾</span>
+                                <span class="rv-svc-label">Alle</span>
+                            </button>
+                            <button class="rv-svc-card" data-svc="Gassi">
+                                <span class="rv-svc-icon">🚶</span>
+                                <span class="rv-svc-label">Gassi</span>
+                            </button>
+                            <button class="rv-svc-card" data-svc="Tag">
+                                <span class="rv-svc-icon">☀️</span>
+                                <span class="rv-svc-label">Tagesbetr.</span>
+                            </button>
+                            <button class="rv-svc-card" data-svc="Nacht">
+                                <span class="rv-svc-icon">🌙</span>
+                                <span class="rv-svc-label">Nacht</span>
+                            </button>
+                            <button class="rv-svc-card" data-svc="Urlaub">
+                                <span class="rv-svc-icon">✈️</span>
+                                <span class="rv-svc-label">Urlaub</span>
+                            </button>
                         </div>
-                        <label class="price-filter">
-                            <span>Max. Preis/Std: <strong id="maxPriceLabel">CHF 100</strong></span>
-                            <input type="range" id="maxPriceSlider" min="5" max="100" value="100" step="5" />
-                        </label>
-                        <label class="radius-filter">
-                            <span>Umkreis: <strong id="sitterRadiusLabel">10 km</strong></span>
-                            <input type="range" id="sitterRadiusSlider" min="1" max="50" value="10" />
-                        </label>
+                        <div class="rv-filter-row">
+                            <div class="rv-filter-pill">
+                                <span>📍</span>
+                                <span id="sitterLocationLabel">Basel</span>
+                                <span class="rv-sep">·</span>
+                                <strong id="sitterRadiusLabel">10 km</strong>
+                                <input type="range" id="sitterRadiusSlider" min="1" max="50" value="10" class="rv-range-inline" />
+                            </div>
+                            <div class="rv-filter-pill">
+                                <span>💰</span>
+                                <span>Max.</span>
+                                <strong id="maxPriceLabel">CHF 100</strong>
+                                <input type="range" id="maxPriceSlider" min="5" max="100" value="100" step="5" class="rv-range-inline" />
+                            </div>
+                        </div>
                     </div>
-                    <div id="sitterList" class="sitter-list"></div>
+
+                    <!-- Trust Banner -->
+                    <div class="rv-trust-banner">
+                        <span class="rv-trust-title">Jede Buchung beinhaltet</span>
+                        <div class="rv-trust-items">
+                            <div class="rv-trust-item"><span>🛡️</span>ID-Verifizierung</div>
+                            <div class="rv-trust-item"><span>📸</span>Foto-Updates</div>
+                            <div class="rv-trust-item"><span>💬</span>Direkter Chat</div>
+                            <div class="rv-trust-item"><span>⭐</span>Bewertungen</div>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div class="rv-results-header">
+                        <h3 id="sitterResultCount">Sitter in deiner Nähe</h3>
+                        <select id="sitterSort" class="rv-sort-select">
+                            <option value="distance">Nächste zuerst</option>
+                            <option value="rating">Beste Bewertung</option>
+                            <option value="price">Günstigster Preis</option>
+                            <option value="reviews">Meiste Bewertungen</option>
+                        </select>
+                    </div>
+                    <div id="sitterList" class="rv-sitter-grid"></div>
                 </div>
 
                 <div id="sitterBookings" class="hidden">
-                    <div id="bookingList" class="booking-list"></div>
+                    <div class="rv-bookings-header">
+                        <h2>Meine Buchungen</h2>
+                    </div>
+                    <div id="bookingList" class="rv-booking-list"></div>
                 </div>
 
                 <div id="sitterBecome" class="hidden">
-                    <!-- Wenn KEIN Profil: Hero + Formular -->
+                    <!-- Wenn KEIN Profil: Professional Landing -->
                     <div id="sitterRegisterWrap">
-                        <div class="sitter-hero">
-                            <div class="sitter-hero-emoji">🏡</div>
-                            <h3>Werde Hundesitter</h3>
-                            <p>Verdiene Geld mit dem, was du liebst – Hunde betreuen.<br>Bestimme selbst Preise, Verfügbarkeit und welche Hunde du nimmst.</p>
-                            <ul class="sitter-perks">
-                                <li>💰 <strong>Du bestimmst</strong> die Preise</li>
-                                <li>📅 <strong>Volle Flexibilität</strong> bei der Verfügbarkeit</li>
-                                <li>🛡️ <strong>Stripe Identity</strong> Verifizierung für Vertrauen</li>
-                                <li>🗺️ <strong>Standortbasiert</strong> – überall einsetzbar</li>
-                                <li>⭐ <strong>Premium Sitter-Abo</strong> zum Veröffentlichen</li>
-                            </ul>
-                            <div class="sitter-trust-badges">
-                                <div class="trust-badge"><span>🛡️</span> ID-geprüft</div>
-                                <div class="trust-badge"><span>🔒</span> Verschlüsselt</div>
-                                <div class="trust-badge"><span>⭐</span> Bewertungen</div>
+                        <div class="rv-become-hero">
+                            <div class="rv-become-icon">🏡</div>
+                            <h2>Verdiene als Hundesitter</h2>
+                            <p>Bestimme selbst Preise, Verfügbarkeit und welche Hunde du betreust.</p>
+                            <div class="rv-earn-card">
+                                <span class="rv-earn-amount">Bis zu CHF 2'000</span>
+                                <span class="rv-earn-period">pro Monat verdienen</span>
                             </div>
-                            <div id="sitterPremiumGate" class="sitter-premium-gate hidden">
-                                <div class="premium-gate-card">
-                                    <h4>⭐ Sitter Premium erforderlich</h4>
-                                    <p>Um dein Profil zu veröffentlichen und Anfragen zu erhalten, benötigst du ein aktives Sitter-Abo.</p>
-                                    <div class="premium-gate-price">CHF 9.90 <small>/ Monat</small></div>
-                                    <button type="button" class="btn-primary full" id="sitterUpgradeBtn">⭐ Jetzt Sitter Premium aktivieren</button>
-                                    <small class="muted">Jederzeit kündbar. Du kannst dein Profil erstellen und erst später upgraden.</small>
+                        </div>
+
+                        <div class="rv-how-it-works">
+                            <h3>So funktioniert's</h3>
+                            <div class="rv-steps">
+                                <div class="rv-step">
+                                    <div class="rv-step-num">1</div>
+                                    <div>
+                                        <strong>Profil erstellen</strong>
+                                        <small>Name, Foto, Services & Preise</small>
+                                    </div>
                                 </div>
+                                <div class="rv-step">
+                                    <div class="rv-step-num">2</div>
+                                    <div>
+                                        <strong>Identität verifizieren</strong>
+                                        <small>Ausweis + Selfie via Stripe</small>
+                                    </div>
+                                </div>
+                                <div class="rv-step">
+                                    <div class="rv-step-num">3</div>
+                                    <div>
+                                        <strong>Premium aktivieren</strong>
+                                        <small>CHF 9.90/Monat, jederzeit kündbar</small>
+                                    </div>
+                                </div>
+                                <div class="rv-step">
+                                    <div class="rv-step-num">4</div>
+                                    <div>
+                                        <strong>Anfragen erhalten</strong>
+                                        <small>Hundebesitzer finden dich</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rv-trust-row">
+                            <div class="rv-trust-pill"><span>🛡️</span> ID-geprüft</div>
+                            <div class="rv-trust-pill"><span>🔒</span> Sicher</div>
+                            <div class="rv-trust-pill"><span>⭐</span> Bewertungen</div>
+                        </div>
+
+                        <div id="sitterPremiumGate" class="sitter-premium-gate hidden">
+                            <div class="premium-gate-card">
+                                <h4>⭐ Sitter Premium erforderlich</h4>
+                                <p>Um dein Profil zu veröffentlichen und Anfragen zu erhalten, benötigst du ein aktives Sitter-Abo.</p>
+                                <div class="premium-gate-price">CHF 9.90 <small>/ Monat</small></div>
+                                <button type="button" class="btn-primary full" id="sitterUpgradeBtn">⭐ Jetzt Sitter Premium aktivieren</button>
+                                <small class="muted">Jederzeit kündbar. Du kannst dein Profil erstellen und erst später upgraden.</small>
                             </div>
                         </div>
 
@@ -1172,7 +1251,9 @@
                 <span></span>
             </header>
             <div class="op-scroll">
-                <div class="profile-header">
+                <!-- Cover photo -->
+                <div id="sdCover" class="sd-cover-photo"></div>
+                <div class="profile-header" style="margin-top:-36px;position:relative;z-index:2">
                     <div class="profile-avatar-wrap">
                         <div id="sdAvatar" class="profile-avatar sitter-profile-av">👩</div>
                         <span class="avatar-ring"></span>
@@ -1193,30 +1274,33 @@
                     </div>
                     <p class="bio" id="sdBio"></p>
                 </div>
-                <div class="profile-actions">
-                    <button class="btn-primary full" id="sdBookBtn">🗓 Betreuung anfragen</button>
-                </div>
                 <div class="profile-tabs" role="tablist">
-                    <button class="profile-tab active" data-sdtab="photos">🏞️ Fotos</button>
-                    <button class="profile-tab" data-sdtab="info">ℹ Info</button>
-                    <button class="profile-tab" data-sdtab="reviews">⭐ Bewertungen</button>
+                    <button class="profile-tab active" data-sdtab="info">Info & Preise</button>
+                    <button class="profile-tab" data-sdtab="photos">Fotos</button>
+                    <button class="profile-tab" data-sdtab="reviews">Bewertungen</button>
                 </div>
-                <div id="sdPhotos" class="profile-photos op-photo-grid"></div>
-                <div id="sdInfo" class="profile-info hidden">
+                <div id="sdInfo" class="profile-info">
                     <div class="info-row"><span>⏱ Antwortzeit</span><strong id="sdResponse">—</strong></div>
                     <div class="info-row"><span>🎓 Erfahrung</span><strong id="sdExperience">—</strong></div>
                     <div class="info-row"><span>📐 Akzeptiert</span><strong id="sdSizes">—</strong></div>
                     <div class="info-row"><span>📆 Verfügbarkeit</span><strong id="sdAvailability">—</strong></div>
-                    <div class="info-row"><span>📝 Über mich</span><strong id="sdAbout">—</strong></div>
-                </div>
-                <div id="sdPricesWrap" class="profile-info hidden">
-                    <h3 class="sd-section">💰 Preise</h3>
+                    <div id="sdHomeDetailsWrap"></div>
+                    <div class="sd-about-section">
+                        <h4>Über mich</h4>
+                        <p id="sdAbout">—</p>
+                    </div>
+                    <h4 class="sd-section">Services & Preise</h4>
                     <div class="sd-prices" id="sdPrices"></div>
                 </div>
+                <div id="sdPhotos" class="profile-photos op-photo-grid hidden"></div>
                 <div id="sdReviewsList" class="sd-reviews-section hidden">
                     <div id="sdReviewsContent"></div>
-                    <button class="btn-primary full" id="sdWriteReviewBtn">⭐ Bewertung schreiben</button>
+                    <button class="btn-ghost full" id="sdWriteReviewBtn">⭐ Bewertung schreiben</button>
                 </div>
+            </div>
+            <div class="sd-sticky-cta" id="sdStickyCta">
+                <div class="sd-cta-price" id="sdCtaPrice">ab CHF 18<small>/Std</small></div>
+                <button class="btn-primary" id="sdBookBtn">Jetzt buchen</button>
             </div>
         </div>
     </div>
