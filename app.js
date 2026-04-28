@@ -3461,8 +3461,11 @@ function renderSitters() {
         else if (s.priceDay) priceDisplay = `ab CHF ${s.priceDay}/Tag`;
         else priceDisplay = `ab CHF ${s.priceNight}/Nacht`;
         const meBadge = isMe ? '<span class="me-badge">Du</span>' : '';
+        const avContent = s.avatarImage
+            ? `<img src="${s.avatarImage}" alt="${escapeHtml(s.name)}" />`
+            : s.avatar;
         card.innerHTML = `
-            <div class="sc-av">${s.avatar}${s.verified || s.identityVerified ? '<span class="verified-dot">🛡️</span>' : ''}</div>
+            <div class="sc-av">${avContent}${s.verified || s.identityVerified ? '<span class="verified-dot">🛡️</span>' : ''}</div>
             <div class="sc-body">
                 <div class="sc-head">
                     <strong>${escapeHtml(s.name)}${meBadge}</strong>
@@ -3489,29 +3492,52 @@ function renderSitters() {
 }
 
 function openSitterDetail(id) {
-    const s = DOG_SITTERS.find(x => x.id === id);
+    const all = [...DOG_SITTERS, ..._remoteSitters];
+    const s = all.find(x => x.id === id);
     if (!s) return;
     sitterUi.detailId = id;
-    $("#sdAvatar").textContent = s.avatar;
+
+    // Top bar name
+    const topName = $("#sdTopName");
+    if (topName) topName.textContent = s.name;
+
+    // Avatar
+    const avEl = $("#sdAvatar");
+    if (s.avatarImage) {
+        avEl.innerHTML = `<img src="${s.avatarImage}" alt="${escapeHtml(s.name)}" />`;
+    } else {
+        avEl.textContent = s.avatar;
+    }
+
+    // Stats
+    $("#sdStatReviews").textContent = s.reviewCount || 0;
+    $("#sdStatExp").textContent = s.experience || "—";
+    $("#sdStatServices").textContent = (s.services || []).length;
+
+    // Identity
     $("#sdName").textContent = s.name;
-    const dist = sitterDistance(s).toFixed(1);
+    const dist = (s.distance ?? sitterDistance(s)).toFixed(1);
     $("#sdHood").textContent = `${s.neighborhood} · ${dist} km entfernt`;
     $("#sdRating").textContent = `⭐ ${s.rating.toFixed(1)}`;
     $("#sdReviews").textContent = `(${s.reviewCount} Bewertungen)`;
-    $("#sdVerified").classList.toggle("hidden", !s.verified);
+    $("#sdVerified").classList.toggle("hidden", !s.verified && !s.identityVerified);
     $("#sdBio").textContent = s.bio;
-    $("#sdResponse").textContent = s.responseTime;
-    $("#sdExperience").textContent = s.experience;
-    $("#sdSizes").textContent = s.acceptedSizes.join(", ");
-    $("#sdAvailability").textContent = s.availability;
 
+    // Info tab
+    $("#sdResponse").textContent = s.responseTime || "—";
+    $("#sdExperience").textContent = s.experience || "—";
+    $("#sdSizes").textContent = (s.acceptedSizes || []).join(", ") || "—";
+    $("#sdAvailability").textContent = s.availability || "—";
+    $("#sdAbout").textContent = s.about || s.bio || "—";
+
+    // Prices
     const prices = $("#sdPrices");
     prices.innerHTML = "";
     const items = [];
-    if (s.services.includes("Gassi")  && s.priceHour)  items.push(["🚶", "Gassi gehen",      `CHF ${s.priceHour}/Std`]);
-    if (s.services.includes("Tag")    && s.priceDay)   items.push(["☀", "Tagesbetreuung",   `CHF ${s.priceDay}/Tag`]);
-    if (s.services.includes("Nacht")  && s.priceNight) items.push(["🌙", "Übernachtung",     `CHF ${s.priceNight}/Nacht`]);
-    if (s.services.includes("Urlaub") && s.priceNight) items.push(["✈", "Urlaubspflege",    `CHF ${s.priceNight}/Nacht`]);
+    if (s.services.includes("Gassi")  && s.priceHour)  items.push(["🚶", "Gassi gehen",    `CHF ${s.priceHour}/Std`]);
+    if (s.services.includes("Tag")    && s.priceDay)   items.push(["☀", "Tagesbetreuung", `CHF ${s.priceDay}/Tag`]);
+    if (s.services.includes("Nacht")  && s.priceNight) items.push(["🌙", "Übernachtung",   `CHF ${s.priceNight}/Nacht`]);
+    if (s.services.includes("Urlaub") && s.priceNight) items.push(["✈", "Urlaubspflege",  `CHF ${s.priceNight}/Nacht`]);
     items.forEach(([icon, label, p]) => {
         const row = document.createElement("div");
         row.className = "price-row";
@@ -3519,11 +3545,147 @@ function openSitterDetail(id) {
         prices.appendChild(row);
     });
 
+    // Photos tab
+    const photosEl = $("#sdPhotos");
+    photosEl.innerHTML = "";
+    const photos = s.photos || [];
+    if (photos.length > 0) {
+        photos.forEach(src => {
+            const cell = document.createElement("div");
+            cell.className = "photo-cell";
+            cell.innerHTML = `<img src="${src}" alt="Foto" />`;
+            photosEl.appendChild(cell);
+        });
+    } else {
+        photosEl.innerHTML = `<p class="empty-state" style="grid-column:1/-1;text-align:center;padding:30px 0">Noch keine Fotos hochgeladen</p>`;
+    }
+
+    // Reviews tab
+    renderSitterReviews(s);
+
+    // Default to photos tab
+    switchSitterDetailTab("photos");
+
     $("#sitterDetailModal").classList.remove("hidden");
 }
 
+function switchSitterDetailTab(name) {
+    $$("[data-sdtab]").forEach(t => t.classList.toggle("active", t.dataset.sdtab === name));
+    $("#sdPhotos").classList.toggle("hidden", name !== "photos");
+    $("#sdInfo").classList.toggle("hidden", name !== "info");
+    $("#sdPricesWrap").classList.toggle("hidden", name !== "info");
+    $("#sdReviewsList").classList.toggle("hidden", name !== "reviews");
+}
+
+function renderSitterReviews(s) {
+    const container = $("#sdReviewsContent");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const reviews = s.reviews || [];
+    const rating = s.rating || 5.0;
+    const count = s.reviewCount || reviews.length;
+
+    // Summary
+    const fullStars = Math.floor(rating);
+    const halfStar = (rating - fullStars) >= 0.5;
+    let starsHtml = "★".repeat(fullStars);
+    if (halfStar) starsHtml += "½";
+    starsHtml += "☆".repeat(5 - fullStars - (halfStar ? 1 : 0));
+
+    const summary = document.createElement("div");
+    summary.className = "reviews-summary";
+    summary.innerHTML = `
+        <div class="big-rating">${rating.toFixed(1)}</div>
+        <div class="star-display">${starsHtml}</div>
+        <small>${count} Bewertung${count !== 1 ? "en" : ""}</small>
+    `;
+    container.appendChild(summary);
+
+    if (reviews.length === 0) {
+        container.innerHTML += `<p class="empty-state" style="text-align:center;padding:20px 0">Noch keine Bewertungen</p>`;
+        return;
+    }
+
+    reviews.forEach(r => {
+        const card = document.createElement("div");
+        card.className = "review-card";
+        const stars = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
+        const ago = timeAgo(r.ts);
+        card.innerHTML = `
+            <div class="review-header">
+                <span class="review-author">${escapeHtml(r.reviewer)}${r.dogName ? `<small>& ${escapeHtml(r.dogName)}</small>` : ""}</span>
+                <span class="review-rating">${stars}</span>
+            </div>
+            <p class="review-text">${escapeHtml(r.text)}</p>
+            <div class="review-date">${ago}</div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function timeAgo(ts) {
+    const diff = Date.now() - ts;
+    const days = Math.floor(diff / 86400000);
+    if (days < 1) return "Heute";
+    if (days === 1) return "Gestern";
+    if (days < 7) return `vor ${days} Tagen`;
+    if (days < 30) return `vor ${Math.floor(days / 7)} Wochen`;
+    return `vor ${Math.floor(days / 30)} Monaten`;
+}
+
+// ---------- Review writing ----------
+let _reviewSitterId = null;
+let _reviewRating = 0;
+
+function openWriteReview() {
+    const all = [...DOG_SITTERS, ..._remoteSitters];
+    const s = all.find(x => x.id === sitterUi.detailId);
+    if (!s) return;
+    _reviewSitterId = s.id;
+    _reviewRating = 0;
+    $$("#reviewStars button").forEach(b => {
+        b.textContent = "☆";
+        b.classList.remove("active");
+    });
+    $("#reviewText").value = "";
+    $("#reviewSitterInfo").innerHTML = `Bewertung für <strong>${escapeHtml(s.name)}</strong>`;
+    $("#reviewModal").classList.remove("hidden");
+}
+
+function submitReview() {
+    if (_reviewRating < 1) { flashToast("Bitte Sterne vergeben"); return; }
+    const text = ($("#reviewText")?.value || "").trim();
+    if (!text) { flashToast("Bitte einen Text schreiben"); return; }
+
+    const all = [...DOG_SITTERS];
+    const s = all.find(x => x.id === _reviewSitterId);
+    if (!s) { flashToast("Sitter nicht gefunden"); return; }
+
+    const review = {
+        id: "r" + Date.now(),
+        reviewer: state.myProfile.name || "Anonym",
+        dogName: state.myProfile.name,
+        rating: _reviewRating,
+        text,
+        ts: Date.now()
+    };
+
+    if (!s.reviews) s.reviews = [];
+    s.reviews.unshift(review);
+    s.reviewCount = (s.reviewCount || 0) + 1;
+    const totalRating = s.reviews.reduce((sum, r) => sum + r.rating, 0);
+    s.rating = Math.round((totalRating / s.reviews.length) * 10) / 10;
+
+    $("#reviewModal").classList.add("hidden");
+    renderSitterReviews(s);
+    renderSitters();
+    flashToast("⭐ Bewertung gesendet!");
+}
+
 function openBookingForm() {
-    const s = DOG_SITTERS.find(x => x.id === sitterUi.detailId);
+    const all = [...DOG_SITTERS, ..._remoteSitters];
+    const s = all.find(x => x.id === sitterUi.detailId);
     if (!s) return;
     $("#bookingSitterInfo").innerHTML = `Mit <strong>${escapeHtml(s.name)}</strong> · ${s.neighborhood}`;
     const sel = $("#bkService");
@@ -3559,7 +3721,8 @@ function computeBookingTotal(sitter, svc, from, to, hours) {
 }
 
 function updateBookingFormUi() {
-    const s = DOG_SITTERS.find(x => x.id === sitterUi.detailId);
+    const all = [...DOG_SITTERS, ..._remoteSitters];
+    const s = all.find(x => x.id === sitterUi.detailId);
     if (!s) return;
     const svc = $("#bkService").value;
     // Felder passend zum Service zeigen/verstecken
@@ -3571,7 +3734,8 @@ function updateBookingFormUi() {
 }
 
 function submitBooking() {
-    const s = DOG_SITTERS.find(x => x.id === sitterUi.detailId);
+    const all = [...DOG_SITTERS, ..._remoteSitters];
+    const s = all.find(x => x.id === sitterUi.detailId);
     if (!s) return;
     const svc = $("#bkService").value;
     const from = $("#bkFrom").value;
@@ -3684,7 +3848,7 @@ function cancelBooking(id) {
 // "SITTER WERDEN" – Registrierung, Dashboard, Anfragen
 // ============================================================
 
-const sitterForm = { selectedAvatar: "👩", selectedSizes: [] };
+const sitterForm = { selectedAvatar: "👩", selectedSizes: [], avatarImage: null, photos: [] };
 
 function renderBecomeSitter() {
     const hasProfile = !!state.mySitterProfile;
@@ -3702,24 +3866,69 @@ function renderBecomeSitter() {
 }
 
 function initSitterFormDefaults() {
-    // Avatar-Picker aktiv-Markierung
-    const avPicker = $("#msAvatarPicker");
-    if (avPicker) {
-        $$("#msAvatarPicker button").forEach(b => {
-            b.classList.toggle("active", b.dataset.av === sitterForm.selectedAvatar);
-        });
+    // Avatar preview
+    const avPreview = $("#msAvatarPreview");
+    if (avPreview) {
+        if (sitterForm.avatarImage) {
+            avPreview.innerHTML = `<img src="${sitterForm.avatarImage}" alt="Profilbild" />`;
+        } else {
+            avPreview.innerHTML = `<span class="sitter-avatar-placeholder">📷</span>`;
+        }
     }
+    // Gallery preview
+    renderSitterGalleryPreview();
     // Size-Picker aktiv
     $$("#msSizes button").forEach(b => {
         b.classList.toggle("active", sitterForm.selectedSizes.includes(b.dataset.size));
     });
 }
 
+function renderSitterGalleryPreview() {
+    const gallery = $("#msGallery");
+    if (!gallery) return;
+    gallery.innerHTML = "";
+    sitterForm.photos.forEach((src, i) => {
+        const cell = document.createElement("div");
+        cell.className = "sitter-gallery-cell";
+        cell.innerHTML = `<img src="${src}" alt="Foto ${i + 1}" /><button class="gallery-remove" data-idx="${i}">✕</button>`;
+        cell.querySelector(".gallery-remove").addEventListener("click", (e) => {
+            e.stopPropagation();
+            sitterForm.photos.splice(i, 1);
+            renderSitterGalleryPreview();
+        });
+        gallery.appendChild(cell);
+    });
+    if (sitterForm.photos.length < 6) {
+        const addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "sitter-gallery-add";
+        addBtn.innerHTML = `<span>➕</span><small>Hinzufügen</small>`;
+        addBtn.addEventListener("click", () => $("#msGalleryInput")?.click());
+        gallery.appendChild(addBtn);
+    }
+}
+
 function bindSitterRegistration() {
-    $$("#msAvatarPicker button").forEach(b => {
-        b.addEventListener("click", () => {
-            sitterForm.selectedAvatar = b.dataset.av;
-            $$("#msAvatarPicker button").forEach(x => x.classList.toggle("active", x === b));
+    // Photo upload for sitter avatar
+    $("#msAvatarUploadBtn")?.addEventListener("click", () => $("#msAvatarInput")?.click());
+    $("#msAvatarInput")?.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        downscaleImage(file, 400, 0.8, (resized) => {
+            sitterForm.avatarImage = resized;
+            const avPreview = $("#msAvatarPreview");
+            if (avPreview) avPreview.innerHTML = `<img src="${resized}" alt="Profilbild" />`;
+        });
+    });
+    // Gallery photo upload
+    $("#msGalleryInput")?.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        downscaleImage(file, 600, 0.78, (resized) => {
+            if (sitterForm.photos.length < 6) {
+                sitterForm.photos.push(resized);
+                renderSitterGalleryPreview();
+            }
         });
     });
     $$("#msSizes button").forEach(b => {
@@ -3772,18 +3981,24 @@ function saveMySitterProfile() {
         flashToast("Bitte Nachtpreis angeben"); return;
     }
 
+    const about = ($("#msAbout")?.value || "").trim();
+
     const isNew = !state.mySitterProfile;
     state.mySitterProfile = {
         id: "me",
         name,
         avatar: sitterForm.selectedAvatar,
+        avatarImage: sitterForm.avatarImage,
+        photos: [...sitterForm.photos],
         neighborhood: city,
         lat, lng,
         rating: state.mySitterProfile?.rating || 5.0,
         reviewCount: state.mySitterProfile?.reviewCount || 0,
+        reviews: state.mySitterProfile?.reviews || [],
         priceHour, priceDay, priceNight,
         services,
         bio,
+        about,
         experience,
         verified: _sitterIdentityVerified,
         identityVerified: _sitterIdentityVerified,
@@ -3840,10 +4055,13 @@ function editMySitterProfile() {
     $("#msPriceHour").value  = p.priceHour  || "";
     $("#msPriceDay").value   = p.priceDay   || "";
     $("#msPriceNight").value = p.priceNight || "";
+    if ($("#msAbout")) $("#msAbout").value = p.about || "";
     $$('input[name="msSvc"]').forEach(i => {
         i.checked = p.services.includes(i.value);
     });
     sitterForm.selectedAvatar = p.avatar;
+    sitterForm.avatarImage = p.avatarImage || null;
+    sitterForm.photos = [...(p.photos || [])];
     sitterForm.selectedSizes = [...p.acceptedSizes];
     initSitterFormDefaults();
 
@@ -3873,6 +4091,8 @@ function deleteMySitterProfile() {
     _sitterIdentityVerified = false;
     _sitterIdentityStatus = "not_started";
     sitterForm.selectedAvatar = "👩";
+    sitterForm.avatarImage = null;
+    sitterForm.photos = [];
     sitterForm.selectedSizes = [];
     const form = $("#sitterForm");
     if (form) form.reset();
@@ -3936,7 +4156,12 @@ function computeRequestTotal(sitter, svc, hours) {
 function renderSitterDashboard() {
     const p = state.mySitterProfile;
     if (!p) return;
-    $("#dashAv").textContent = p.avatar;
+    const dashAvEl = $("#dashAv");
+    if (p.avatarImage) {
+        dashAvEl.innerHTML = `<img src="${p.avatarImage}" alt="${escapeHtml(p.name)}" />`;
+    } else {
+        dashAvEl.innerHTML = `<span>${p.avatar}</span>`;
+    }
     $("#dashName").textContent = p.name;
     $("#dashHood").textContent = `${p.city || p.neighborhood} · ${p.services.length} Services`;
     const isVerified = p.verified || p.identityVerified;
@@ -4584,7 +4809,23 @@ function bindEvents() {
     });
     $("#sitterDetailClose").addEventListener("click", () =>
         $("#sitterDetailModal").classList.add("hidden"));
+    $$("[data-sdtab]").forEach(t => {
+        t.addEventListener("click", () => switchSitterDetailTab(t.dataset.sdtab));
+    });
     $("#sdBookBtn").addEventListener("click", openBookingForm);
+    $("#sdWriteReviewBtn")?.addEventListener("click", openWriteReview);
+    $$("#reviewStars button").forEach(b => {
+        b.addEventListener("click", () => {
+            _reviewRating = parseInt(b.dataset.star);
+            $$("#reviewStars button").forEach(s => {
+                const val = parseInt(s.dataset.star);
+                s.textContent = val <= _reviewRating ? "★" : "☆";
+                s.classList.toggle("active", val <= _reviewRating);
+            });
+        });
+    });
+    $("#reviewCancel")?.addEventListener("click", () => $("#reviewModal").classList.add("hidden"));
+    $("#reviewSubmit")?.addEventListener("click", submitReview);
     // Booking form
     $("#bkService").addEventListener("change", updateBookingFormUi);
     $("#bkFrom").addEventListener("change", updateBookingFormUi);

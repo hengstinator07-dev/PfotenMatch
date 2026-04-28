@@ -4774,7 +4774,7 @@ button { font-family: inherit; }
     color: #888;
 }
 
-/* Avatar picker */
+/* Avatar picker (legacy) */
 .avatar-picker {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -4799,6 +4799,197 @@ button { font-family: inherit; }
     background: #fff0ec;
     transform: scale(1.08);
     box-shadow: 0 3px 10px rgba(255, 107, 107, 0.22);
+}
+
+/* Sitter photo upload */
+.sitter-photo-upload {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 4px;
+}
+.sitter-avatar-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffd5cd, #ffebe0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    border: 3px solid white;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.sitter-avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.sitter-avatar-placeholder { opacity: 0.5; }
+.sitter-gallery-upload {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 4px;
+}
+.sitter-gallery-add {
+    aspect-ratio: 1;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    background: #fafafa;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+}
+.sitter-gallery-add:hover { border-color: var(--brand); background: #fff6f3; }
+.sitter-gallery-add span { font-size: 22px; }
+.sitter-gallery-add small { font-size: 10px; color: #999; }
+.sitter-gallery-cell {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.sitter-gallery-cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.sitter-gallery-cell .gallery-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Sitter profile avatar with photo */
+.sitter-profile-av {
+    font-size: 42px;
+}
+.sitter-profile-av img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Sitter card avatar with photo */
+.sc-av img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Dashboard avatar with photo */
+.sd-av img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Review stars */
+.review-stars {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px 0;
+}
+.review-stars button {
+    background: none;
+    border: none;
+    font-size: 36px;
+    cursor: pointer;
+    transition: transform 0.15s;
+    color: #ddd;
+    padding: 0;
+    line-height: 1;
+}
+.review-stars button:hover { transform: scale(1.15); }
+.review-stars button.active { color: #f39c12; }
+
+/* Reviews section in sitter profile */
+.sd-reviews-section {
+    padding: 0 4px;
+}
+.review-card {
+    background: white;
+    border: 1px solid #f0f0f0;
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.review-author {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+}
+.review-author small {
+    font-weight: 400;
+    color: #888;
+    margin-left: 4px;
+}
+.review-rating {
+    color: #f39c12;
+    font-size: 13px;
+    font-weight: 600;
+}
+.review-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #555;
+    margin: 0;
+}
+.review-date {
+    font-size: 11px;
+    color: #aaa;
+    margin-top: 6px;
+}
+.reviews-summary {
+    text-align: center;
+    padding: 16px 0;
+    margin-bottom: 12px;
+}
+.reviews-summary .big-rating {
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+}
+.reviews-summary .star-display {
+    color: #f39c12;
+    font-size: 20px;
+    margin: 6px 0 4px;
+    letter-spacing: 2px;
+}
+.reviews-summary small {
+    font-size: 12px;
+    color: #888;
 }
 
 /* Services list */

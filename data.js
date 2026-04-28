@@ -300,6 +300,8 @@ const AUTO_REPLIES = [
 const DOG_SITTERS = [
     {
         id: 101, name: "Sophie Keller", avatar: "👩‍🦰",
+        avatarImage: null,
+        photos: [],
         neighborhood: "Kleinbasel", lat: 47.5650, lng: 7.6050,
         rating: 4.9, reviewCount: 47,
         priceHour: 18, priceDay: 85, priceNight: 120,
@@ -308,10 +310,18 @@ const DOG_SITTERS = [
         experience: "10 Jahre", verified: true,
         acceptedSizes: ["Klein", "Mittel", "Groß"],
         responseTime: "~1 Std",
-        availability: "Mo–Fr ganztägig, WE nach Absprache"
+        availability: "Mo–Fr ganztägig, WE nach Absprache",
+        about: "Ich lebe in einer großen Altbauwohnung mit Garten in Kleinbasel. Keine Kinder, keine anderen Haustiere — dein Hund hat meine volle Aufmerksamkeit. Ich bin ausgebildete Hundetrainerin.",
+        reviews: [
+            { id: "r1", reviewer: "Lisa M.", dogName: "Mochi", rating: 5, text: "Sophie ist fantastisch! Mochi war super glücklich und hat sogar neue Tricks gelernt.", ts: Date.now() - 86400000 * 3 },
+            { id: "r2", reviewer: "Tim K.", dogName: "Buddy", rating: 5, text: "Zuverlässig, liebevoll und professionell. Buddy will immer wieder zu Sophie!", ts: Date.now() - 86400000 * 12 },
+            { id: "r3", reviewer: "Sandra B.", dogName: "Luna", rating: 4, text: "Sehr zufrieden. Sophie hat sich perfekt um Luna gekümmert während unseres Urlaubs.", ts: Date.now() - 86400000 * 25 }
+        ]
     },
     {
         id: 102, name: "Marco Rossi", avatar: "🧔",
+        avatarImage: null,
+        photos: [],
         neighborhood: "Gundeldingen", lat: 47.5440, lng: 7.5920,
         rating: 4.7, reviewCount: 23,
         priceHour: 15, priceDay: null, priceNight: null,
@@ -320,10 +330,17 @@ const DOG_SITTERS = [
         experience: "4 Jahre", verified: true,
         acceptedSizes: ["Mittel", "Groß"],
         responseTime: "~30 Min",
-        availability: "Täglich 6–9 Uhr und 17–20 Uhr"
+        availability: "Täglich 6–9 Uhr und 17–20 Uhr",
+        about: "Ich bin leidenschaftlicher Läufer und nehme deinen Hund gerne auf meine Joggingrunden mit. Die Langen Erlen sind mein Revier.",
+        reviews: [
+            { id: "r4", reviewer: "Andrea W.", dogName: "Rex", rating: 5, text: "Marco hat Rex richtig ausgepowert — kam total glücklich zurück!", ts: Date.now() - 86400000 * 5 },
+            { id: "r5", reviewer: "Jan D.", dogName: "Thor", rating: 4, text: "Super Gassi-Service, pünktlich und Thor liebt ihn.", ts: Date.now() - 86400000 * 18 }
+        ]
     },
     {
         id: 103, name: "Dr. Claudia Weber", avatar: "👵",
+        avatarImage: null,
+        photos: [],
         neighborhood: "St. Johann", lat: 47.5700, lng: 7.5780,
         rating: 5.0, reviewCount: 89,
         priceHour: 22, priceDay: 95, priceNight: 140,
@@ -332,10 +349,18 @@ const DOG_SITTERS = [
         experience: "30+ Jahre", verified: true,
         acceptedSizes: ["Klein", "Mittel", "Groß"],
         responseTime: "~2 Std",
-        availability: "Flexibel, am liebsten Tagsüber"
+        availability: "Flexibel, am liebsten Tagsüber",
+        about: "Als pensionierte Tierärztin bringe ich 30 Jahre medizinisches Wissen mit. Ich kümmere mich besonders gerne um ältere Hunde oder solche mit speziellen Bedürfnissen.",
+        reviews: [
+            { id: "r6", reviewer: "Monika H.", dogName: "Benny", rating: 5, text: "Benny braucht täglich Medikamente — Claudia macht das perfekt. Absolute Vertrauensperson!", ts: Date.now() - 86400000 * 2 },
+            { id: "r7", reviewer: "Peter S.", dogName: "Max", rating: 5, text: "Goldene Hände, goldenes Herz. Max hat sich bei ihr richtig erholt nach der OP.", ts: Date.now() - 86400000 * 10 },
+            { id: "r8", reviewer: "Julia R.", dogName: "Nala", rating: 5, text: "Einfach die Beste. Nala war 2 Wochen bei ihr und es war alles perfekt.", ts: Date.now() - 86400000 * 30 }
+        ]
     },
     {
         id: 104, name: "Jonas Schmid", avatar: "👨",
+        avatarImage: null,
+        photos: [],
         neighborhood: "Bruderholz", lat: 47.5370, lng: 7.5830,
         rating: 4.6, reviewCount: 12,
         priceHour: 14, priceDay: 75, priceNight: null,
@@ -344,10 +369,16 @@ const DOG_SITTERS = [
         experience: "2 Jahre", verified: false,
         acceptedSizes: ["Klein", "Mittel"],
         responseTime: "~2 Std",
-        availability: "Mo, Mi, Fr ganztägig"
+        availability: "Mo, Mi, Fr ganztägig",
+        about: "Ich studiere Biologie an der Uni Basel und liebe Tiere. Meine WG-Mitbewohner sind auch alle hundefreundlich.",
+        reviews: [
+            { id: "r9", reviewer: "Karin F.", dogName: "Fifi", rating: 5, text: "Jonas ist super lieb zu Fifi. Faire Preise und sehr zuverlässig.", ts: Date.now() - 86400000 * 8 }
+        ]
     },
     {
         id: 105, name: "Fatima Akyol", avatar: "👩",
+        avatarImage: null,
+        photos: [],
         neighborhood: "Matthäus", lat: 47.5680, lng: 7.5920,
         rating: 4.8, reviewCount: 34,
         priceHour: 17, priceDay: 80, priceNight: 125,
@@ -356,10 +387,18 @@ const DOG_SITTERS = [
         experience: "7 Jahre", verified: true,
         acceptedSizes: ["Klein", "Mittel", "Groß"],
         responseTime: "~45 Min",
-        availability: "Täglich, auch kurzfristig"
+        availability: "Täglich, auch kurzfristig",
+        about: "Ich habe zwei Golden Retriever (Sunny & Goldie) und einen großen umzäunten Garten. Dein Hund hat sofort Spielkameraden und viel Platz.",
+        reviews: [
+            { id: "r10", reviewer: "Lena W.", dogName: "Pepper", rating: 5, text: "Pepper und die Golden Retriever sind beste Freunde geworden! Fatima schickt immer Fotos.", ts: Date.now() - 86400000 * 4 },
+            { id: "r11", reviewer: "David M.", dogName: "Rocky", rating: 5, text: "Kurzfristig eingesprungen und alles war perfekt organisiert. Top!", ts: Date.now() - 86400000 * 15 },
+            { id: "r12", reviewer: "Nina P.", dogName: "Loki", rating: 4, text: "Sehr nett, großer Garten, Loki war glücklich. Gerne wieder!", ts: Date.now() - 86400000 * 22 }
+        ]
     },
     {
         id: 106, name: "Peter Baumann", avatar: "👴",
+        avatarImage: null,
+        photos: [],
         neighborhood: "Riehen", lat: 47.5800, lng: 7.6500,
         rating: 4.9, reviewCount: 61,
         priceHour: 16, priceDay: 90, priceNight: 130,
@@ -368,10 +407,17 @@ const DOG_SITTERS = [
         experience: "20 Jahre", verified: true,
         acceptedSizes: ["Mittel", "Groß"],
         responseTime: "~3 Std",
-        availability: "Ganztägig, außer Dienstag"
+        availability: "Ganztägig, außer Dienstag",
+        about: "Seit ich meine Berner Sennenhunde verloren habe, betreue ich leidenschaftlich gerne andere Hunde. Ruhiges Haus mit Garten am Dorfrand von Riehen.",
+        reviews: [
+            { id: "r13", reviewer: "Michael T.", dogName: "Zeus", rating: 5, text: "Peter ist ein Schatz. Zeus fühlt sich bei ihm wie zuhause.", ts: Date.now() - 86400000 * 6 },
+            { id: "r14", reviewer: "Sarah K.", dogName: "Bella", rating: 5, text: "Wir lassen Bella jedes Mal bei Peter wenn wir in Urlaub sind. Absolute Empfehlung!", ts: Date.now() - 86400000 * 20 }
+        ]
     },
     {
         id: 107, name: "Lea Hofer", avatar: "👱‍♀️",
+        avatarImage: null,
+        photos: [],
         neighborhood: "Iselin", lat: 47.5580, lng: 7.5640,
         rating: 4.5, reviewCount: 8,
         priceHour: 12, priceDay: null, priceNight: null,
@@ -380,10 +426,16 @@ const DOG_SITTERS = [
         experience: "< 1 Jahr", verified: false,
         acceptedSizes: ["Klein", "Mittel"],
         responseTime: "~4 Std",
-        availability: "Wochenenden und Abende"
+        availability: "Wochenenden und Abende",
+        about: "Ich mache gerade meine Ausbildung zur Tierpflegerin und möchte nebenbei praktische Erfahrung sammeln.",
+        reviews: [
+            { id: "r15", reviewer: "Anna L.", dogName: "Cookie", rating: 5, text: "Lea ist super engagiert und Cookie liebt sie!", ts: Date.now() - 86400000 * 7 }
+        ]
     },
     {
         id: 108, name: "Tobias Furrer", avatar: "👨‍🦱",
+        avatarImage: null,
+        photos: [],
         neighborhood: "Breite", lat: 47.5520, lng: 7.6100,
         rating: 4.8, reviewCount: 29,
         priceHour: 20, priceDay: 88, priceNight: 135,
@@ -392,6 +444,12 @@ const DOG_SITTERS = [
         experience: "8 Jahre", verified: true,
         acceptedSizes: ["Klein", "Mittel", "Groß"],
         responseTime: "~1 Std",
-        availability: "Di–Sa, So auf Anfrage"
+        availability: "Di–Sa, So auf Anfrage",
+        about: "Als zertifizierter Hundetrainer biete ich mehr als nur Betreuung: leichtes Training inklusive. Meine Praxis ist in der Breite.",
+        reviews: [
+            { id: "r16", reviewer: "Mark B.", dogName: "Bruno", rating: 5, text: "Bruno hat bei Tobias das Sitz und Platz gelernt — während der Betreuung! Genial.", ts: Date.now() - 86400000 * 3 },
+            { id: "r17", reviewer: "Stefanie H.", dogName: "Lilly", rating: 5, text: "Professionell, kompetent und liebevoll. Lilly zieht nicht mehr an der Leine!", ts: Date.now() - 86400000 * 14 },
+            { id: "r18", reviewer: "Oliver G.", dogName: "Sam", rating: 4, text: "Gute Betreuung mit Trainingseffekt. Etwas teurer aber jeden Rappen wert.", ts: Date.now() - 86400000 * 28 }
+        ]
     }
 ];

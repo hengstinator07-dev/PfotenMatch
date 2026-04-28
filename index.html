@@ -596,17 +596,24 @@
                                 <input type="text" id="msName" required maxlength="40" placeholder="z. B. Sophie Keller" />
                             </label>
                             <label>
-                                <span>Avatar (Emoji)</span>
-                                <div class="avatar-picker" id="msAvatarPicker">
-                                    <button type="button" data-av="👩">👩</button>
-                                    <button type="button" data-av="👨">👨</button>
-                                    <button type="button" data-av="👩‍🦰">👩‍🦰</button>
-                                    <button type="button" data-av="🧔">🧔</button>
-                                    <button type="button" data-av="👵">👵</button>
-                                    <button type="button" data-av="👴">👴</button>
-                                    <button type="button" data-av="👱‍♀️">👱‍♀️</button>
-                                    <button type="button" data-av="👨‍🦱">👨‍🦱</button>
+                                <span>Profilbild</span>
+                                <div class="sitter-photo-upload">
+                                    <div class="sitter-avatar-preview" id="msAvatarPreview">
+                                        <span class="sitter-avatar-placeholder">📷</span>
+                                    </div>
+                                    <button type="button" class="btn-ghost-sm" id="msAvatarUploadBtn">Foto hochladen</button>
+                                    <input type="file" id="msAvatarInput" accept="image/*" hidden />
                                 </div>
+                            </label>
+                            <label>
+                                <span>Fotos (zeige dein Zuhause, Garten, betreute Hunde)</span>
+                                <div class="sitter-gallery-upload" id="msGallery">
+                                    <button type="button" class="sitter-gallery-add" id="msGalleryAddBtn">
+                                        <span>➕</span>
+                                        <small>Hinzufügen</small>
+                                    </button>
+                                </div>
+                                <input type="file" id="msGalleryInput" accept="image/*" hidden />
                             </label>
                             <label>
                                 <span>📍 Standort</span>
@@ -621,8 +628,12 @@
                                 <small id="msLocationStatus" class="muted">Dein genauer Standort wird nie angezeigt – nur der ungefähre Umkreis.</small>
                             </label>
                             <label>
-                                <span>Über dich (Bio)</span>
-                                <textarea id="msBio" rows="3" maxlength="300" placeholder="Erzähl was über deine Erfahrung mit Hunden, deinen Wohnsitz, andere Tiere im Haushalt …"></textarea>
+                                <span>Kurzbeschreibung (Bio)</span>
+                                <textarea id="msBio" rows="2" maxlength="200" placeholder="Kurze Bio für deine Karte (max. 200 Zeichen)"></textarea>
+                            </label>
+                            <label>
+                                <span>Über mich (ausführlich)</span>
+                                <textarea id="msAbout" rows="4" maxlength="500" placeholder="Erzähl über deine Erfahrung, dein Zuhause, andere Tiere, Besonderheiten …"></textarea>
                             </label>
 
                             <h4>🐾 Services & Preise</h4>
@@ -753,7 +764,7 @@
                     <div id="sitterDashboardWrap" class="hidden">
                         <div class="sitter-dash-card">
                             <div class="sd-head">
-                                <div class="sd-av" id="dashAv">👩</div>
+                                <div class="sd-av" id="dashAv"><span>👩</span></div>
                                 <div class="sd-meta">
                                     <strong id="dashName">Du</strong>
                                     <small id="dashHood">Quartier</small>
@@ -1152,30 +1163,83 @@
         </div>
     </div>
 
-    <!-- Sitter detail bottom sheet -->
+    <!-- Sitter detail (fullscreen profile) -->
     <div id="sitterDetailModal" class="modal hidden">
-        <div class="sitter-sheet">
-            <button class="sheet-close" id="sitterDetailClose" title="Schließen">✕</button>
-            <div class="sitter-hero">
-                <div class="sh-av" id="sdAvatar">👩</div>
-                <h2 id="sdName">Name</h2>
-                <p class="sh-hood" id="sdHood">Kleinbasel · 1.2 km</p>
-                <div class="sh-rating-row">
-                    <span class="sh-rating" id="sdRating">⭐ 4.9</span>
-                    <span id="sdReviews">(47 Bewertungen)</span>
-                    <span id="sdVerified" class="sh-verified hidden">🛡️ ID Verifiziert</span>
+        <div class="modal-content op-fullscreen">
+            <header class="op-topbar">
+                <button id="sitterDetailClose" class="op-back-btn">← Zurück</button>
+                <span id="sdTopName" class="op-topbar-name"></span>
+                <span></span>
+            </header>
+            <div class="op-scroll">
+                <div class="profile-header">
+                    <div class="profile-avatar-wrap">
+                        <div id="sdAvatar" class="profile-avatar sitter-profile-av">👩</div>
+                        <span class="avatar-ring"></span>
+                    </div>
+                    <div class="profile-stats">
+                        <div class="stat"><strong id="sdStatReviews">0</strong><span>Bewertungen</span></div>
+                        <div class="stat"><strong id="sdStatExp">—</strong><span>Erfahrung</span></div>
+                        <div class="stat"><strong id="sdStatServices">0</strong><span>Services</span></div>
+                    </div>
+                </div>
+                <div class="profile-identity">
+                    <h2 id="sdName">Name</h2>
+                    <p class="handle" id="sdHood">Kleinbasel · 1.2 km</p>
+                    <div class="sh-rating-row">
+                        <span class="sh-rating" id="sdRating">⭐ 4.9</span>
+                        <span id="sdReviews">(47 Bewertungen)</span>
+                        <span id="sdVerified" class="sh-verified hidden">🛡️ ID Verifiziert</span>
+                    </div>
+                    <p class="bio" id="sdBio"></p>
+                </div>
+                <div class="profile-actions">
+                    <button class="btn-primary full" id="sdBookBtn">🗓 Betreuung anfragen</button>
+                </div>
+                <div class="profile-tabs" role="tablist">
+                    <button class="profile-tab active" data-sdtab="photos">🏞️ Fotos</button>
+                    <button class="profile-tab" data-sdtab="info">ℹ Info</button>
+                    <button class="profile-tab" data-sdtab="reviews">⭐ Bewertungen</button>
+                </div>
+                <div id="sdPhotos" class="profile-photos op-photo-grid"></div>
+                <div id="sdInfo" class="profile-info hidden">
+                    <div class="info-row"><span>⏱ Antwortzeit</span><strong id="sdResponse">—</strong></div>
+                    <div class="info-row"><span>🎓 Erfahrung</span><strong id="sdExperience">—</strong></div>
+                    <div class="info-row"><span>📐 Akzeptiert</span><strong id="sdSizes">—</strong></div>
+                    <div class="info-row"><span>📆 Verfügbarkeit</span><strong id="sdAvailability">—</strong></div>
+                    <div class="info-row"><span>📝 Über mich</span><strong id="sdAbout">—</strong></div>
+                </div>
+                <div id="sdPricesWrap" class="profile-info hidden">
+                    <h3 class="sd-section">💰 Preise</h3>
+                    <div class="sd-prices" id="sdPrices"></div>
+                </div>
+                <div id="sdReviewsList" class="sd-reviews-section hidden">
+                    <div id="sdReviewsContent"></div>
+                    <button class="btn-primary full" id="sdWriteReviewBtn">⭐ Bewertung schreiben</button>
                 </div>
             </div>
-            <p id="sdBio" class="sd-bio"></p>
-            <div class="sd-info">
-                <div class="info-row"><span>⏱ Antwortzeit</span><strong id="sdResponse">—</strong></div>
-                <div class="info-row"><span>🎓 Erfahrung</span><strong id="sdExperience">—</strong></div>
-                <div class="info-row"><span>📐 Akzeptiert</span><strong id="sdSizes">—</strong></div>
-                <div class="info-row"><span>📆 Verfügbarkeit</span><strong id="sdAvailability">—</strong></div>
+        </div>
+    </div>
+
+    <!-- Write review modal -->
+    <div id="reviewModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>⭐ Bewertung schreiben</h2>
+            <p id="reviewSitterInfo" class="booking-info"></p>
+            <div class="review-stars" id="reviewStars">
+                <button type="button" data-star="1">☆</button>
+                <button type="button" data-star="2">☆</button>
+                <button type="button" data-star="3">☆</button>
+                <button type="button" data-star="4">☆</button>
+                <button type="button" data-star="5">☆</button>
             </div>
-            <h3 class="sd-section">💰 Preise</h3>
-            <div class="sd-prices" id="sdPrices"></div>
-            <button class="btn-primary full" id="sdBookBtn">🗓 Betreuung anfragen</button>
+            <label>Deine Bewertung
+                <textarea id="reviewText" rows="4" maxlength="300" placeholder="Erzähl von deiner Erfahrung…"></textarea>
+            </label>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="reviewCancel">Abbrechen</button>
+                <button class="btn-primary" id="reviewSubmit">Bewertung senden</button>
+            </div>
         </div>
     </div>
 
