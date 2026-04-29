@@ -84,6 +84,13 @@ button { font-family: inherit; }
 .view.active { display: block; }
 .view-title { margin: 4px 0 16px; font-size: 22px; }
 
+/* ---------- Lucide icon helpers ---------- */
+.lc-icon { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+.lc-sm  { width: 16px; height: 16px; }
+.lc-xs  { width: 14px; height: 14px; }
+.lc-action { width: 26px; height: 26px; }
+.lc-empty  { width: 64px; height: 64px; color: var(--muted); }
+
 /* ---------- Filter bar ---------- */
 .filter-bar {
     display: flex;

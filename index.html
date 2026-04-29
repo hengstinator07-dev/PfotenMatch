@@ -19,6 +19,7 @@
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
 </head>
 <body>
     <!-- ============================================================
@@ -306,11 +307,12 @@
             <section id="view-swipe" class="view active">
                 <div class="filter-bar">
                     <label>
+                        <i data-lucide="map-pin" class="lc-icon lc-sm"></i>
                         Umkreis: <span id="radiusLabel">10</span> km
                         <input type="range" id="radiusSlider" min="1" max="50" value="10" />
                     </label>
                     <button id="openFiltersBtn" class="btn-filter">
-                        ⚙ Filter
+                        <i data-lucide="sliders-horizontal" class="lc-icon lc-sm"></i> Filter
                         <span id="filterBadge" class="filter-badge hidden">0</span>
                     </button>
                 </div>
@@ -319,7 +321,7 @@
                 </div>
 
                 <div id="dailyPickBanner" class="daily-pick-banner hidden">
-                    <span class="dpb-icon">⭐</span>
+                    <span class="dpb-icon"><i data-lucide="sparkles" class="lc-icon"></i></span>
                     <div class="dpb-text">
                         <strong>Top-Pick heute</strong>
                         <span id="dailyPickSubtitle">Dein bester Match wartet!</span>
@@ -332,14 +334,14 @@
                 </div>
 
                 <div class="action-bar">
-                    <button id="btnPass" class="action-btn pass" title="Nope">✕</button>
-                    <button id="btnSuper" class="action-btn super" title="Super-Like (Premium)">★</button>
-                    <button id="btnLike" class="action-btn like" title="Woof!">♥</button>
+                    <button id="btnPass" class="action-btn pass" title="Nope"><i data-lucide="x" class="lc-icon lc-action"></i></button>
+                    <button id="btnSuper" class="action-btn super" title="Super-Like (Premium)"><i data-lucide="star" class="lc-icon lc-action"></i></button>
+                    <button id="btnLike" class="action-btn like" title="Woof!"><i data-lucide="heart" class="lc-icon lc-action"></i></button>
                 </div>
                 <div class="trust-strip">
-                    <span>🛡️ Verifizierte Profile</span>
-                    <span>📍 Standort nur ungefähr</span>
-                    <span>⚠ Melde- & Blockfunktion</span>
+                    <span><i data-lucide="shield-check" class="lc-icon lc-xs"></i> Verifizierte Profile</span>
+                    <span><i data-lucide="map-pin-off" class="lc-icon lc-xs"></i> Standort nur ungefähr</span>
+                    <span><i data-lucide="flag" class="lc-icon lc-xs"></i> Melde- & Blockfunktion</span>
                 </div>
             </section>
 
@@ -1366,36 +1368,36 @@
         </div>
         <div class="fs-body">
             <div class="fs-group">
-                <label class="fs-label">📏 Größe</label>
+                <label class="fs-label"><i data-lucide="ruler" class="lc-icon lc-sm"></i> Größe</label>
                 <div class="fs-chips" id="fSizeChips">
-                    <button class="fs-chip" data-filter="size" data-val="Klein">🐾 Klein</button>
-                    <button class="fs-chip" data-filter="size" data-val="Mittel">🐕 Mittel</button>
-                    <button class="fs-chip" data-filter="size" data-val="Groß">🐕‍🦺 Groß</button>
-                    <button class="fs-chip" data-filter="size" data-val="Sehr groß">🦮 XL</button>
+                    <button class="fs-chip" data-filter="size" data-val="Klein">Klein</button>
+                    <button class="fs-chip" data-filter="size" data-val="Mittel">Mittel</button>
+                    <button class="fs-chip" data-filter="size" data-val="Groß">Groß</button>
+                    <button class="fs-chip" data-filter="size" data-val="Sehr groß">XL</button>
                 </div>
             </div>
             <div class="fs-group">
-                <label class="fs-label">⚡ Energielevel</label>
+                <label class="fs-label"><i data-lucide="zap" class="lc-icon lc-sm"></i> Energielevel</label>
                 <div class="fs-chips" id="fEnergyChips">
-                    <button class="fs-chip" data-filter="energy" data-val="Couch-Potato">🛋️ Couch</button>
-                    <button class="fs-chip" data-filter="energy" data-val="Ausgeglichen">🐾 Ausgeglichen</button>
-                    <button class="fs-chip" data-filter="energy" data-val="Duracell">⚡ Duracell</button>
+                    <button class="fs-chip" data-filter="energy" data-val="Couch-Potato">Couch</button>
+                    <button class="fs-chip" data-filter="energy" data-val="Ausgeglichen">Ausgeglichen</button>
+                    <button class="fs-chip" data-filter="energy" data-val="Duracell">Duracell</button>
                 </div>
             </div>
             <div class="fs-group">
-                <label class="fs-label">🎾 Spielstil</label>
+                <label class="fs-label"><i data-lucide="target" class="lc-icon lc-sm"></i> Spielstil</label>
                 <div class="fs-chips" id="fPlayChips">
-                    <button class="fs-chip" data-filter="play" data-val="Zurückhaltend">🤗 Ruhig</button>
-                    <button class="fs-chip" data-filter="play" data-val="Rennend">🏃 Rennend</button>
-                    <button class="fs-chip" data-filter="play" data-val="Grob">🤼 Grob</button>
+                    <button class="fs-chip" data-filter="play" data-val="Zurückhaltend">Ruhig</button>
+                    <button class="fs-chip" data-filter="play" data-val="Rennend">Rennend</button>
+                    <button class="fs-chip" data-filter="play" data-val="Grob">Grob</button>
                 </div>
             </div>
             <div class="fs-group premium-filter">
-                <label class="fs-label"><span class="premium-tag">★</span> Rasse enthält</label>
+                <label class="fs-label"><i data-lucide="crown" class="lc-icon lc-sm"></i> Rasse enthält</label>
                 <input type="text" id="fBreed" placeholder="z. B. Labrador" class="fs-input" />
             </div>
         </div>
-        <button id="closeFilterSheet" class="btn-primary full fs-done">✓ Fertig</button>
+        <button id="closeFilterSheet" class="btn-primary full fs-done"><i data-lucide="check" class="lc-icon lc-sm"></i> Fertig</button>
     </div>
 
     <!-- Premium modal -->

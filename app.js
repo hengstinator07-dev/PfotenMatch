@@ -435,9 +435,9 @@ function updateFilterBadge() {
     btn.classList.toggle("has-filters", n > 0);
 }
 const FILTER_LABELS = {
-    size: { "Klein": "🐾 Klein", "Mittel": "🐕 Mittel", "Groß": "🐕‍🦺 Groß", "Sehr groß": "🦮 XL" },
-    energy: { "Couch-Potato": "🛋️ Couch", "Ausgeglichen": "🐾 Ausgeglichen", "Duracell": "⚡ Duracell" },
-    play: { "Zurückhaltend": "🤗 Ruhig", "Rennend": "🏃 Rennend", "Grob": "🤼 Grob" }
+    size: { "Klein": "Klein", "Mittel": "Mittel", "Groß": "Groß", "Sehr groß": "XL" },
+    energy: { "Couch-Potato": "Couch", "Ausgeglichen": "Ausgeglichen", "Duracell": "Duracell" },
+    play: { "Zurückhaltend": "Ruhig", "Rennend": "Rennend", "Grob": "Grob" }
 };
 function renderActiveFilterChips() {
     const wrap = $("#activeFilterChips");
@@ -460,7 +460,7 @@ function renderActiveFilterChips() {
     if (state.radius !== 10) {
         const chip = document.createElement("button");
         chip.className = "active-chip";
-        chip.innerHTML = `📍 ${state.radius} km <span class="ac-x">✕</span>`;
+        chip.innerHTML = `<i data-lucide="map-pin" class="lc-icon lc-xs"></i> ${state.radius} km <span class="ac-x">✕</span>`;
         chip.addEventListener("click", () => {
             state.radius = 10;
             $("#radiusSlider").value = 10;
@@ -481,6 +481,7 @@ function renderActiveFilterChips() {
         });
         wrap.appendChild(chip);
     }
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 // ---------- Card stack rendering ----------
@@ -494,7 +495,7 @@ function renderCardStack() {
         stack.style.aspectRatio = "auto";
         stack.innerHTML = `
             <div class="empty-cards">
-                <div class="big">🐾</div>
+                <div class="big"><i data-lucide="dog" class="lc-icon lc-empty"></i></div>
                 <h3>Keine Hunde mehr in der Nähe</h3>
                 <p>Versuche den Umkreis zu erweitern oder schau später wieder rein!</p>
             </div>`;
@@ -511,7 +512,7 @@ function renderCardStack() {
         const y = (remaining.length - 1 - i) * 8;
         card.style.transform = `translateY(${y}px) scale(${scale})`;
 
-        const warnsHtml = (dog.warns || []).map(w => `<span class="tag warn">⚠ ${w}</span>`).join("");
+        const warnsHtml = (dog.warns || []).map(w => `<span class="tag warn"><i data-lucide="alert-triangle" class="lc-icon lc-xs"></i> ${w}</span>`).join("");
         const tagsHtml  = (dog.tags || []).map(t => `<span class="tag">${t}</span>`).join("");
         const score = computeCompatibility(state.myProfile, dog);
         const scoreClass = score >= 85 ? "high" : score >= 70 ? "mid" : "low";
@@ -524,9 +525,9 @@ function renderCardStack() {
         card.innerHTML = `
             <div class="photo" style="background: linear-gradient(135deg, #ffd5cd, #ffebe0);">
                 ${photoHtml}
-                ${isTopPick ? `<div class="top-pick-badge">⭐ Top-Pick heute</div>` : ""}
+                ${isTopPick ? `<div class="top-pick-badge"><i data-lucide="sparkles" class="lc-icon lc-xs"></i> Top-Pick heute</div>` : ""}
                 <div class="compat-badge ${scoreClass}" title="${compatibilityLabel(score)}">
-                    🎯 <strong>${score}%</strong> Match
+                    <i data-lucide="crosshair" class="lc-icon lc-xs"></i> <strong>${score}%</strong> Match
                 </div>
             </div>
             <div class="stamp like">LIKE</div>
@@ -535,7 +536,7 @@ function renderCardStack() {
             <div class="info">
                 <h3>${dog.name}, ${dog.age}</h3>
                 <p class="sub">${dog.breed} · ${dog.size} · ${dog.distance} km</p>
-                <p class="sub">⚡ ${dog.energy} · 🎾 ${dog.playStyle}${dog.neutered ? " · kastriert" : ""}</p>
+                <p class="sub"><i data-lucide="zap" class="lc-icon lc-xs"></i> ${dog.energy} · <i data-lucide="target" class="lc-icon lc-xs"></i> ${dog.playStyle}${dog.neutered ? " · kastriert" : ""}</p>
                 <div class="tags">${tagsHtml}${warnsHtml}</div>
             </div>
         `;
@@ -543,6 +544,7 @@ function renderCardStack() {
         stack.appendChild(card);
         if (i === remaining.length - 1) attachSwipe(card, dog);
     });
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 // ---------- Swipe gestures ----------
@@ -5649,4 +5651,8 @@ async function init() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", init);
+function initLucide() { if (typeof lucide !== "undefined") lucide.createIcons(); }
+document.addEventListener("DOMContentLoaded", () => {
+    init().finally(initLucide);
+    window.addEventListener("load", initLucide);
+});
