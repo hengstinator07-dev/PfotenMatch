@@ -3406,6 +3406,19 @@ button { font-family: inherit; }
     gap: 10px;
     margin-top: 20px;
 }
+.btn-skip {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 8px 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s;
+}
+.btn-skip:hover { color: #888; }
 
 /* Step head */
 .onb-head {

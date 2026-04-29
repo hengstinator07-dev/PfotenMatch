@@ -4995,9 +4995,9 @@ function onbValidateStep(step) {
 
 // --- Typewriter on step 0 ---
 const TYPE_LINES = [
-    "Finde den perfekten Spielkameraden für deinen Hund.",
-    "Entdecke Parks, Hundewiesen und Cafés in der Nähe.",
-    "Plane Treffen direkt im Chat — ganz einfach.",
+    "Finde sichere Spielkameraden für deinen Hund.",
+    "In deiner Nähe. Vertrauensvoll. Kostenlos.",
+    "Damit jeder Spaziergang ein Abenteuer wird.",
     "Für glücklichere Hunde. Und Menschen. 🐾"
 ];
 let typeTimer = null;
