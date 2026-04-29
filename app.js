@@ -653,6 +653,9 @@ function handleDecision(dog, decision) {
 
 function addMatch(dog) {
     if (state.matches.some(m => m.profile.id === dog.id)) return;
+    if (state.matches.length === 0) {
+        setTimeout(showSafetyTipsIfNeeded, 3000);
+    }
     if (dog.isReal && dog.userId) {
         const matchEntry = {
             profile: { ...dog, isFriend: true, friendUserId: dog.userId },
@@ -1423,6 +1426,38 @@ function blockCurrentChat() {
     $("#chatModal").classList.add("hidden");
     renderMatches();
     flashToast("🚫 Blockiert");
+}
+
+let _reportTargetId = null;
+let _reportReason = null;
+
+function openReportUser(targetId, targetName) {
+    _reportTargetId = targetId;
+    _reportReason = null;
+    $$("#reportUserModal .report-reason-btn").forEach(b => b.classList.remove("selected"));
+    $("#reportDetailWrap").classList.add("hidden");
+    $("#reportDetail").value = "";
+    $("#submitReportBtn").disabled = true;
+    if (targetName) {
+        $("#reportUserInfo").innerHTML = `Warum möchtest du <strong>${escapeHtml(targetName)}</strong> melden?`;
+    }
+    $("#reportUserModal").classList.remove("hidden");
+}
+
+function submitReport() {
+    if (!_reportReason) return;
+    const detail = ($("#reportDetail")?.value || "").trim();
+    flashToast("⚠ Meldung gesendet. Wir prüfen den Fall.");
+    $("#reportUserModal").classList.add("hidden");
+    _reportTargetId = null;
+    _reportReason = null;
+}
+
+function showSafetyTipsIfNeeded() {
+    if (state._safetyTipsSeen) return;
+    state._safetyTipsSeen = true;
+    saveState();
+    $("#safetyTipsModal").classList.remove("hidden");
 }
 
 // Toggle send button / voice button abhängig vom Input
@@ -4663,6 +4698,11 @@ function bindEvents() {
         clearChatHistory();
         $("#chatMenuModal").classList.add("hidden");
     });
+    $("#chatReportBtn")?.addEventListener("click", () => {
+        const match = state.matches.find(m => m.profile.id === state.activeChatId);
+        $("#chatMenuModal").classList.add("hidden");
+        if (match) openReportUser(match.profile.id, match.profile.name);
+    });
     $("#chatBlockBtn").addEventListener("click", blockCurrentChat);
     // Kontextmenü
     $$("#msgContextMenu button").forEach(btn => {
@@ -4699,6 +4739,23 @@ function bindEvents() {
     $("#reportDangerBtn")?.addEventListener("click", openDangerReport);
     $("#cancelDangerBtn")?.addEventListener("click", () => $("#dangerModal").classList.add("hidden"));
     $("#saveDangerBtn")?.addEventListener("click", saveDangerReport);
+    // --- Report & Safety ---
+    $$("#reportUserModal .report-reason-btn").forEach(b => {
+        b.addEventListener("click", () => {
+            $$("#reportUserModal .report-reason-btn").forEach(x => x.classList.remove("selected"));
+            b.classList.add("selected");
+            _reportReason = b.dataset.reason;
+            $("#reportDetailWrap").classList.remove("hidden");
+            $("#submitReportBtn").disabled = false;
+        });
+    });
+    $("#cancelReportBtn")?.addEventListener("click", () => $("#reportUserModal").classList.add("hidden"));
+    $("#submitReportBtn")?.addEventListener("click", submitReport);
+    $("#closeSafetyTipsBtn")?.addEventListener("click", () => $("#safetyTipsModal").classList.add("hidden"));
+    $("#opReportBtn")?.addEventListener("click", () => {
+        const name = $("#opName")?.textContent;
+        openReportUser(null, name);
+    });
     // --- Profile page ---
     $("#profileAvatarBtn").addEventListener("click", () => {
         if (hasActiveStory("me")) {

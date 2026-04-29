@@ -336,6 +336,11 @@
                     <button id="btnSuper" class="action-btn super" title="Super-Like (Premium)">★</button>
                     <button id="btnLike" class="action-btn like" title="Woof!">♥</button>
                 </div>
+                <div class="trust-strip">
+                    <span>🛡️ Verifizierte Profile</span>
+                    <span>📍 Standort nur ungefähr</span>
+                    <span>⚠ Melde- & Blockfunktion</span>
+                </div>
             </section>
 
             <!-- ============ MATCHES / CHAT VIEW ============ -->
@@ -1021,6 +1026,7 @@
             <button class="btn-ghost full" id="chatSearchBtn">🔍 In Chat suchen</button>
             <button class="btn-ghost full" id="chatMuteBtn">🔕 Stummschalten</button>
             <button class="btn-ghost full" id="chatClearBtn">🧹 Verlauf löschen</button>
+            <button class="btn-danger-outline full" id="chatReportBtn">⚠ Melden</button>
             <button class="btn-danger-outline full" id="chatBlockBtn">🚫 Blockieren</button>
             <div class="modal-actions">
                 <button class="btn-ghost" id="closeChatMenuBtn">Schließen</button>
@@ -1502,6 +1508,10 @@
         <div class="modal-content">
             <h2>Treffen vorschlagen</h2>
             <p id="meetWith"></p>
+            <div class="safety-hint-bar">
+                <span>🛡️</span>
+                <span>Treffe dich beim ersten Mal an einem <strong>öffentlichen Ort</strong> mit anderen Menschen in der Nähe.</span>
+            </div>
             <label>Ort
                 <select id="meetSpot"></select>
             </label>
@@ -1546,6 +1556,7 @@
                     <button class="btn-primary full" id="opMessageBtn">💬 Nachricht</button>
                     <button class="btn-ghost full" id="opMeetBtn">📍 Treffen planen</button>
                 </div>
+                <button class="btn-report-link" id="opReportBtn">⚠ Profil melden</button>
                 <div class="profile-tabs" role="tablist">
                     <button class="profile-tab active" data-optab="photos">🏞️ Fotos</button>
                     <button class="profile-tab" data-optab="info">ℹ Info</button>
@@ -1577,6 +1588,77 @@
                 <input type="text" id="photoCommentInput" placeholder="Kommentar schreiben…" />
                 <button id="photoCommentSend" class="photo-send-btn">➤</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Report user modal -->
+    <div id="reportUserModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>⚠ Profil melden</h2>
+            <p class="muted" id="reportUserInfo">Warum möchtest du dieses Profil melden?</p>
+            <div class="report-reasons">
+                <button class="report-reason-btn" data-reason="fake">🎭 Gefälschtes Profil</button>
+                <button class="report-reason-btn" data-reason="harassment">😤 Belästigung / unangemessenes Verhalten</button>
+                <button class="report-reason-btn" data-reason="danger">⚠ Gefahr für Hunde</button>
+                <button class="report-reason-btn" data-reason="spam">📨 Spam oder Werbung</button>
+                <button class="report-reason-btn" data-reason="photo">📸 Unangemessene Fotos</button>
+                <button class="report-reason-btn" data-reason="other">💬 Sonstiges</button>
+            </div>
+            <label class="report-detail-label hidden" id="reportDetailWrap">
+                Details (optional)
+                <textarea id="reportDetail" rows="3" maxlength="300" placeholder="Beschreibe das Problem…"></textarea>
+            </label>
+            <div class="modal-actions">
+                <button class="btn-ghost" id="cancelReportBtn">Abbrechen</button>
+                <button class="btn-primary" id="submitReportBtn" disabled>Meldung senden</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Safety tips modal (shown before first meeting) -->
+    <div id="safetyTipsModal" class="modal hidden">
+        <div class="modal-content safety-tips-modal">
+            <div class="safety-hero-icon">🛡️</div>
+            <h2>Sicherheitshinweise</h2>
+            <p class="lead">Für ein sicheres erstes Treffen mit einem neuen Hund</p>
+            <div class="safety-tips-list">
+                <div class="safety-tip">
+                    <span>📍</span>
+                    <div>
+                        <strong>Öffentlicher Ort</strong>
+                        <small>Trefft euch an einem belebten Park oder einer Hundewiese — nie allein an abgelegenen Orten.</small>
+                    </div>
+                </div>
+                <div class="safety-tip">
+                    <span>👫</span>
+                    <div>
+                        <strong>Begleitung mitnehmen</strong>
+                        <small>Nimm beim ersten Treffen eine Vertrauensperson mit.</small>
+                    </div>
+                </div>
+                <div class="safety-tip">
+                    <span>🐕</span>
+                    <div>
+                        <strong>Hunde angeleint lassen</strong>
+                        <small>Beide Hunde zu Beginn an der Leine, bis sie sich beschnuppern konnten.</small>
+                    </div>
+                </div>
+                <div class="safety-tip">
+                    <span>📱</span>
+                    <div>
+                        <strong>Standort teilen</strong>
+                        <small>Teile deinen Standort mit Freunden oder Familie.</small>
+                    </div>
+                </div>
+                <div class="safety-tip">
+                    <span>⚠</span>
+                    <div>
+                        <strong>Vertraue deinem Bauchgefühl</strong>
+                        <small>Wenn sich etwas falsch anfühlt, brich das Treffen ab. Du kannst den Nutzer jederzeit melden oder blockieren.</small>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-primary full" id="closeSafetyTipsBtn">Verstanden</button>
         </div>
     </div>
 
