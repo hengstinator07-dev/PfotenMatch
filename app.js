@@ -4916,7 +4916,7 @@ function bindEvents() {
 // ============================================================
 const onb = {
     step: 0,
-    total: 7,
+    total: 6,
     authMethod: null,
     draft: {
         name: "",
@@ -4989,9 +4989,6 @@ function onbValidateStep(step) {
     if (step === 3) {
         onb.draft.breed = $("#onbBreed").value.trim() || "Mischling";
         onb.draft.age = parseInt($("#onbAge").value) || 0;
-    }
-    if (step === 5) {
-        onb.draft.bio = $("#onbBio").value.trim();
     }
     return true;
 }
@@ -5255,7 +5252,6 @@ function renderDoneSummary() {
         ["🎂", "Alter", d.age + " Jahre"],
         ["📏", "Größe", d.size],
         ["⚡", "Energie", d.energy],
-        ["🎾", "Spielstil", d.playStyle],
         ["📍", "Standort", d.city]
     ];
     const box = $("#doneSummary");
@@ -5388,17 +5384,6 @@ function bindOnboarding() {
     bindPicker("#sizePicker",   "size",   "size");
     bindPicker("#energyPicker", "energy", "energy");
     bindPicker("#playPicker",   "play",   "playStyle");
-    bindPicker("#neutPicker",   "neut",   "neutered");
-    // Bio
-    $("#onbBio").addEventListener("input", (e) => {
-        $("#bioCount").textContent = e.target.value.length;
-    });
-    $$("#bioSuggestions button").forEach(b => {
-        b.addEventListener("click", () => {
-            $("#onbBio").value = b.dataset.sugg;
-            $("#bioCount").textContent = b.dataset.sugg.length;
-        });
-    });
     // Location
     $("#useGpsBtn").addEventListener("click", onbUseGps);
     $$(".city-chips button").forEach(b => {
