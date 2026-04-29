@@ -646,11 +646,17 @@
 
                         <div id="sitterPremiumGate" class="sitter-premium-gate hidden">
                             <div class="premium-gate-card">
-                                <h4>⭐ Sitter Premium erforderlich</h4>
-                                <p>Um dein Profil zu veröffentlichen und Anfragen zu erhalten, benötigst du ein aktives Sitter-Abo.</p>
+                                <h4>🏡 Sitter Premium</h4>
+                                <p>Werde sichtbar und erhalte Buchungsanfragen von Hundebesitzern in deiner Nähe.</p>
+                                <ul class="sitter-premium-perks">
+                                    <li><span>📣</span> Dein Profil wird in der Sitter-Suche angezeigt</li>
+                                    <li><span>🛡️</span> Verifizierungs-Badge für mehr Vertrauen</li>
+                                    <li><span>📩</span> Buchungsanfragen direkt erhalten</li>
+                                    <li><span>⭐</span> Bewertungen sammeln und anzeigen</li>
+                                </ul>
                                 <div class="premium-gate-price">CHF 9.90 <small>/ Monat</small></div>
-                                <button type="button" class="btn-primary full" id="sitterUpgradeBtn">⭐ Jetzt Sitter Premium aktivieren</button>
-                                <small class="muted">Jederzeit kündbar. Du kannst dein Profil erstellen und erst später upgraden.</small>
+                                <button type="button" class="btn-primary full" id="sitterUpgradeBtn">Sitter Premium starten</button>
+                                <small class="muted">Jederzeit kündbar · Profil erst erstellen, später aktivieren</small>
                             </div>
                         </div>
 
@@ -1389,20 +1395,52 @@
     <!-- Premium modal -->
     <div id="premiumModal" class="modal hidden">
         <div class="modal-content premium-modal">
-            <h2>★ PfotenMatch Premium</h2>
-            <p class="lead">Mehr Pfoten, mehr Spielspaß.</p>
+            <div class="pm-hero-icon">🐾</div>
+            <h2>PfotenMatch Premium</h2>
+            <p class="lead">Sicherere Matches. Bessere Spielkameraden.</p>
             <ul class="premium-features">
-                <li>👀 Sieh, wer dein Profil gelikt hat</li>
-                <li>🎯 Erweiterte Filter (Rasse, Alter, Tags)</li>
-                <li>🥷 Unsichtbares Swipen</li>
-                <li>⭐ 5 Super-Likes pro Tag</li>
-                <li>🚫 Keine Werbung</li>
+                <li>
+                    <span class="pf-icon">🎯</span>
+                    <div>
+                        <strong>Kompatibilitäts-Einblicke</strong>
+                        <small>Sieh, welche Hunde am besten zu deinem Hund passen</small>
+                    </div>
+                </li>
+                <li>
+                    <span class="pf-icon">🛡️</span>
+                    <div>
+                        <strong>Sicherheits- & Verhaltensfilter</strong>
+                        <small>Filtere nach Kastriert, Verträglichkeit und Warn-Tags</small>
+                    </div>
+                </li>
+                <li>
+                    <span class="pf-icon">📍</span>
+                    <div>
+                        <strong>Erweiterte Reichweite</strong>
+                        <small>Finde Hunde bis 50 km in deiner Umgebung</small>
+                    </div>
+                </li>
+                <li>
+                    <span class="pf-icon">⭐</span>
+                    <div>
+                        <strong>Premium-Badge</strong>
+                        <small>Mehr Vertrauen bei anderen Hundebesitzern</small>
+                    </div>
+                </li>
+                <li>
+                    <span class="pf-icon">🎉</span>
+                    <div>
+                        <strong>Exklusive Gassi-Events</strong>
+                        <small>Zugang zu organisierten Hundetreffen in deiner Stadt</small>
+                    </div>
+                </li>
             </ul>
             <div class="price-box">
-                <div class="price">4,99 € <small>/ Monat</small></div>
-                <button class="btn-primary" id="buyPremiumBtn">Premium aktivieren</button>
+                <div class="price">CHF 4.90 <small>/ Monat</small></div>
+                <small class="price-hint">Jederzeit kündbar · Keine versteckten Kosten</small>
+                <button class="btn-primary" id="buyPremiumBtn">Jetzt Premium starten</button>
             </div>
-            <button class="btn-ghost" id="closePremiumBtn">Später</button>
+            <button class="btn-ghost" id="closePremiumBtn">Vielleicht später</button>
         </div>
     </div>
 

@@ -3120,23 +3120,40 @@ button { font-family: inherit; }
 
 /* Premium modal */
 .premium-modal { text-align: center; background: linear-gradient(180deg, #fffdf5, white); }
-.premium-modal .lead { color: var(--muted); margin: 0; }
+.pm-hero-icon { font-size: 48px; margin-bottom: 4px; }
+.premium-modal h2 { margin-bottom: 2px; }
+.premium-modal .lead { color: var(--muted); margin: 0 0 12px; font-size: 14px; }
 .premium-features {
     list-style: none;
     padding: 0;
-    margin: 10px 0;
+    margin: 4px 0 14px;
     text-align: left;
 }
 .premium-features li {
-    padding: 10px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
     background: var(--bg);
-    border-radius: 10px;
+    border-radius: 12px;
     margin-bottom: 6px;
-    font-weight: 600;
+}
+.pf-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.premium-features li strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1px;
+}
+.premium-features li small {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.4;
 }
 .price-box {
     background: linear-gradient(135deg, var(--super), #ffb84d);
-    padding: 18px;
+    padding: 20px 18px;
     border-radius: var(--radius);
     color: #333;
     margin: 10px 0;
@@ -3144,9 +3161,15 @@ button { font-family: inherit; }
 .price-box .price {
     font-size: 28px;
     font-weight: 800;
-    margin-bottom: 10px;
+    margin-bottom: 4px;
 }
 .price-box .price small { font-size: 14px; font-weight: 500; }
+.price-hint {
+    display: block;
+    font-size: 12px;
+    color: #7a5a00;
+    margin-bottom: 12px;
+}
 .premium-tag {
     display: inline-block;
     background: var(--super);
@@ -5575,7 +5598,25 @@ button { font-family: inherit; }
     text-align: center;
 }
 .premium-gate-card h4 { margin: 0 0 8px; font-size: 16px; }
-.premium-gate-card p { font-size: 13px; color: #666; margin: 0 0 12px; }
+.premium-gate-card p { font-size: 13px; color: #666; margin: 0 0 12px; line-height: 1.5; }
+.sitter-premium-perks {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px;
+    text-align: left;
+}
+.sitter-premium-perks li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+    border-bottom: 1px solid rgba(255,215,0,0.25);
+}
+.sitter-premium-perks li:last-child { border-bottom: none; }
+.sitter-premium-perks li span { font-size: 16px; flex-shrink: 0; }
 .premium-gate-price {
     font-size: 24px;
     font-weight: 700;
