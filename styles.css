@@ -1855,6 +1855,44 @@ button { font-family: inherit; }
     margin-bottom: 0;
 }
 
+/* Sitter module card in profile */
+.profile-module-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0 16px 14px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #fff5f2, #ffe8e0);
+    border: 1.5px solid rgba(255,107,107,0.15);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+    text-align: left;
+    width: calc(100% - 32px);
+}
+.profile-module-card:active { transform: scale(0.98); }
+.profile-module-card:hover { box-shadow: 0 4px 14px rgba(255,107,107,0.12); }
+.pmc-icon { font-size: 28px; flex-shrink: 0; }
+.pmc-text { flex: 1; min-width: 0; }
+.pmc-text strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text, #2d2d2d);
+    margin-bottom: 1px;
+}
+.pmc-text span {
+    font-size: 12px;
+    color: #888;
+}
+.pmc-arrow {
+    font-size: 22px;
+    color: #ccc;
+    font-weight: 300;
+    flex-shrink: 0;
+}
+
 .profile-tabs {
     display: flex;
     border-top: 1px solid var(--border);
@@ -4261,6 +4299,31 @@ button { font-family: inherit; }
 /* ============================================================
    Sitter view — Rover-inspired professional redesign
    ============================================================ */
+
+/* --- Sitter back bar --- */
+.sitter-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+}
+.sitter-back-btn {
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--brand, #ff6b6b);
+    cursor: pointer;
+    padding: 4px 0;
+}
+.sitter-topbar-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text, #2d2d2d);
+}
 
 /* --- Top tabs --- */
 .rv-tabs {

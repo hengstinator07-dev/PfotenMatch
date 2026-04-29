@@ -131,7 +131,8 @@ function loadState() {
 function switchView(name) {
     $$(".view").forEach(v => v.classList.remove("active"));
     $("#view-" + name)?.classList.add("active");
-    $$(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === name));
+    const navName = name === "sitter" ? null : name;
+    $$(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === navName));
     if (name === "matches") renderMatches();
     if (name === "map") renderMap();
     if (name === "profile") renderProfile();
@@ -4742,6 +4743,7 @@ function bindEvents() {
         });
     });
     $("#editProfileBtn").addEventListener("click", openEditProfile);
+    $("#openSitterModuleBtn")?.addEventListener("click", () => switchView("sitter"));
     $("#shareProfileBtn").addEventListener("click", openShareProfileModal);
     $("#closeShareProfileBtn").addEventListener("click", () => $("#shareProfileModal").classList.add("hidden"));
     $("#copyCodeBtn").addEventListener("click", () => {
@@ -4849,7 +4851,8 @@ function bindEvents() {
     });
     // Ad close
     $("#adClose").addEventListener("click", () => $("#adBanner").classList.add("hidden"));
-    // --- Sitter tab ---
+    // --- Sitter module ---
+    $("#sitterBackBtn")?.addEventListener("click", () => switchView("profile"));
     $$(".rv-tab").forEach(t => {
         t.addEventListener("click", () => switchSitterTab(t.dataset.stab));
     });

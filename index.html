@@ -480,6 +480,16 @@
                         <button class="btn-ghost full" id="shareProfileBtn">🔗 Profil teilen</button>
                     </div>
 
+                    <!-- Sitter Module Card -->
+                    <button class="profile-module-card" id="openSitterModuleBtn">
+                        <div class="pmc-icon">🏡</div>
+                        <div class="pmc-text">
+                            <strong>Hundebetreuung</strong>
+                            <span>Sitter finden oder selbst Sitter werden</span>
+                        </div>
+                        <span class="pmc-arrow">›</span>
+                    </button>
+
                     <!-- Tabs -->
                     <div class="profile-tabs" role="tablist">
                         <button class="profile-tab active" data-ptab="photos">🏞️ Fotos</button>
@@ -515,8 +525,13 @@
                 <input type="file" id="storyInput" accept="image/*" hidden />
             </section>
 
-            <!-- ============ SITTER VIEW ============ -->
+            <!-- ============ SITTER VIEW (Module, accessed from Profile) ============ -->
             <section id="view-sitter" class="view">
+                <div class="sitter-topbar">
+                    <button class="sitter-back-btn" id="sitterBackBtn">← Zurück</button>
+                    <span class="sitter-topbar-title">Hundebetreuung</span>
+                    <span></span>
+                </div>
                 <div class="rv-tabs">
                     <button class="rv-tab active" data-stab="discover">Entdecken</button>
                     <button class="rv-tab" data-stab="bookings">
@@ -889,13 +904,12 @@
 
         <!-- Bottom navigation -->
         <nav class="bottom-nav">
-            <button class="nav-btn active" data-view="swipe"><span>🐾</span>Swipe</button>
+            <button class="nav-btn active" data-view="swipe"><span>🐾</span>Entdecken</button>
+            <button class="nav-btn" data-view="map"><span>📍</span>Karte</button>
             <button class="nav-btn" data-view="matches">
-                <span>💬</span>Matches
+                <span>💬</span>Nachrichten
                 <span id="matchesNavBadge" class="nav-badge hidden">0</span>
             </button>
-            <button class="nav-btn" data-view="map"><span>📍</span>Karte</button>
-            <button class="nav-btn" data-view="sitter"><span>🏡</span>Sitter</button>
             <button class="nav-btn" data-view="profile"><span>🐶</span>Profil</button>
         </nav>
     </div>
