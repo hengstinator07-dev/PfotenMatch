@@ -1,4 +1,4 @@
-const CACHE_NAME = "pfotenmatch-v55";
+const CACHE_NAME = "pfotenmatch-v56";
 const ASSETS = [
     "/",
     "/index.html",
