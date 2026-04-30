@@ -2789,10 +2789,10 @@ function renderProfile() {
     // Info-Panel
     $("#infoBreed").textContent    = p.breed || "—";
     $("#infoAge").textContent      = (p.age || 0) + " Jahre";
-    $("#infoSize").textContent     = p.size || "—";
+    $("#infoSize").textContent     = stripEmoji(p.size || "—");
     $("#infoNeutered").textContent = p.neutered || "—";
-    $("#infoEnergy").textContent   = p.energy || "—";
-    $("#infoPlay").textContent     = p.playStyle || "—";
+    $("#infoEnergy").textContent   = stripEmoji(p.energy || "—");
+    $("#infoPlay").textContent     = stripEmoji(p.playStyle || "—");
     $("#infoWalkKm").textContent    = (state.walkTracker.totalKm || 0).toFixed(1) + " km";
     $("#infoWalkSteps").textContent = Math.round(state.walkTracker.totalKm * 1000 / 0.7).toLocaleString("de");
     // Photo grid
