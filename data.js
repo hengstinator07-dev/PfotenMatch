@@ -266,7 +266,7 @@ const ADS = [
 // Gefahren-Typen fürs Giftköder-/Gefahren-Radar
 const DANGER_TYPES = [
     { id: "poison",  label: "Giftköder",               icon: "☠️", lucide: "skull" },
-    { id: "glass",   label: "Scherben",                icon: "🔪", lucide: "shield-alert" },
+    { id: "glass",   label: "Scherben",                icon: "🔪", lucide: "alert-circle" },
     { id: "cattle",  label: "Freilaufende Weidetiere", icon: "🐄", lucide: "triangle-alert" },
     { id: "traffic", label: "Verkehrsgefahr",          icon: "🚗", lucide: "car" },
     { id: "other",   label: "Sonstige Gefahr",         icon: "⚠",  lucide: "alert-triangle" }
