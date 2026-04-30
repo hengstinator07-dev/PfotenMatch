@@ -137,6 +137,7 @@ function switchView(name) {
     if (name === "map") renderMap();
     if (name === "profile") renderProfile();
     if (name === "sitter") renderSitterView();
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 // ---------- Compatibility scoring ----------
@@ -2771,18 +2772,19 @@ function renderProfile() {
     const chipsEl = $("#profileChips");
     chipsEl.innerHTML = "";
     const chipList = [];
-    if (p.size)      chipList.push({ text: "📏 " + p.size });
-    if (p.energy)    chipList.push({ text: "⚡ " + p.energy });
-    if (p.playStyle) chipList.push({ text: "🎾 " + p.playStyle });
-    if (p.neutered === "Ja") chipList.push({ text: "✂ kastriert" });
+    if (p.size)      chipList.push({ icon: "ruler", text: p.size });
+    if (p.energy)    chipList.push({ icon: "zap", text: p.energy });
+    if (p.playStyle) chipList.push({ icon: "target", text: p.playStyle });
+    if (p.neutered === "Ja") chipList.push({ icon: "scissors", text: "kastriert" });
     (p.tags || "").split(",").map(t => t.trim()).filter(Boolean)
-        .forEach(t => chipList.push({ text: "⚠ " + t, warn: true }));
+        .forEach(t => chipList.push({ icon: "alert-triangle", text: t, warn: true }));
     chipList.forEach(c => {
         const s = document.createElement("span");
         s.className = "chip" + (c.warn ? " warn" : "");
-        s.textContent = c.text;
+        s.innerHTML = `<i data-lucide="${c.icon}" class="lc-icon lc-xs"></i> ${c.text}`;
         chipsEl.appendChild(s);
     });
+    if (typeof lucide !== "undefined") lucide.createIcons({ nameAttr: "data-lucide" });
     // Stats
     $("#statMatches").textContent = state.matches.length;
     $("#statPaws").textContent = Object.keys(state.paws).length;

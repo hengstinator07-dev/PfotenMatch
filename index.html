@@ -436,7 +436,7 @@
                                 <div id="profileAvatar" class="profile-avatar">🐕</div>
                                 <span class="avatar-ring"></span>
                             </button>
-                            <button id="profileMenuOpenBtn" class="avatar-edit-dot" title="Profilmenü">⚙</button>
+                            <button id="profileMenuOpenBtn" class="avatar-edit-dot" title="Profilmenü"><i data-lucide="settings" class="lc-icon lc-xs"></i></button>
                         </div>
                         <div class="profile-stats">
                             <div class="stat"><strong id="statMatches">0</strong><span>Matches</span></div>
@@ -455,45 +455,45 @@
 
                     <!-- Actions -->
                     <div class="profile-actions">
-                        <button class="btn-primary full" id="editProfileBtn">✏ Profil bearbeiten</button>
-                        <button class="btn-ghost full" id="shareProfileBtn">🔗 Profil teilen</button>
+                        <button class="btn-primary full" id="editProfileBtn"><i data-lucide="pencil" class="lc-icon lc-xs"></i> Profil bearbeiten</button>
+                        <button class="btn-ghost full" id="shareProfileBtn"><i data-lucide="share-2" class="lc-icon lc-xs"></i> Profil teilen</button>
                     </div>
 
                     <!-- Sitter Module Card -->
                     <button class="profile-module-card" id="openSitterModuleBtn">
-                        <div class="pmc-icon">🏡</div>
+                        <div class="pmc-icon"><i data-lucide="house" class="lc-icon lc-action"></i></div>
                         <div class="pmc-text">
                             <strong>Hundebetreuung</strong>
                             <span>Sitter finden oder selbst Sitter werden</span>
                         </div>
-                        <span class="pmc-arrow">›</span>
+                        <span class="pmc-arrow"><i data-lucide="chevron-right" class="lc-icon lc-xs"></i></span>
                     </button>
 
                     <!-- Tabs -->
                     <div class="profile-tabs" role="tablist">
-                        <button class="profile-tab active" data-ptab="photos">🏞️ Fotos</button>
-                        <button class="profile-tab" data-ptab="info">ℹ Info</button>
+                        <button class="profile-tab active" data-ptab="photos"><i data-lucide="image" class="lc-icon lc-xs"></i> Fotos</button>
+                        <button class="profile-tab" data-ptab="info"><i data-lucide="info" class="lc-icon lc-xs"></i> Info</button>
                     </div>
 
                     <!-- Photos grid -->
                     <div id="profilePhotos" class="profile-photos">
                         <button class="photo-cell add" id="addPhotoBtn" title="Foto hinzufügen">
-                            <span>➕</span>
+                            <span><i data-lucide="plus" class="lc-icon lc-sm"></i></span>
                             <small>Hinzufügen</small>
                         </button>
                     </div>
 
                     <!-- Info panel -->
                     <div id="profileInfo" class="profile-info hidden">
-                        <div class="info-row"><span>🐾 Rasse</span><strong id="infoBreed">—</strong></div>
-                        <div class="info-row"><span>🎂 Alter</span><strong id="infoAge">—</strong></div>
-                        <div class="info-row"><span>📏 Größe</span><strong id="infoSize">—</strong></div>
-                        <div class="info-row"><span>✂ Kastriert</span><strong id="infoNeutered">—</strong></div>
-                        <div class="info-row"><span>⚡ Energie</span><strong id="infoEnergy">—</strong></div>
-                        <div class="info-row"><span>🎾 Spielstil</span><strong id="infoPlay">—</strong></div>
-                        <div class="info-row"><span>📍 Standort</span><strong id="infoLocation">Basel</strong></div>
-                        <div class="info-row"><span>🚶 Gelaufen</span><strong id="infoWalkKm">0 km</strong></div>
-                        <div class="info-row"><span>👣 Schritte total</span><strong id="infoWalkSteps">0</strong></div>
+                        <div class="info-row"><span><i data-lucide="paw-print" class="lc-icon lc-xs"></i> Rasse</span><strong id="infoBreed">—</strong></div>
+                        <div class="info-row"><span><i data-lucide="cake" class="lc-icon lc-xs"></i> Alter</span><strong id="infoAge">—</strong></div>
+                        <div class="info-row"><span><i data-lucide="ruler" class="lc-icon lc-xs"></i> Größe</span><strong id="infoSize">—</strong></div>
+                        <div class="info-row"><span><i data-lucide="scissors" class="lc-icon lc-xs"></i> Kastriert</span><strong id="infoNeutered">—</strong></div>
+                        <div class="info-row"><span><i data-lucide="zap" class="lc-icon lc-xs"></i> Energie</span><strong id="infoEnergy">—</strong></div>
+                        <div class="info-row"><span><i data-lucide="target" class="lc-icon lc-xs"></i> Spielstil</span><strong id="infoPlay">—</strong></div>
+                        <div class="info-row"><span><i data-lucide="map-pin" class="lc-icon lc-xs"></i> Standort</span><strong id="infoLocation">Basel</strong></div>
+                        <div class="info-row"><span><i data-lucide="footprints" class="lc-icon lc-xs"></i> Gelaufen</span><strong id="infoWalkKm">0 km</strong></div>
+                        <div class="info-row"><span><i data-lucide="activity" class="lc-icon lc-xs"></i> Schritte total</span><strong id="infoWalkSteps">0</strong></div>
                     </div>
 
                 </div>
@@ -507,7 +507,7 @@
             <!-- ============ SITTER VIEW (Module, accessed from Profile) ============ -->
             <section id="view-sitter" class="view">
                 <div class="sitter-topbar">
-                    <button class="sitter-back-btn" id="sitterBackBtn">← Zurück</button>
+                    <button class="sitter-back-btn" id="sitterBackBtn"><i data-lucide="arrow-left" class="lc-icon lc-xs"></i> Zurück</button>
                     <span class="sitter-topbar-title">Hundebetreuung</span>
                     <span></span>
                 </div>
@@ -889,13 +889,13 @@
 
         <!-- Bottom navigation -->
         <nav class="bottom-nav">
-            <button class="nav-btn active" data-view="swipe"><span>🐾</span>Entdecken</button>
-            <button class="nav-btn" data-view="map"><span>📍</span>Karte</button>
+            <button class="nav-btn active" data-view="swipe"><span><i data-lucide="paw-print" class="lc-icon lc-sm"></i></span>Entdecken</button>
+            <button class="nav-btn" data-view="map"><span><i data-lucide="map-pin" class="lc-icon lc-sm"></i></span>Karte</button>
             <button class="nav-btn" data-view="matches">
-                <span>💬</span>Nachrichten
+                <span><i data-lucide="message-circle" class="lc-icon lc-sm"></i></span>Nachrichten
                 <span id="matchesNavBadge" class="nav-badge hidden">0</span>
             </button>
-            <button class="nav-btn" data-view="profile"><span>🐶</span>Profil</button>
+            <button class="nav-btn" data-view="profile"><span><i data-lucide="dog" class="lc-icon lc-sm"></i></span>Profil</button>
         </nav>
     </div>
 
@@ -1053,15 +1053,15 @@
         <div class="bottom-sheet">
             <div class="sheet-handle"></div>
             <h3 class="sheet-title">Mein Profil</h3>
-            <button class="sheet-item" data-menu="edit"><span>✏</span>Profil bearbeiten</button>
-            <button class="sheet-item" data-menu="avatar"><span>📷</span>Profilbild ändern</button>
-            <button class="sheet-item" data-menu="viewStory" id="viewMyStoryBtn" hidden><span>📺</span>Meine Story ansehen</button>
-            <button class="sheet-item" data-menu="story"><span>📸</span>Story hochladen</button>
-            <button class="sheet-item" data-menu="addPhoto"><span>🏞️</span>Foto zur Galerie</button>
-            <button class="sheet-item" data-menu="settings"><span>⚙</span>Einstellungen</button>
-            <button class="sheet-item" data-menu="premium"><span>★</span>Premium</button>
-            <button class="sheet-item" data-menu="help"><span>❓</span>Hilfe &amp; Feedback</button>
-            <button class="sheet-item danger" data-menu="logout"><span>🚪</span>Abmelden</button>
+            <button class="sheet-item" data-menu="edit"><span><i data-lucide="pencil" class="lc-icon lc-sm"></i></span>Profil bearbeiten</button>
+            <button class="sheet-item" data-menu="avatar"><span><i data-lucide="camera" class="lc-icon lc-sm"></i></span>Profilbild ändern</button>
+            <button class="sheet-item" data-menu="viewStory" id="viewMyStoryBtn" hidden><span><i data-lucide="play-circle" class="lc-icon lc-sm"></i></span>Meine Story ansehen</button>
+            <button class="sheet-item" data-menu="story"><span><i data-lucide="image-plus" class="lc-icon lc-sm"></i></span>Story hochladen</button>
+            <button class="sheet-item" data-menu="addPhoto"><span><i data-lucide="images" class="lc-icon lc-sm"></i></span>Foto zur Galerie</button>
+            <button class="sheet-item" data-menu="settings"><span><i data-lucide="settings" class="lc-icon lc-sm"></i></span>Einstellungen</button>
+            <button class="sheet-item" data-menu="premium"><span><i data-lucide="crown" class="lc-icon lc-sm"></i></span>Premium</button>
+            <button class="sheet-item" data-menu="help"><span><i data-lucide="help-circle" class="lc-icon lc-sm"></i></span>Hilfe &amp; Feedback</button>
+            <button class="sheet-item danger" data-menu="logout"><span><i data-lucide="log-out" class="lc-icon lc-sm"></i></span>Abmelden</button>
             <button class="sheet-cancel" id="closeProfileMenuBtn">Abbrechen</button>
         </div>
     </div>
