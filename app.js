@@ -985,8 +985,6 @@ function resetChatUi() {
     $("#attachMenu").classList.add("hidden");
     $("#typingIndicator").classList.add("hidden");
     $("#voiceRecording").classList.add("hidden");
-    $("#sendBtn").classList.add("hidden");
-    $("#voiceBtn").classList.remove("hidden");
     if (chatUi.typingTimer) { clearTimeout(chatUi.typingTimer); chatUi.typingTimer = null; }
     if (chatUi.voiceTimer)  { clearInterval(chatUi.voiceTimer); chatUi.voiceTimer = null; }
 }
@@ -1465,17 +1463,7 @@ function showSafetyTipsIfNeeded() {
     $("#safetyTipsModal").classList.remove("hidden");
 }
 
-// Toggle send button / voice button abhängig vom Input
-function toggleSendButton() {
-    const val = $("#chatInput").value.trim();
-    if (val) {
-        $("#sendBtn").classList.remove("hidden");
-        $("#voiceBtn").classList.add("hidden");
-    } else {
-        $("#sendBtn").classList.add("hidden");
-        $("#voiceBtn").classList.remove("hidden");
-    }
-}
+function toggleSendButton() {}
 
 // ---------- Check-Ins ----------
 function pruneCheckIns() {

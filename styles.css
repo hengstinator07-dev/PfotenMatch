@@ -2981,21 +2981,6 @@ button { font-family: inherit; }
     transition: border-color 0.2s;
 }
 .chat-input input:focus { border-color: var(--brand); }
-.chat-emoji-btn {
-    background: transparent;
-    border: none;
-    color: var(--muted);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: color 0.15s;
-}
-.chat-emoji-btn:hover { color: var(--text); }
 .chat-send {
     width: 38px;
     height: 38px;
@@ -3013,7 +2998,6 @@ button { font-family: inherit; }
     transition: transform 0.15s;
 }
 .chat-send:active { transform: scale(0.92); }
-.chat-send.hidden { display: none; }
 .chat-voice-btn {
     width: 38px;
     height: 38px;
