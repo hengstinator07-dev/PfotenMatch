@@ -798,7 +798,7 @@ function renderMatches(searchQuery) {
     updateMatchesNavBadge();
     const list = $("#matchesList");
     if (state.matches.length === 0) {
-        list.innerHTML = `<p class="empty-state">Noch keine Matches – swipe los! 🐾</p>`;
+        list.innerHTML = `<p class="empty-state">Noch keine Matches – swipe los! <i data-lucide="paw-print" class="lc-icon lc-xs"></i></p>`;
         return;
     }
     const q = (searchQuery || "").toLowerCase();
@@ -819,10 +819,10 @@ function renderMatches(searchQuery) {
         const item = document.createElement("div");
         item.className = "match-item" + (unread > 0 ? " has-unread" : "");
         const preview = lastMsg
-            ? (lastMsg.type === "voice" ? "🎤 Sprachnachricht"
-              : lastMsg.type === "image" ? "🖼️ Foto"
-              : lastMsg.type === "location" ? "📍 Standort"
-              : lastMsg.deleted ? "🚫 Nachricht gelöscht"
+            ? (lastMsg.type === "voice" ? "Sprachnachricht"
+              : lastMsg.type === "image" ? "Foto"
+              : lastMsg.type === "location" ? "Standort"
+              : lastMsg.deleted ? "Nachricht gelöscht"
               : lastMsg.text)
             : "Noch keine Nachricht";
         const prefix = lastMsg && lastMsg.from === "me" ? "Du: " : "";
@@ -837,7 +837,7 @@ function renderMatches(searchQuery) {
                 <p>${escapeHtml(prefix + preview)}</p>
             </div>
             ${unread > 0 ? `<span class="unread">${unread}</span>` : ""}
-            <button class="meet-btn" data-meet="${m.profile.id}">📍 Treffen</button>
+            <button class="meet-btn" data-meet="${m.profile.id}"><i data-lucide="map-pin" class="lc-icon lc-xs"></i> Treffen</button>
         `;
         item.addEventListener("click", (e) => {
             if (e.target.dataset.meet) {
@@ -854,6 +854,7 @@ function renderMatches(searchQuery) {
         });
         list.appendChild(item);
     });
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 // ---------- Chat (WhatsApp-Style) ----------
@@ -1019,15 +1020,15 @@ function renderQuotedReply(msg, match) {
     const orig = match.messages.find(m => m.id === msg.replyTo);
     if (!orig) return "";
     const whoName = orig.from === "me" ? (state.myProfile.name || "Ich") : match.profile.name;
-    const preview = orig.type === "voice"    ? "🎤 Sprachnachricht"
-                  : orig.type === "image"    ? "🖼️ Foto"
-                  : orig.type === "location" ? "📍 Standort"
+    const preview = orig.type === "voice"    ? "Sprachnachricht"
+                  : orig.type === "image"    ? "Foto"
+                  : orig.type === "location" ? "Standort"
                   : escapeHtml(orig.text || "");
     return `<div class="quoted-reply"><strong>${escapeHtml(whoName)}</strong><div class="q-text">${preview}</div></div>`;
 }
 
 function renderBubbleBody(msg) {
-    if (msg.deleted) return `<span class="deleted-text">🚫 Nachricht gelöscht</span>`;
+    if (msg.deleted) return `<span class="deleted-text"><i data-lucide="ban" class="lc-icon lc-xs"></i> Nachricht gelöscht</span>`;
     if (msg.type === "voice") {
         const bars = Array.from({ length: 24 }, (_, i) => {
             const h = 6 + ((i * 7 + (msg.id || "").length) % 18);
@@ -1043,11 +1044,11 @@ function renderBubbleBody(msg) {
         if (msg.image && msg.image.startsWith("data:")) {
             return `<div class="image-msg"><img src="${msg.image}" alt="Foto" /></div>${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}`;
         }
-        return `<div class="image-msg placeholder">${msg.image || "🖼️"}</div>${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}`;
+        return `<div class="image-msg placeholder">${msg.image || '<i data-lucide="image" class="lc-icon lc-sm"></i>'}</div>${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}`;
     }
     if (msg.type === "location") {
         return `<div class="location-msg">
-            <div class="icon">📍</div>
+            <div class="icon"><i data-lucide="map-pin" class="lc-icon lc-sm"></i></div>
             <div class="info">
                 <strong>${escapeHtml(msg.location?.name || "Standort")}</strong>
                 <small>${escapeHtml(msg.location?.desc || "")}</small>
@@ -1119,6 +1120,7 @@ function renderChatMessages() {
         lastFrom = msg.from;
     });
     box.scrollTop = box.scrollHeight;
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 function sendMessage(text) {
@@ -1412,12 +1414,12 @@ function clearChatHistory() {
     match.messages = [];
     saveState();
     renderChatMessages();
-    flashToast("🧹 Verlauf gelöscht");
+    flashToast("Verlauf gelöscht");
 }
 function toggleMuteChat() {
     const id = state.activeChatId;
     chatUi.muted[id] = !chatUi.muted[id];
-    flashToast(chatUi.muted[id] ? "🔕 Stummgeschaltet" : "🔔 Benachrichtigungen an");
+    flashToast(chatUi.muted[id] ? "Stummgeschaltet" : "Benachrichtigungen an");
 }
 function blockCurrentChat() {
     const match = state.matches.find(m => m.profile.id === state.activeChatId);
@@ -1428,7 +1430,7 @@ function blockCurrentChat() {
     $("#chatMenuModal").classList.add("hidden");
     $("#chatModal").classList.add("hidden");
     renderMatches();
-    flashToast("🚫 Blockiert");
+    flashToast("Blockiert");
 }
 
 let _reportTargetId = null;
@@ -2043,7 +2045,7 @@ function renderMap() {
                 <h4>${s.name}</h4>
                 <p>${s.desc}</p>
             </div>
-            ${count > 0 ? `<span class="checkin-badge">🐾 ${count}</span>` : ""}
+            ${count > 0 ? `<span class="checkin-badge"><i data-lucide="paw-print" class="lc-icon lc-xs"></i> ${count}</span>` : ""}
             <button class="checkin-btn${checkedIn ? " leave" : ""}" data-spot="${s.id}">
                 ${checkedIn ? "Check-out" : "Einchecken"}
             </button>
@@ -2085,7 +2087,7 @@ function renderMap() {
                     ${d.desc ? `<div>${d.desc}</div>` : ""}
                     <small>${formatAgo(d.ts)} · von ${d.reporter} · läuft ab in ${formatTimeLeft(d.ts, 48)}</small>
                 </div>
-                <button title="Als erledigt markieren" data-remove="${d.id}">✓</button>
+                <button title="Als erledigt markieren" data-remove="${d.id}"><i data-lucide="check" class="lc-icon lc-xs"></i></button>
             `;
             el.addEventListener("click", (e) => {
                 if (e.target.dataset.remove) {
@@ -2311,7 +2313,7 @@ function renderMapCategoryChips() {
     wrap.innerHTML = "";
     const allBtn = document.createElement("button");
     allBtn.className = "map-chip" + (state.mapFilter.cats.length === 0 ? " active" : "");
-    allBtn.textContent = "⭐ Alle";
+    allBtn.innerHTML = '<i data-lucide="star" class="lc-icon lc-xs"></i> Alle';
     allBtn.dataset.cat = "all";
     allBtn.addEventListener("click", () => {
         state.mapFilter.cats = [];
@@ -2334,6 +2336,7 @@ function renderMapCategoryChips() {
         });
         wrap.appendChild(btn);
     });
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 function renderMapSearchResults() {
@@ -2534,7 +2537,7 @@ function startWalk() {
     if (!_gpsTracking) toggleGpsTracking();
     _walkTimerInterval = setInterval(renderWalkTracker, 1000);
     renderWalkTracker();
-    flashToast("🚶 Gassi gestartet! Viel Spass!");
+    flashToast("Gassi gestartet! Viel Spass!");
 }
 
 function stopWalk() {
@@ -2569,11 +2572,11 @@ function renderWalkTracker() {
 
     const timerText = _walkActive && _walkStartTs ? formatWalkTime(Date.now() - _walkStartTs) : "00:00";
     const btnClass = _walkActive ? "walk-btn active" : "walk-btn";
-    const btnText = _walkActive ? "⏹ Stopp" : "▶ Gassi starten";
+    const btnText = _walkActive ? '<i data-lucide="square" class="lc-icon lc-xs"></i> Stopp' : '<i data-lucide="play" class="lc-icon lc-xs"></i> Gassi starten';
 
     el.innerHTML =
         `<div class="walk-header">` +
-            `<span class="walk-title">🚶 Schrittzähler</span>` +
+            `<span class="walk-title"><i data-lucide="footprints" class="lc-icon lc-xs"></i> Schrittzähler</span>` +
             `<button class="${btnClass}" id="walkToggleBtn">${btnText}</button>` +
         `</div>` +
         `<div class="walk-stats">` +
@@ -2588,6 +2591,7 @@ function renderWalkTracker() {
 
     const btn = el.querySelector("#walkToggleBtn");
     if (btn) btn.addEventListener("click", () => _walkActive ? stopWalk() : startWalk());
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 function checkNearbyPois() {
@@ -2649,7 +2653,8 @@ function locateUser() {
         return;
     }
     const btn = $("#locateBtn");
-    if (btn) btn.textContent = "📡";
+    if (btn) btn.innerHTML = '<i data-lucide="radar" class="lc-icon lc-sm"></i>';
+    if (typeof lucide !== "undefined") lucide.createIcons();
     navigator.geolocation.getCurrentPosition(
         (pos) => {
             state.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -2660,12 +2665,14 @@ function locateUser() {
                 _osmLastBounds = null;
                 scheduleOsmLoad();
             }
-            if (btn) btn.textContent = "🎯";
+            if (btn) btn.innerHTML = '<i data-lucide="crosshair" class="lc-icon lc-sm"></i>';
+            if (typeof lucide !== "undefined") lucide.createIcons();
             if (!_gpsTracking) toggleGpsTracking();
         },
         () => {
             flashToast("Standort konnte nicht ermittelt werden");
-            if (btn) btn.textContent = "🎯";
+            if (btn) btn.innerHTML = '<i data-lucide="crosshair" class="lc-icon lc-sm"></i>';
+            if (typeof lucide !== "undefined") lucide.createIcons();
         },
         { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -2677,14 +2684,14 @@ function toggleGpsTracking() {
     if (_gpsTracking) {
         startGpsTracking();
         if (btn) {
-            btn.textContent = "📍";
+            btn.innerHTML = '<i data-lucide="map-pin" class="lc-icon lc-sm"></i>';
             btn.title = "Live-Standort aktiv – klicken zum Deaktivieren";
             btn.classList.add("active");
         }
     } else {
         stopGpsTracking();
         if (btn) {
-            btn.textContent = "📍";
+            btn.innerHTML = '<i data-lucide="map-pin" class="lc-icon lc-sm"></i>';
             btn.title = "Live-Standort deaktiviert – klicken zum Aktivieren";
             btn.classList.remove("active");
         }

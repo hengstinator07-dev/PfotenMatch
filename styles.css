@@ -90,6 +90,8 @@ button { font-family: inherit; }
 .lc-xs  { width: 14px; height: 14px; }
 .lc-action { width: 26px; height: 26px; }
 .lc-empty  { width: 64px; height: 64px; color: var(--muted); }
+.lc-spin   { animation: lc-rotate 1s linear infinite; }
+@keyframes lc-rotate { to { transform: rotate(360deg); } }
 
 /* ---------- Filter bar ---------- */
 .filter-bar {

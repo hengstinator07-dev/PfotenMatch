@@ -349,12 +349,12 @@
             <section id="view-matches" class="view">
                 <div class="matches-header">
                     <h2 class="view-title">Deine Matches</h2>
-                    <button id="connectFriendBtn" class="btn-connect-friend">🔗 Freund verbinden</button>
+                    <button id="connectFriendBtn" class="btn-connect-friend"><i data-lucide="link" class="lc-icon lc-xs"></i> Freund verbinden</button>
                 </div>
                 <div class="match-search-bar">
-                    <span class="match-search-icon">🔍</span>
+                    <span class="match-search-icon"><i data-lucide="search" class="lc-icon lc-xs"></i></span>
                     <input type="text" id="matchSearchInput" placeholder="Match suchen…" autocomplete="off" />
-                    <button id="matchSearchClear" class="match-search-clear hidden" title="Löschen">✕</button>
+                    <button id="matchSearchClear" class="match-search-clear hidden" title="Löschen"><i data-lucide="x" class="lc-icon lc-xs"></i></button>
                 </div>
                 <div id="matchesList" class="matches-list">
                     <p class="empty-state">Noch keine Matches – swipe los!</p>
@@ -367,37 +367,37 @@
 
                 <!-- Stadt-Suche -->
                 <div class="map-searchbar city-search">
-                    <span class="map-search-icon">📍</span>
+                    <span class="map-search-icon"><i data-lucide="map-pin" class="lc-icon lc-xs"></i></span>
                     <input type="text" id="citySearch" placeholder="Stadt suchen (z.B. Zürich, Berlin, Wien …)" autocomplete="off" />
-                    <button id="citySearchClear" class="map-search-clear hidden" title="Löschen">✕</button>
+                    <button id="citySearchClear" class="map-search-clear hidden" title="Löschen"><i data-lucide="x" class="lc-icon lc-xs"></i></button>
                 </div>
                 <div id="citySearchResults" class="map-search-results hidden"></div>
 
                 <!-- POI-Suchleiste -->
                 <div class="map-searchbar">
-                    <span class="map-search-icon">🔍</span>
+                    <span class="map-search-icon"><i data-lucide="search" class="lc-icon lc-xs"></i></span>
                     <input type="text" id="mapSearch" placeholder="Park, Tierarzt, Café, Hund …" autocomplete="off" />
-                    <button id="mapSearchClear" class="map-search-clear hidden" title="Löschen">✕</button>
+                    <button id="mapSearchClear" class="map-search-clear hidden" title="Löschen"><i data-lucide="x" class="lc-icon lc-xs"></i></button>
                 </div>
                 <div id="mapSearchResults" class="map-search-results hidden"></div>
 
                 <!-- Live-Daten Hinweis -->
-                <div id="osmStatus" class="osm-status hidden">🔄 Lade Orte aus OpenStreetMap…</div>
+                <div id="osmStatus" class="osm-status hidden"><i data-lucide="loader" class="lc-icon lc-xs lc-spin"></i> Lade Orte aus OpenStreetMap…</div>
 
                 <!-- Kategorie-Chips -->
                 <div id="mapCatChips" class="map-cat-chips">
-                    <button class="map-chip active" data-cat="all">⭐ Alle</button>
+                    <button class="map-chip active" data-cat="all"><i data-lucide="star" class="lc-icon lc-xs"></i> Alle</button>
                 </div>
 
                 <div id="mapWrap" class="map-wrap">
                     <div id="mapCanvas" class="map-canvas"></div>
-                    <button id="searchAreaBtn" class="search-area-btn hidden">🔍 In diesem Bereich suchen</button>
+                    <button id="searchAreaBtn" class="search-area-btn hidden"><i data-lucide="search" class="lc-icon lc-xs"></i> In diesem Bereich suchen</button>
                     <div id="mapLoadingOverlay" class="map-loading-overlay hidden">
                         <div class="map-loading-spinner"></div>
                         <span>Lade Orte…</span>
                     </div>
-                    <button id="gpsToggleBtn" class="gps-toggle-btn active" title="Live-Standort aktiv – klicken zum Deaktivieren">📍</button>
-                    <button id="locateBtn" class="locate-btn" title="Auf meinen Standort zentrieren">🎯</button>
+                    <button id="gpsToggleBtn" class="gps-toggle-btn active" title="Live-Standort aktiv – klicken zum Deaktivieren"><i data-lucide="map-pin" class="lc-icon lc-sm"></i></button>
+                    <button id="locateBtn" class="locate-btn" title="Auf meinen Standort zentrieren"><i data-lucide="crosshair" class="lc-icon lc-sm"></i></button>
                 </div>
 
                 <!-- Schrittzähler / Walk Tracker -->
@@ -407,7 +407,7 @@
                 <div id="pawCollector" class="paw-collector">
                     <div class="paw-info">
                         <div class="paw-row">
-                            <strong>🐾 Pfoten-Sammlung</strong>
+                            <strong><i data-lucide="paw-print" class="lc-icon lc-xs"></i> Pfoten-Sammlung</strong>
                             <span id="pawTotal">0 / 0</span>
                         </div>
                         <div class="paw-bar"><div id="pawBarFill" class="paw-bar-fill"></div></div>
@@ -416,13 +416,13 @@
                     <div class="paw-badges" id="pawBadges"></div>
                 </div>
 
-                <h3 class="sub-title">📍 Beliebte Treffpunkte</h3>
+                <h3 class="sub-title"><i data-lucide="map-pin" class="lc-icon lc-xs"></i> Beliebte Treffpunkte</h3>
                 <div id="spotList" class="spot-list"></div>
 
                 <div class="map-actions">
-                    <button id="reportDangerBtn" class="btn-danger">☠ Gefahr melden</button>
+                    <button id="reportDangerBtn" class="btn-danger"><i data-lucide="skull" class="lc-icon lc-xs"></i> Gefahr melden</button>
                 </div>
-                <h3 class="sub-title">⚠ Gefahren-Radar</h3>
+                <h3 class="sub-title"><i data-lucide="alert-triangle" class="lc-icon lc-xs"></i> Gefahren-Radar</h3>
                 <div id="dangerList" class="danger-list"></div>
             </section>
 
