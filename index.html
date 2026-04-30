@@ -207,10 +207,10 @@
                     <input type="range" id="onbAge" min="0" max="20" value="3" />
                 </label>
                 <div class="size-picker" id="sizePicker">
-                    <button type="button" data-size="Klein (&lt;10kg)"><span>🐾</span><small>Klein</small></button>
-                    <button type="button" data-size="Mittel (10–25kg)" class="selected"><span>🐕</span><small>Mittel</small></button>
-                    <button type="button" data-size="Groß (25–40kg)"><span>🐕‍🦺</span><small>Groß</small></button>
-                    <button type="button" data-size="Sehr groß (&gt;40kg)"><span>🦮</span><small>XL</small></button>
+                    <button type="button" data-size="Klein (&lt;10kg)"><span><i data-lucide="dog" class="lc-icon lc-sm"></i></span><small>Klein</small></button>
+                    <button type="button" data-size="Mittel (10–25kg)" class="selected"><span><i data-lucide="dog" class="lc-icon lc-sm"></i></span><small>Mittel</small></button>
+                    <button type="button" data-size="Groß (25–40kg)"><span><i data-lucide="dog" class="lc-icon lc-sm"></i></span><small>Groß</small></button>
+                    <button type="button" data-size="Sehr groß (&gt;40kg)"><span><i data-lucide="dog" class="lc-icon lc-sm"></i></span><small>XL</small></button>
                 </div>
                 <div class="onb-nav">
                     <button class="btn-ghost" data-prev>← Zurück</button>
@@ -224,17 +224,17 @@
                     <h2>Persönlichkeit 🎭</h2>
                     <p>Damit wir passende Spielkameraden finden.</p>
                 </div>
-                <h4 class="group-title">⚡ Energielevel</h4>
+                <h4 class="group-title"><i data-lucide="zap" class="lc-icon lc-xs"></i> Energielevel</h4>
                 <div class="choice-grid" id="energyPicker">
-                    <button type="button" data-energy="Couch-Potato 🛋️"><span>🛋️</span><small>Couch-Potato</small></button>
-                    <button type="button" data-energy="Ausgeglichen 🐾" class="selected"><span>🐾</span><small>Ausgeglichen</small></button>
-                    <button type="button" data-energy="Duracell-Häschen ⚡"><span>⚡</span><small>Duracell</small></button>
+                    <button type="button" data-energy="Couch-Potato"><span><i data-lucide="sofa" class="lc-icon lc-sm"></i></span><small>Couch-Potato</small></button>
+                    <button type="button" data-energy="Ausgeglichen" class="selected"><span><i data-lucide="paw-print" class="lc-icon lc-sm"></i></span><small>Ausgeglichen</small></button>
+                    <button type="button" data-energy="Duracell-Häschen"><span><i data-lucide="zap" class="lc-icon lc-sm"></i></span><small>Duracell</small></button>
                 </div>
-                <h4 class="group-title">🎾 Spielstil</h4>
+                <h4 class="group-title"><i data-lucide="target" class="lc-icon lc-xs"></i> Spielstil</h4>
                 <div class="choice-grid" id="playPicker">
-                    <button type="button" data-play="Zurückhaltend 🤗"><span>🤗</span><small>Zurückhaltend</small></button>
-                    <button type="button" data-play="Rennend 🏃" class="selected"><span>🏃</span><small>Rennend</small></button>
-                    <button type="button" data-play="Grob / Körperlich 🤼"><span>🤼</span><small>Grob</small></button>
+                    <button type="button" data-play="Zurückhaltend"><span><i data-lucide="hand" class="lc-icon lc-sm"></i></span><small>Zurückhaltend</small></button>
+                    <button type="button" data-play="Rennend" class="selected"><span><i data-lucide="rabbit" class="lc-icon lc-sm"></i></span><small>Rennend</small></button>
+                    <button type="button" data-play="Grob / Körperlich"><span><i data-lucide="swords" class="lc-icon lc-sm"></i></span><small>Grob</small></button>
                 </div>
                 <div class="onb-nav">
                     <button class="btn-ghost" data-prev>← Zurück</button>
@@ -1100,16 +1100,16 @@
                 </label>
                 <label>Energielevel
                     <select id="pfEnergy">
-                        <option>Couch-Potato 🛋️</option>
-                        <option selected>Ausgeglichen 🐾</option>
-                        <option>Duracell-Häschen ⚡</option>
+                        <option>Couch-Potato</option>
+                        <option selected>Ausgeglichen</option>
+                        <option>Duracell-Häschen</option>
                     </select>
                 </label>
                 <label>Spielstil
                     <select id="pfPlay">
-                        <option>Zurückhaltend 🤗</option>
-                        <option selected>Rennend 🏃</option>
-                        <option>Grob / Körperlich 🤼</option>
+                        <option>Zurückhaltend</option>
+                        <option selected>Rennend</option>
+                        <option>Grob / Körperlich</option>
                     </select>
                 </label>
                 <label>Warn-Tags (Kommas)
