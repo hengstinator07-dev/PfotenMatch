@@ -3345,7 +3345,7 @@ button { font-family: inherit; }
     gap: 10px;
     font-size: 13px;
 }
-.danger-item .icon { font-size: 24px; }
+.danger-item .icon { font-size: 24px; display: flex; align-items: center; justify-content: center; width: 32px; flex-shrink: 0; }
 .danger-item .info { flex: 1; min-width: 0; }
 .danger-item .info strong { display: block; font-size: 14px; }
 .danger-item .info small { color: var(--muted); font-size: 11px; }
