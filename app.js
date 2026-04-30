@@ -1530,7 +1530,7 @@ function openDangerReport() {
     DANGER_TYPES.forEach(t => {
         const opt = document.createElement("option");
         opt.value = t.id;
-        opt.textContent = `${t.icon} ${t.label}`;
+        opt.textContent = t.label;
         sel.appendChild(opt);
     });
     $("#dangerDesc").value = "";
@@ -2074,14 +2074,14 @@ function renderMap() {
     if (!dList) return;
     dList.innerHTML = "";
     if (state.dangers.length === 0) {
-        dList.innerHTML = `<p class="empty-mini">Keine aktuellen Gefahren gemeldet. 🙏</p>`;
+        dList.innerHTML = `<p class="empty-mini">Keine aktuellen Gefahren gemeldet.</p>`;
     } else {
         [...state.dangers].sort((a, b) => b.ts - a.ts).forEach(d => {
             const type = DANGER_TYPES.find(t => t.id === d.type) || DANGER_TYPES[DANGER_TYPES.length - 1];
             const el = document.createElement("div");
             el.className = "danger-item";
             el.innerHTML = `
-                <div class="icon">${type.icon}</div>
+                <div class="icon"><i data-lucide="${type.lucide}" class="lc-icon lc-action"></i></div>
                 <div class="info">
                     <strong>${type.label}</strong>
                     ${d.desc ? `<div>${d.desc}</div>` : ""}
@@ -2102,6 +2102,7 @@ function renderMap() {
             });
             dList.appendChild(el);
         });
+        if (typeof lucide !== "undefined") lucide.createIcons();
     }
 }
 
@@ -2168,7 +2169,7 @@ function renderMapMarkers() {
             title: type.label
         }).addTo(leafletMap);
         marker.bindPopup(
-            `<strong>⚠ ${type.label}</strong><br>` +
+            `<strong>${type.icon} ${type.label}</strong><br>` +
             (d.desc ? escapeHtml(d.desc) + "<br>" : "") +
             `<small>Gemeldet ${formatAgo(d.ts)} von ${escapeHtml(d.reporter)}</small>`
         );
