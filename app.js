@@ -2771,13 +2771,14 @@ function renderProfile() {
     // Chips
     const chipsEl = $("#profileChips");
     chipsEl.innerHTML = "";
+    const stripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, "").trim();
     const chipList = [];
-    if (p.size)      chipList.push({ icon: "ruler", text: p.size });
-    if (p.energy)    chipList.push({ icon: "zap", text: p.energy });
-    if (p.playStyle) chipList.push({ icon: "target", text: p.playStyle });
+    if (p.size)      chipList.push({ icon: "ruler", text: stripEmoji(p.size) });
+    if (p.energy)    chipList.push({ icon: "zap", text: stripEmoji(p.energy) });
+    if (p.playStyle) chipList.push({ icon: "target", text: stripEmoji(p.playStyle) });
     if (p.neutered === "Ja") chipList.push({ icon: "scissors", text: "kastriert" });
     (p.tags || "").split(",").map(t => t.trim()).filter(Boolean)
-        .forEach(t => chipList.push({ icon: "alert-triangle", text: t, warn: true }));
+        .forEach(t => chipList.push({ icon: "alert-triangle", text: stripEmoji(t), warn: true }));
     chipList.forEach(c => {
         const s = document.createElement("span");
         s.className = "chip" + (c.warn ? " warn" : "");
@@ -3154,17 +3155,19 @@ function openOtherProfile(dogId) {
 
     const chipsEl = $("#opChips");
     chipsEl.innerHTML = "";
+    const opStripEmoji = s => s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, "").trim();
     const chipList = [];
-    if (dog.size)      chipList.push({ text: "📏 " + dog.size });
-    if (dog.energy)    chipList.push({ text: "⚡ " + dog.energy });
-    if (dog.playStyle) chipList.push({ text: "🎾 " + dog.playStyle });
-    if (dog.neutered === "Ja" || dog.neutered === true) chipList.push({ text: "✂ kastriert" });
+    if (dog.size)      chipList.push({ icon: "ruler", text: opStripEmoji(dog.size) });
+    if (dog.energy)    chipList.push({ icon: "zap", text: opStripEmoji(dog.energy) });
+    if (dog.playStyle) chipList.push({ icon: "target", text: opStripEmoji(dog.playStyle) });
+    if (dog.neutered === "Ja" || dog.neutered === true) chipList.push({ icon: "scissors", text: "kastriert" });
     chipList.forEach(c => {
         const s = document.createElement("span");
         s.className = "chip";
-        s.textContent = c.text;
+        s.innerHTML = `<i data-lucide="${c.icon}" class="lc-icon lc-xs"></i> ${c.text}`;
         chipsEl.appendChild(s);
     });
+    if (typeof lucide !== "undefined") lucide.createIcons();
 
     $("#opMessageBtn").onclick = () => {
         $("#otherProfileModal").classList.add("hidden");
