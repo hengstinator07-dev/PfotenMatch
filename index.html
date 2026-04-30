@@ -943,13 +943,14 @@
     <div id="chatModal" class="modal hidden">
         <div class="modal-content chat-modal">
             <header class="chat-header">
-                <button id="chatBack" class="chat-icon-btn">←</button>
+                <button id="chatBack" class="chat-icon-btn"><i data-lucide="arrow-left" class="lc-icon lc-sm"></i></button>
                 <div id="chatAvatar" class="chat-avatar">🐶</div>
                 <div class="chat-title" id="chatTitleArea" style="cursor:pointer">
                     <span id="chatName">Rex</span>
                     <small id="chatStatus" class="chat-status">online</small>
                 </div>
-                <button id="chatMenuBtn" class="chat-icon-btn" title="Menü">⋮</button>
+                <button id="chatCallBtn" class="chat-icon-btn" title="Anrufen"><i data-lucide="phone" class="lc-icon lc-sm"></i></button>
+                <button id="chatMenuBtn" class="chat-icon-btn" title="Menü"><i data-lucide="ellipsis-vertical" class="lc-icon lc-sm"></i></button>
             </header>
 
             <div id="chatMessages" class="chat-messages"></div>
@@ -969,24 +970,25 @@
                     <strong id="replyName">Rex</strong>
                     <span id="replyText">Text</span>
                 </div>
-                <button id="cancelReplyBtn" class="chat-icon-btn">✕</button>
+                <button id="cancelReplyBtn" class="chat-icon-btn"><i data-lucide="x" class="lc-icon lc-xs"></i></button>
             </div>
 
             <!-- Attachment menu -->
             <div id="attachMenu" class="attach-menu hidden">
-                <button data-attach="photo"><span>🖼️</span>Foto</button>
-                <button data-attach="location"><span>📍</span>Standort</button>
-                <button data-attach="meet"><span>📅</span>Treffen</button>
+                <button data-attach="photo"><span><i data-lucide="image" class="lc-icon lc-sm"></i></span>Foto</button>
+                <button data-attach="location"><span><i data-lucide="map-pin" class="lc-icon lc-sm"></i></span>Standort</button>
+                <button data-attach="meet"><span><i data-lucide="calendar" class="lc-icon lc-sm"></i></span>Treffen</button>
             </div>
 
             <!-- Hidden file input für echten Foto-Upload -->
             <input type="file" id="photoInput" accept="image/*" hidden />
 
             <form id="chatForm" class="chat-input">
-                <button type="button" id="attachBtn" class="chat-icon-btn" title="Anhang">📎</button>
+                <button type="button" id="attachBtn" class="chat-attach-btn" title="Anhang"><i data-lucide="plus" class="lc-icon lc-sm"></i></button>
                 <input type="text" id="chatInput" placeholder="Nachricht schreiben…" autocomplete="off" />
-                <button type="submit" id="sendBtn" class="chat-send hidden">➤</button>
-                <button type="button" id="voiceBtn" class="chat-icon-btn voice" title="Sprachnachricht aufnehmen">🎤</button>
+                <button type="button" class="chat-emoji-btn" title="Emoji"><i data-lucide="smile" class="lc-icon lc-sm"></i></button>
+                <button type="submit" id="sendBtn" class="chat-send hidden"><i data-lucide="send" class="lc-icon lc-sm"></i></button>
+                <button type="button" id="voiceBtn" class="chat-voice-btn" title="Sprachnachricht aufnehmen"><i data-lucide="mic" class="lc-icon lc-sm"></i></button>
             </form>
 
             <!-- Voice recording overlay -->
@@ -1002,10 +1004,10 @@
     <!-- Message context menu -->
     <div id="msgContextMenu" class="modal hidden">
         <div class="context-menu">
-            <button data-action="react">😊 Reagieren</button>
-            <button data-action="reply">↩ Antworten</button>
-            <button data-action="copy">📋 Kopieren</button>
-            <button data-action="delete">🗑 Löschen</button>
+            <button data-action="react"><i data-lucide="smile-plus" class="lc-icon lc-sm"></i> Reagieren</button>
+            <button data-action="reply"><i data-lucide="reply" class="lc-icon lc-sm"></i> Antworten</button>
+            <button data-action="copy"><i data-lucide="copy" class="lc-icon lc-sm"></i> Kopieren</button>
+            <button data-action="delete"><i data-lucide="trash-2" class="lc-icon lc-sm"></i> Löschen</button>
         </div>
     </div>
 
@@ -1025,11 +1027,11 @@
     <div id="chatMenuModal" class="modal hidden">
         <div class="modal-content">
             <h2>Chat-Optionen</h2>
-            <button class="btn-ghost full" id="chatSearchBtn">🔍 In Chat suchen</button>
-            <button class="btn-ghost full" id="chatMuteBtn">🔕 Stummschalten</button>
-            <button class="btn-ghost full" id="chatClearBtn">🧹 Verlauf löschen</button>
-            <button class="btn-danger-outline full" id="chatReportBtn">⚠ Melden</button>
-            <button class="btn-danger-outline full" id="chatBlockBtn">🚫 Blockieren</button>
+            <button class="btn-ghost full" id="chatSearchBtn"><i data-lucide="search" class="lc-icon lc-xs"></i> In Chat suchen</button>
+            <button class="btn-ghost full" id="chatMuteBtn"><i data-lucide="bell-off" class="lc-icon lc-xs"></i> Stummschalten</button>
+            <button class="btn-ghost full" id="chatClearBtn"><i data-lucide="trash" class="lc-icon lc-xs"></i> Verlauf löschen</button>
+            <button class="btn-danger-outline full" id="chatReportBtn"><i data-lucide="flag" class="lc-icon lc-xs"></i> Melden</button>
+            <button class="btn-danger-outline full" id="chatBlockBtn"><i data-lucide="ban" class="lc-icon lc-xs"></i> Blockieren</button>
             <div class="modal-actions">
                 <button class="btn-ghost" id="closeChatMenuBtn">Schließen</button>
             </div>
