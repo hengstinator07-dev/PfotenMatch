@@ -3292,29 +3292,11 @@ function openEditProfile() {
     $("#pfNeutered").value = p.neutered || "Nein";
     setSelectByPrefix("#pfEnergy", p.energy);
     setSelectByPrefix("#pfPlay", p.playStyle);
-    if (p.avatarImage) {
-        $("#avatarPreview").innerHTML = `<img src="${p.avatarImage}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`;
-    } else {
-        $("#avatarPreview").textContent = p.emoji || "🐕";
-    }
-    $$(".avatar-options button").forEach(b => {
-        b.classList.toggle("selected", b.dataset.emoji === p.emoji);
-    });
     $("#editProfileModal").classList.remove("hidden");
 }
 
 function bindProfileForm() {
     const f = $("#myProfileForm");
-    // Avatar-Emoji-Picker
-    $$(".avatar-options button").forEach(b => {
-        b.addEventListener("click", () => {
-            $$(".avatar-options button").forEach(x => x.classList.remove("selected"));
-            b.classList.add("selected");
-            state.myProfile.emoji = b.dataset.emoji;
-            state.myProfile.avatarImage = null; // Emoji überschreibt Bild
-            $("#avatarPreview").textContent = b.dataset.emoji;
-        });
-    });
     f.addEventListener("submit", async (e) => {
         e.preventDefault();
         state.myProfile = {
