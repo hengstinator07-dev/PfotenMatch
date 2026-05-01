@@ -3685,6 +3685,11 @@ button { font-family: inherit; }
     border-radius: 8px;
 }
 .auth-error.hidden { display: none; }
+.cf-turnstile {
+    display: flex;
+    justify-content: center;
+    margin: 4px 0;
+}
 
 /* Auth switch (register <-> login) */
 .auth-switch {

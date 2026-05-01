@@ -18,16 +18,20 @@ function _sbReady() { return sb !== null; }
 
 // ---------- Auth Helpers ----------
 
-async function sbSignUp(email, password) {
+async function sbSignUp(email, password, captchaToken) {
     if (!_sbReady()) throw new Error("Supabase nicht verfügbar");
-    const { data, error } = await sb.auth.signUp({ email, password });
+    const opts = { email, password };
+    if (captchaToken) opts.options = { captchaToken };
+    const { data, error } = await sb.auth.signUp(opts);
     if (error) throw error;
     return data;
 }
 
-async function sbSignIn(email, password) {
+async function sbSignIn(email, password, captchaToken) {
     if (!_sbReady()) throw new Error("Supabase nicht verfügbar");
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    const opts = { email, password };
+    if (captchaToken) opts.options = { captchaToken };
+    const { data, error } = await sb.auth.signInWithPassword(opts);
     if (error) throw error;
     return data;
 }

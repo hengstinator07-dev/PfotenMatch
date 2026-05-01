@@ -20,6 +20,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
     <!-- ============================================================
@@ -87,6 +88,7 @@
                         </label>
                         <div class="pw-strength" id="regPwStrength"></div>
                         <div id="regError" class="auth-error hidden"></div>
+                        <div id="regTurnstile" class="cf-turnstile" data-sitekey="DEIN_TURNSTILE_SITE_KEY" data-theme="light" data-language="de"></div>
                         <button class="btn-primary full" id="regSubmitBtn">Account erstellen</button>
                     </div>
                     <div class="auth-switch">
@@ -125,6 +127,7 @@
                             <input type="password" id="loginPass" placeholder="Dein Passwort" />
                         </label>
                         <div id="loginError" class="auth-error hidden"></div>
+                        <div id="loginTurnstile" class="cf-turnstile" data-sitekey="DEIN_TURNSTILE_SITE_KEY" data-theme="light" data-language="de"></div>
                         <button class="btn-primary full" id="loginSubmitBtn">Einloggen</button>
                     </div>
                     <div class="auth-switch">

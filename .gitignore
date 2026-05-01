@@ -1,0 +1,29 @@
+# Environment variables & secrets
+.env
+.env.*
+.env.local
+.env.production
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node (falls je benötigt)
+node_modules/
+npm-debug.log*
+
+# Supabase local dev
+supabase/.temp/
+supabase/.branches/
+
+# Build output
+dist/
+build/

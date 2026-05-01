@@ -2,6 +2,24 @@
    PfotenMatch – App-Logik
    ============================================================ */
 
+// ---------- Cloudflare Turnstile CAPTCHA Helpers ----------
+function getCaptchaToken(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return null;
+    const input = container.querySelector('input[name="cf-turnstile-response"]');
+    return input ? input.value || null : null;
+}
+
+function resetCaptcha(containerId) {
+    if (typeof turnstile !== "undefined") {
+        const container = document.getElementById(containerId);
+        if (container) {
+            const widgetId = container.dataset.widgetId;
+            if (widgetId) turnstile.reset(widgetId);
+        }
+    }
+}
+
 // ---------- State ----------
 const state = {
     profiles: [],       // gefilterte / sichtbare Kandidaten
@@ -5122,12 +5140,17 @@ async function handleEmailRegister() {
         flashToast("Passwort mindestens 6 Zeichen");
         return;
     }
+    const captchaToken = getCaptchaToken("regTurnstile");
+    if (!captchaToken) {
+        flashToast("Bitte bestätige, dass du kein Bot bist");
+        return;
+    }
     const btn = $("#regSubmitBtn");
     const origText = btn.textContent;
     btn.textContent = "Bitte warten…";
     btn.disabled = true;
     try {
-        const data = await sbSignUp(email, pass);
+        const data = await sbSignUp(email, pass, captchaToken);
         const needsConfirmation = data?.user && !data.user.email_confirmed_at && (!data.session);
         if (needsConfirmation) {
             _pendingVerifyEmail = email;
@@ -5143,6 +5166,7 @@ async function handleEmailRegister() {
     } finally {
         btn.textContent = origText;
         btn.disabled = false;
+        resetCaptcha("regTurnstile");
     }
 }
 
@@ -5159,12 +5183,17 @@ async function handleEmailLogin() {
         flashToast("Passwort mindestens 6 Zeichen");
         return;
     }
+    const captchaToken = getCaptchaToken("loginTurnstile");
+    if (!captchaToken) {
+        flashToast("Bitte bestätige, dass du kein Bot bist");
+        return;
+    }
     const btn = $("#loginSubmitBtn");
     const origText = btn.textContent;
     btn.textContent = "Bitte warten…";
     btn.disabled = true;
     try {
-        await sbSignIn(email, pass);
+        await sbSignIn(email, pass, captchaToken);
         await handlePostLogin();
     } catch (err) {
         errEl.textContent = err.message || "Fehler beim Einloggen";
@@ -5172,6 +5201,7 @@ async function handleEmailLogin() {
     } finally {
         btn.textContent = origText;
         btn.disabled = false;
+        resetCaptcha("loginTurnstile");
     }
 }
 
