@@ -39,14 +39,14 @@
             <!-- ===== STEP 0: Welcome splash ===== -->
             <section class="onb-step" data-step="0">
                 <div class="onb-hero">
-                    <div class="big-paw">🐾</div>
+                    <div class="big-paw"><i data-lucide="paw-print" class="lc-icon" style="width:48px;height:48px"></i></div>
                     <h1 class="onb-title">PfotenMatch</h1>
                     <p class="onb-tag" id="typewriter"></p>
                 </div>
                 <div class="onb-bullets">
-                    <div class="onb-bullet"><span>🐕</span>Passende Spielkameraden finden</div>
-                    <div class="onb-bullet"><span>🌳</span>Sichere Gassi-Orte entdecken</div>
-                    <div class="onb-bullet"><span>📅</span>Treffen direkt planen</div>
+                    <div class="onb-bullet"><span><i data-lucide="dog" class="lc-icon lc-sm"></i></span>Passende Spielkameraden finden</div>
+                    <div class="onb-bullet"><span><i data-lucide="tree-pine" class="lc-icon lc-sm"></i></span>Sichere Gassi-Orte entdecken</div>
+                    <div class="onb-bullet"><span><i data-lucide="calendar" class="lc-icon lc-sm"></i></span>Treffen direkt planen</div>
                 </div>
                 <div class="onb-actions">
                     <button class="btn-primary full" data-next>Kostenlos starten</button>
@@ -60,7 +60,7 @@
                 <!-- REGISTER MODE (default) -->
                 <div id="authRegisterMode">
                     <div class="onb-head">
-                        <h2>Willkommen im Rudel! 🐕</h2>
+                        <h2>Willkommen im Rudel!</h2>
                         <p>Erstelle einen Account — dauert 30 Sekunden.</p>
                     </div>
                     <div class="auth-buttons">
@@ -74,7 +74,7 @@
                         </button>
                         <div class="auth-divider"><span>oder</span></div>
                         <button class="auth-btn email" id="showRegEmailBtn">
-                            <span class="auth-ic">✉</span>
+                            <span class="auth-ic"><i data-lucide="mail" class="lc-icon lc-sm"></i></span>
                             <span>Mit E-Mail registrieren</span>
                         </button>
                     </div>
@@ -99,7 +99,7 @@
                 <!-- LOGIN MODE -->
                 <div id="authLoginMode" class="hidden">
                     <div class="onb-head">
-                        <h2>Willkommen zurück! 🐾</h2>
+                        <h2>Willkommen zurück!</h2>
                         <p>Melde dich mit deinem Account an.</p>
                     </div>
                     <div class="auth-buttons">
@@ -113,7 +113,7 @@
                         </button>
                         <div class="auth-divider"><span>oder</span></div>
                         <button class="auth-btn email" id="showLoginEmailBtn">
-                            <span class="auth-ic">✉</span>
+                            <span class="auth-ic"><i data-lucide="mail" class="lc-icon lc-sm"></i></span>
                             <span>Mit E-Mail einloggen</span>
                         </button>
                     </div>
@@ -136,10 +136,10 @@
                 <!-- EMAIL VERIFICATION MODE (after signup) -->
                 <div id="authVerifyMode" class="hidden">
                     <div class="onb-head">
-                        <h2>Fast geschafft! ✉</h2>
+                        <h2>Fast geschafft! <i data-lucide="mail" class="lc-icon lc-sm"></i></h2>
                     </div>
                     <div class="verify-card">
-                        <div class="verify-icon">📬</div>
+                        <div class="verify-icon"><i data-lucide="mail-check" class="lc-icon" style="width:48px;height:48px"></i></div>
                         <p class="verify-text">Wir haben eine Bestätigungs-E-Mail an</p>
                         <p class="verify-email" id="verifyEmailDisplay">du@beispiel.com</p>
                         <p class="verify-text">gesendet. Bitte öffne die E-Mail und klicke den Bestätigungslink.</p>
@@ -150,35 +150,28 @@
                 </div>
 
                 <div class="onb-nav">
-                    <button class="btn-ghost" data-prev>← Zurück</button>
+                    <button class="btn-ghost" data-prev><i data-lucide="arrow-left" class="lc-icon lc-xs"></i> Zurück</button>
                 </div>
             </section>
 
             <!-- ===== STEP 2: Dog name + avatar ===== -->
             <section class="onb-step" data-step="2" hidden>
                 <div class="onb-head">
-                    <h2>Wie heißt dein Hund? 🐶</h2>
+                    <h2>Wie heißt dein Hund?</h2>
                     <p>Wir sagen Hallo zu ihm/ihr im nächsten Schritt.</p>
                 </div>
                 <div class="avatar-big">
-                    <div class="avatar-big-circle" id="onbAvatarCircle">🐕</div>
-                    <button class="avatar-camera" id="onbCameraBtn" type="button">📷</button>
+                    <div class="avatar-big-circle" id="onbAvatarCircle"><i data-lucide="dog" class="lc-icon lc-action"></i></div>
+                    <button class="avatar-camera" id="onbCameraBtn" type="button"><i data-lucide="camera" class="lc-icon lc-sm"></i></button>
                     <input type="file" id="onbAvatarInput" accept="image/*" hidden />
-                </div>
-                <div class="emoji-strip" id="onbEmojiStrip">
-                    <button data-onb-emoji="🐕">🐕</button>
-                    <button data-onb-emoji="🐶">🐶</button>
-                    <button data-onb-emoji="🦮">🦮</button>
-                    <button data-onb-emoji="🐩">🐩</button>
-                    <button data-onb-emoji="🐕‍🦺">🐕‍🦺</button>
                 </div>
                 <label class="onb-label">Name deines Hundes
                     <input type="text" id="onbName" placeholder="z. B. Bello, Luna, Rex" autocomplete="off" maxlength="20" />
                 </label>
                 <p class="name-preview" id="namePreview"></p>
                 <div class="onb-nav">
-                    <button class="btn-ghost" data-prev>← Zurück</button>
-                    <button class="btn-primary" data-next>Weiter →</button>
+                    <button class="btn-ghost" data-prev><i data-lucide="arrow-left" class="lc-icon lc-xs"></i> Zurück</button>
+                    <button class="btn-primary" data-next>Weiter <i data-lucide="arrow-right" class="lc-icon lc-xs"></i></button>
                 </div>
             </section>
 
@@ -213,15 +206,15 @@
                     <button type="button" data-size="Sehr groß (&gt;40kg)"><span><i data-lucide="dog" class="lc-icon lc-sm"></i></span><small>XL</small></button>
                 </div>
                 <div class="onb-nav">
-                    <button class="btn-ghost" data-prev>← Zurück</button>
-                    <button class="btn-primary" data-next>Weiter →</button>
+                    <button class="btn-ghost" data-prev><i data-lucide="arrow-left" class="lc-icon lc-xs"></i> Zurück</button>
+                    <button class="btn-primary" data-next>Weiter <i data-lucide="arrow-right" class="lc-icon lc-xs"></i></button>
                 </div>
             </section>
 
             <!-- ===== STEP 4: Personality ===== -->
             <section class="onb-step" data-step="4" hidden>
                 <div class="onb-head">
-                    <h2>Persönlichkeit 🎭</h2>
+                    <h2>Persönlichkeit</h2>
                     <p>Damit wir passende Spielkameraden finden.</p>
                 </div>
                 <h4 class="group-title"><i data-lucide="zap" class="lc-icon lc-xs"></i> Energielevel</h4>
@@ -237,23 +230,23 @@
                     <button type="button" data-play="Grob / Körperlich"><span><i data-lucide="swords" class="lc-icon lc-sm"></i></span><small>Grob</small></button>
                 </div>
                 <div class="onb-nav">
-                    <button class="btn-ghost" data-prev>← Zurück</button>
-                    <button class="btn-primary" data-next>Weiter →</button>
+                    <button class="btn-ghost" data-prev><i data-lucide="arrow-left" class="lc-icon lc-xs"></i> Zurück</button>
+                    <button class="btn-primary" data-next>Weiter <i data-lucide="arrow-right" class="lc-icon lc-xs"></i></button>
                 </div>
             </section>
 
             <!-- ===== STEP 5: Location ===== -->
             <section class="onb-step" data-step="5" hidden>
                 <div class="onb-head">
-                    <h2>Wo seid ihr zuhause? 📍</h2>
+                    <h2>Wo seid ihr zuhause?</h2>
                     <p>Damit wir Hunde in deiner Umgebung finden können.</p>
                 </div>
                 <div class="loc-card">
                     <div class="loc-map-mock">
-                        <div class="loc-pin">📍</div>
+                        <div class="loc-pin"><i data-lucide="map-pin" class="lc-icon lc-sm"></i></div>
                         <div class="loc-rings"><span></span><span></span><span></span></div>
                     </div>
-                    <button class="btn-primary full" id="useGpsBtn">🎯 Meinen Standort verwenden</button>
+                    <button class="btn-primary full" id="useGpsBtn"><i data-lucide="crosshair" class="lc-icon lc-xs"></i> Meinen Standort verwenden</button>
                     <div class="auth-divider"><span>oder manuell</span></div>
                     <div class="city-chips">
                         <button type="button" data-city="Basel">Basel</button>
@@ -268,21 +261,21 @@
                     </label>
                 </div>
                 <div class="onb-nav">
-                    <button class="btn-ghost" data-prev>← Zurück</button>
-                    <button class="btn-primary" data-next>Weiter →</button>
+                    <button class="btn-ghost" data-prev><i data-lucide="arrow-left" class="lc-icon lc-xs"></i> Zurück</button>
+                    <button class="btn-primary" data-next>Weiter <i data-lucide="arrow-right" class="lc-icon lc-xs"></i></button>
                 </div>
             </section>
 
             <!-- ===== STEP 6: Done ===== -->
             <section class="onb-step" data-step="6" hidden>
                 <div class="done-hero">
-                    <div class="done-avatar" id="doneAvatar">🐕</div>
+                    <div class="done-avatar" id="doneAvatar"><i data-lucide="dog" class="lc-icon lc-action"></i></div>
                     <div class="confetti" id="confettiBox"></div>
-                    <h1>Willkommen bei PfotenMatch, <span id="doneName">Bello</span>! 🎉</h1>
+                    <h1>Willkommen bei PfotenMatch, <span id="doneName">Bello</span>!</h1>
                     <p>Dein Rudel wartet schon…</p>
                 </div>
                 <div class="done-summary" id="doneSummary"></div>
-                <button class="btn-primary full big-cta" id="finishOnboardBtn">🔥 Jetzt swipen!</button>
+                <button class="btn-primary full big-cta" id="finishOnboardBtn"><i data-lucide="sparkles" class="lc-icon lc-xs"></i> Jetzt swipen!</button>
             </section>
 
         </div>
@@ -292,11 +285,11 @@
         <!-- Top bar -->
         <header class="topbar">
             <div class="logo">
-                <span class="paw">🐾</span>
+                <span class="paw"><i data-lucide="paw-print" class="lc-icon lc-sm"></i></span>
                 <span class="brand">PfotenMatch</span>
             </div>
             <button id="premiumBadge" class="premium-badge" title="Premium upgraden">
-                <span class="star">★</span> Premium
+                <span class="star"><i data-lucide="star" class="lc-icon lc-xs"></i></span> Premium
             </button>
         </header>
 
@@ -428,7 +421,7 @@
                     <div class="profile-header">
                         <div class="profile-avatar-wrap">
                             <button id="profileAvatarBtn" class="profile-avatar-btn" title="Story ansehen oder Menü öffnen">
-                                <div id="profileAvatar" class="profile-avatar">🐕</div>
+                                <div id="profileAvatar" class="profile-avatar"><i data-lucide="dog" class="lc-icon lc-action"></i></div>
                                 <span class="avatar-ring"></span>
                             </button>
                             <button id="profileMenuOpenBtn" class="avatar-edit-dot" title="Profilmenü"><i data-lucide="settings" class="lc-icon lc-xs"></i></button>
@@ -525,36 +518,36 @@
                         <p class="rv-hero-sub">Vertrauensvolle Sitter in deiner Nähe</p>
                         <div class="rv-service-grid" id="serviceChips">
                             <button class="rv-svc-card active" data-svc="">
-                                <span class="rv-svc-icon">🐾</span>
+                                <span class="rv-svc-icon"><i data-lucide="paw-print" class="lc-icon lc-sm"></i></span>
                                 <span class="rv-svc-label">Alle</span>
                             </button>
                             <button class="rv-svc-card" data-svc="Gassi">
-                                <span class="rv-svc-icon">🚶</span>
+                                <span class="rv-svc-icon"><i data-lucide="footprints" class="lc-icon lc-sm"></i></span>
                                 <span class="rv-svc-label">Gassi</span>
                             </button>
                             <button class="rv-svc-card" data-svc="Tag">
-                                <span class="rv-svc-icon">☀️</span>
+                                <span class="rv-svc-icon"><i data-lucide="sun" class="lc-icon lc-sm"></i></span>
                                 <span class="rv-svc-label">Tagesbetr.</span>
                             </button>
                             <button class="rv-svc-card" data-svc="Nacht">
-                                <span class="rv-svc-icon">🌙</span>
+                                <span class="rv-svc-icon"><i data-lucide="moon" class="lc-icon lc-sm"></i></span>
                                 <span class="rv-svc-label">Nacht</span>
                             </button>
                             <button class="rv-svc-card" data-svc="Urlaub">
-                                <span class="rv-svc-icon">✈️</span>
+                                <span class="rv-svc-icon"><i data-lucide="plane" class="lc-icon lc-sm"></i></span>
                                 <span class="rv-svc-label">Urlaub</span>
                             </button>
                         </div>
                         <div class="rv-filter-row">
                             <div class="rv-filter-pill">
-                                <span>📍</span>
+                                <span><i data-lucide="map-pin" class="lc-icon lc-sm"></i></span>
                                 <span id="sitterLocationLabel">Basel</span>
                                 <span class="rv-sep">·</span>
                                 <strong id="sitterRadiusLabel">10 km</strong>
                                 <input type="range" id="sitterRadiusSlider" min="1" max="50" value="10" class="rv-range-inline" />
                             </div>
                             <div class="rv-filter-pill">
-                                <span>💰</span>
+                                <span><i data-lucide="wallet" class="lc-icon lc-sm"></i></span>
                                 <span>Max.</span>
                                 <strong id="maxPriceLabel">CHF 100</strong>
                                 <input type="range" id="maxPriceSlider" min="5" max="100" value="100" step="5" class="rv-range-inline" />
@@ -566,10 +559,10 @@
                     <div class="rv-trust-banner">
                         <span class="rv-trust-title">Jede Buchung beinhaltet</span>
                         <div class="rv-trust-items">
-                            <div class="rv-trust-item"><span>🛡️</span>ID-Verifizierung</div>
-                            <div class="rv-trust-item"><span>📸</span>Foto-Updates</div>
-                            <div class="rv-trust-item"><span>💬</span>Direkter Chat</div>
-                            <div class="rv-trust-item"><span>⭐</span>Bewertungen</div>
+                            <div class="rv-trust-item"><span><i data-lucide="shield-check" class="lc-icon lc-sm"></i></span>ID-Verifizierung</div>
+                            <div class="rv-trust-item"><span><i data-lucide="camera" class="lc-icon lc-sm"></i></span>Foto-Updates</div>
+                            <div class="rv-trust-item"><span><i data-lucide="message-circle" class="lc-icon lc-sm"></i></span>Direkter Chat</div>
+                            <div class="rv-trust-item"><span><i data-lucide="star" class="lc-icon lc-sm"></i></span>Bewertungen</div>
                         </div>
                     </div>
 
@@ -597,7 +590,7 @@
                     <!-- Wenn KEIN Profil: Professional Landing -->
                     <div id="sitterRegisterWrap">
                         <div class="rv-become-hero">
-                            <div class="rv-become-icon">🏡</div>
+                            <div class="rv-become-icon"><i data-lucide="home" class="lc-icon" style="width:48px;height:48px"></i></div>
                             <h2>Verdiene als Hundesitter</h2>
                             <p>Bestimme selbst Preise, Verfügbarkeit und welche Hunde du betreust.</p>
                             <div class="rv-earn-card">
@@ -641,20 +634,20 @@
                         </div>
 
                         <div class="rv-trust-row">
-                            <div class="rv-trust-pill"><span>🛡️</span> ID-geprüft</div>
-                            <div class="rv-trust-pill"><span>🔒</span> Sicher</div>
-                            <div class="rv-trust-pill"><span>⭐</span> Bewertungen</div>
+                            <div class="rv-trust-pill"><span><i data-lucide="shield-check" class="lc-icon lc-sm"></i></span> ID-geprüft</div>
+                            <div class="rv-trust-pill"><span><i data-lucide="lock" class="lc-icon lc-sm"></i></span> Sicher</div>
+                            <div class="rv-trust-pill"><span><i data-lucide="star" class="lc-icon lc-sm"></i></span> Bewertungen</div>
                         </div>
 
                         <div id="sitterPremiumGate" class="sitter-premium-gate hidden">
                             <div class="premium-gate-card">
-                                <h4>🏡 Sitter Premium</h4>
+                                <h4><i data-lucide="home" class="lc-icon lc-sm"></i> Sitter Premium</h4>
                                 <p>Werde sichtbar und erhalte Buchungsanfragen von Hundebesitzern in deiner Nähe.</p>
                                 <ul class="sitter-premium-perks">
-                                    <li><span>📣</span> Dein Profil wird in der Sitter-Suche angezeigt</li>
-                                    <li><span>🛡️</span> Verifizierungs-Badge für mehr Vertrauen</li>
-                                    <li><span>📩</span> Buchungsanfragen direkt erhalten</li>
-                                    <li><span>⭐</span> Bewertungen sammeln und anzeigen</li>
+                                    <li><span><i data-lucide="megaphone" class="lc-icon lc-sm"></i></span> Dein Profil wird in der Sitter-Suche angezeigt</li>
+                                    <li><span><i data-lucide="shield-check" class="lc-icon lc-sm"></i></span> Verifizierungs-Badge für mehr Vertrauen</li>
+                                    <li><span><i data-lucide="mail" class="lc-icon lc-sm"></i></span> Buchungsanfragen direkt erhalten</li>
+                                    <li><span><i data-lucide="star" class="lc-icon lc-sm"></i></span> Bewertungen sammeln und anzeigen</li>
                                 </ul>
                                 <div class="premium-gate-price">CHF 9.90 <small>/ Monat</small></div>
                                 <button type="button" class="btn-primary full" id="sitterUpgradeBtn">Sitter Premium starten</button>
@@ -663,7 +656,7 @@
                         </div>
 
                         <form id="sitterForm" class="sitter-form">
-                            <h4>👤 Über dich</h4>
+                            <h4><i data-lucide="user" class="lc-icon lc-sm"></i> Über dich</h4>
                             <label>
                                 <span>Name</span>
                                 <input type="text" id="msName" required maxlength="40" placeholder="z. B. Sophie Keller" />
@@ -672,7 +665,7 @@
                                 <span>Profilbild</span>
                                 <div class="sitter-photo-upload">
                                     <div class="sitter-avatar-preview" id="msAvatarPreview">
-                                        <span class="sitter-avatar-placeholder">📷</span>
+                                        <span class="sitter-avatar-placeholder"><i data-lucide="camera" class="lc-icon lc-sm"></i></span>
                                     </div>
                                     <button type="button" class="btn-ghost-sm" id="msAvatarUploadBtn">Foto hochladen</button>
                                     <input type="file" id="msAvatarInput" accept="image/*" hidden />
@@ -682,17 +675,17 @@
                                 <span>Fotos (zeige dein Zuhause, Garten, betreute Hunde)</span>
                                 <div class="sitter-gallery-upload" id="msGallery">
                                     <button type="button" class="sitter-gallery-add" id="msGalleryAddBtn">
-                                        <span>➕</span>
+                                        <span><i data-lucide="plus" class="lc-icon lc-sm"></i></span>
                                         <small>Hinzufügen</small>
                                     </button>
                                 </div>
                                 <input type="file" id="msGalleryInput" accept="image/*" hidden />
                             </label>
                             <label>
-                                <span>📍 Standort</span>
+                                <span><i data-lucide="map-pin" class="lc-icon lc-sm"></i> Standort</span>
                                 <div class="sitter-location-search">
                                     <input type="text" id="msLocationInput" placeholder="Stadt oder Ort suchen …" autocomplete="off" />
-                                    <button type="button" id="msUseGps" class="btn-ghost-sm" title="GPS verwenden">📍</button>
+                                    <button type="button" id="msUseGps" class="btn-ghost-sm" title="GPS verwenden"><i data-lucide="locate" class="lc-icon lc-sm"></i></button>
                                 </div>
                                 <div id="msLocationResults" class="city-results hidden"></div>
                                 <input type="hidden" id="msLat" />
@@ -709,32 +702,32 @@
                                 <textarea id="msAbout" rows="4" maxlength="500" placeholder="Erzähl über deine Erfahrung, dein Zuhause, andere Tiere, Besonderheiten …"></textarea>
                             </label>
 
-                            <h4>🐾 Services & Preise</h4>
+                            <h4><i data-lucide="paw-print" class="lc-icon lc-sm"></i> Services &amp; Preise</h4>
                             <p class="form-hint">Welche Dienste bietest du an?</p>
                             <div class="ms-services">
                                 <label class="ms-svc">
                                     <input type="checkbox" name="msSvc" value="Gassi" />
-                                    <span>🚶 Gassi gehen</span>
+                                    <span><i data-lucide="footprints" class="lc-icon lc-sm"></i> Gassi gehen</span>
                                     <input type="number" id="msPriceHour" min="1" step="1" placeholder="CHF/Std" />
                                 </label>
                                 <label class="ms-svc">
                                     <input type="checkbox" name="msSvc" value="Tag" />
-                                    <span>☀ Tagesbetreuung</span>
+                                    <span><i data-lucide="sun" class="lc-icon lc-sm"></i> Tagesbetreuung</span>
                                     <input type="number" id="msPriceDay" min="1" step="1" placeholder="CHF/Tag" />
                                 </label>
                                 <label class="ms-svc">
                                     <input type="checkbox" name="msSvc" value="Nacht" />
-                                    <span>🌙 Übernachtung</span>
+                                    <span><i data-lucide="moon" class="lc-icon lc-sm"></i> Übernachtung</span>
                                     <input type="number" id="msPriceNight" min="1" step="1" placeholder="CHF/Nacht" />
                                 </label>
                                 <label class="ms-svc">
                                     <input type="checkbox" name="msSvc" value="Urlaub" />
-                                    <span>✈ Urlaubspflege</span>
+                                    <span><i data-lucide="plane" class="lc-icon lc-sm"></i> Urlaubspflege</span>
                                     <span class="ms-svc-hint">(nutzt Nacht-Preis)</span>
                                 </label>
                             </div>
 
-                            <h4>📋 Details</h4>
+                            <h4><i data-lucide="clipboard-list" class="lc-icon lc-sm"></i> Details</h4>
                             <label>
                                 <span>Akzeptierte Hundegrößen</span>
                                 <div class="size-picker" id="msSizes">
@@ -768,7 +761,7 @@
                             </label>
 
                             <div class="ms-verify">
-                                <h4>🛡️ Identitätsverifizierung</h4>
+                                <h4><i data-lucide="shield-check" class="lc-icon lc-sm"></i> Identitätsverifizierung</h4>
                                 <p class="form-hint">Verifiziere deine Identität mit einem Ausweisdokument via Stripe Identity. Hundebesitzer vertrauen verifizierten Sittern deutlich mehr.</p>
                                 <div id="identityVerifySection">
                                     <div id="identityNotStarted">
@@ -796,7 +789,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <button type="button" id="startIdentityBtn" class="btn-primary full">🛡️ Jetzt Identität verifizieren</button>
+                                            <button type="button" id="startIdentityBtn" class="btn-primary full"><i data-lucide="shield-check" class="lc-icon lc-sm"></i> Jetzt Identität verifizieren</button>
                                             <div class="id-powered-by">
                                                 <small class="muted">Powered by <strong>Stripe Identity</strong> · Deine Daten sind sicher verschlüsselt</small>
                                             </div>
@@ -804,7 +797,7 @@
                                     </div>
                                     <div id="identityPending" class="hidden">
                                         <div class="id-status-card pending">
-                                            <div class="id-status-icon">⏳</div>
+                                            <div class="id-status-icon"><i data-lucide="loader" class="lc-icon lc-sm lc-spin"></i></div>
                                             <strong>Verifizierung wird geprüft</strong>
                                             <p>Dies dauert normalerweise nur wenige Minuten.</p>
                                             <button type="button" id="checkIdentityBtn" class="btn-ghost">Status prüfen</button>
@@ -812,14 +805,14 @@
                                     </div>
                                     <div id="identityVerified" class="hidden">
                                         <div class="id-status-card verified">
-                                            <div class="id-status-icon">✅</div>
+                                            <div class="id-status-icon"><i data-lucide="check-circle" class="lc-icon lc-sm" style="color:#22c55e"></i></div>
                                             <strong>Identität verifiziert</strong>
-                                            <p>Dein Profil zeigt das Verifizierungs-Badge 🛡️</p>
+                                            <p>Dein Profil zeigt das Verifizierungs-Badge</p>
                                         </div>
                                     </div>
                                     <div id="identityFailed" class="hidden">
                                         <div class="id-status-card failed">
-                                            <div class="id-status-icon">❌</div>
+                                            <div class="id-status-icon"><i data-lucide="x-circle" class="lc-icon lc-sm" style="color:#ef4444"></i></div>
                                             <strong>Verifizierung fehlgeschlagen</strong>
                                             <p>Bitte versuche es erneut mit einem gültigen Ausweisdokument.</p>
                                             <button type="button" id="retryIdentityBtn" class="btn-primary full">Erneut versuchen</button>
@@ -828,7 +821,7 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn-primary full" id="msSubmit">🐾 Sitter-Profil speichern</button>
+                            <button type="submit" class="btn-primary full" id="msSubmit"><i data-lucide="paw-print" class="lc-icon lc-sm"></i> Sitter-Profil speichern</button>
                             <small class="muted" style="text-align:center;display:block;margin-top:6px">Dein Profil wird erst nach Aktivierung von Sitter Premium öffentlich sichtbar.</small>
                         </form>
                     </div>
@@ -837,17 +830,17 @@
                     <div id="sitterDashboardWrap" class="hidden">
                         <div class="sitter-dash-card">
                             <div class="sd-head">
-                                <div class="sd-av" id="dashAv"><span>👩</span></div>
+                                <div class="sd-av" id="dashAv"><span><i data-lucide="user" class="lc-icon" style="width:40px;height:40px"></i></span></div>
                                 <div class="sd-meta">
                                     <strong id="dashName">Du</strong>
                                     <small id="dashHood">Quartier</small>
                                 </div>
-                                <span id="dashVerified" class="verified-tag hidden">🛡️ Verifiziert</span>
+                                <span id="dashVerified" class="verified-tag hidden"><i data-lucide="shield-check" class="lc-icon lc-xs"></i> Verifiziert</span>
                             </div>
                             <div class="sd-trust-bar" id="dashTrustBar">
-                                <div class="trust-item done"><span>🛡️</span> ID geprüft</div>
-                                <div class="trust-item"><span>⭐</span> Premium</div>
-                                <div class="trust-item"><span>💬</span> Bewertungen</div>
+                                <div class="trust-item done"><span><i data-lucide="shield-check" class="lc-icon lc-sm"></i></span> ID geprüft</div>
+                                <div class="trust-item"><span><i data-lucide="star" class="lc-icon lc-sm"></i></span> Premium</div>
+                                <div class="trust-item"><span><i data-lucide="message-circle" class="lc-icon lc-sm"></i></span> Bewertungen</div>
                             </div>
                             <div class="sd-stats">
                                 <div class="sd-stat">
@@ -865,16 +858,16 @@
                             </div>
                             <div id="dashSubStatus" class="dash-sub-status"></div>
                             <div class="sd-actions">
-                                <button id="dashEditBtn" class="btn-ghost">✎ Bearbeiten</button>
-                                <button id="dashUpgradeBtn" class="btn-primary hidden">⭐ Sitter Premium aktivieren</button>
-                                <button id="dashDeleteBtn" class="btn-danger-outline">🗑 Profil löschen</button>
+                                <button id="dashEditBtn" class="btn-ghost"><i data-lucide="pencil" class="lc-icon lc-sm"></i> Bearbeiten</button>
+                                <button id="dashUpgradeBtn" class="btn-primary hidden"><i data-lucide="star" class="lc-icon lc-sm"></i> Sitter Premium aktivieren</button>
+                                <button id="dashDeleteBtn" class="btn-danger-outline"><i data-lucide="trash-2" class="lc-icon lc-sm"></i> Profil löschen</button>
                             </div>
                         </div>
 
-                        <h4 class="sub-title">📥 Anfragen</h4>
+                        <h4 class="sub-title"><i data-lucide="inbox" class="lc-icon lc-sm"></i> Anfragen</h4>
                         <div id="sitterRequestsList" class="sitter-requests-list"></div>
 
-                        <h4 class="sub-title">📜 Aufträge</h4>
+                        <h4 class="sub-title"><i data-lucide="scroll-text" class="lc-icon lc-sm"></i> Aufträge</h4>
                         <div id="sitterJobsList" class="sitter-jobs-list"></div>
                     </div>
                 </div>
@@ -901,35 +894,35 @@
         <div class="modal-content match-modal">
             <div class="match-confetti" id="matchConfettiBox"></div>
             <div class="match-sparkles">
-                <span>✨</span><span>💖</span><span>✨</span><span>🐾</span><span>💕</span>
+                <span><i data-lucide="sparkles" class="lc-icon lc-sm"></i></span><span><i data-lucide="heart" class="lc-icon lc-sm" style="color:#ff6b6b"></i></span><span><i data-lucide="sparkles" class="lc-icon lc-sm"></i></span><span><i data-lucide="paw-print" class="lc-icon lc-sm"></i></span><span><i data-lucide="heart" class="lc-icon lc-sm" style="color:#ff6b6b"></i></span>
             </div>
-            <h1 class="match-title">It's a Match! 🎉</h1>
+            <h1 class="match-title">It's a Match! <i data-lucide="party-popper" class="lc-icon lc-sm"></i></h1>
             <p id="matchText"></p>
             <div class="match-score-row">
-                <div class="match-score-pill" id="matchScorePill">🎯 <strong>92%</strong> Match</div>
+                <div class="match-score-pill" id="matchScorePill"><i data-lucide="target" class="lc-icon lc-sm"></i> <strong>92%</strong> Match</div>
             </div>
             <div class="match-avatars">
                 <div class="match-avatar" id="matchAvatarMine">🐕</div>
-                <div class="heart">♥</div>
+                <div class="heart"><i data-lucide="heart" class="lc-icon lc-sm" style="color:#ff6b6b"></i></div>
                 <div class="match-avatar" id="matchAvatarOther">🐶</div>
             </div>
             <div class="match-greeting" id="matchGreetingBox">
-                <span class="match-greeting-label">💬 Vorgeschlagene Begrüßung:</span>
-                <p id="matchGreetingText">Hey! Wollen wir uns im Park treffen? 🐾</p>
+                <span class="match-greeting-label"><i data-lucide="message-circle" class="lc-icon lc-xs"></i> Vorgeschlagene Begrüßung:</span>
+                <p id="matchGreetingText">Hey! Wollen wir uns im Park treffen?</p>
             </div>
             <div class="match-cta-row">
                 <button class="match-cta" id="matchPlanBtn">
-                    <span class="match-cta-icon">📅</span>
+                    <span class="match-cta-icon"><i data-lucide="calendar" class="lc-icon lc-sm"></i></span>
                     <span>Treffen planen</span>
                 </button>
                 <button class="match-cta" id="matchShareBtn">
-                    <span class="match-cta-icon">📤</span>
+                    <span class="match-cta-icon"><i data-lucide="share-2" class="lc-icon lc-sm"></i></span>
                     <span>Match teilen</span>
                 </button>
             </div>
             <div class="modal-actions">
                 <button class="btn-ghost" id="keepSwipingBtn">Weiter swipen</button>
-                <button class="btn-primary" id="sendMessageBtn">Nachricht senden 💬</button>
+                <button class="btn-primary" id="sendMessageBtn">Nachricht senden <i data-lucide="message-circle" class="lc-icon lc-xs"></i></button>
             </div>
         </div>
     </div>
@@ -939,7 +932,7 @@
         <div class="modal-content chat-modal">
             <header class="chat-header">
                 <button id="chatBack" class="chat-icon-btn"><i data-lucide="arrow-left" class="lc-icon lc-sm"></i></button>
-                <div id="chatAvatar" class="chat-avatar">🐶</div>
+                <div id="chatAvatar" class="chat-avatar"><i data-lucide="dog" class="lc-icon" style="width:32px;height:32px"></i></div>
                 <div class="chat-title" id="chatTitleArea" style="cursor:pointer">
                     <span id="chatName">Rex</span>
                     <small id="chatStatus" class="chat-status">online</small>
@@ -1034,7 +1027,7 @@
     <!-- Chat search overlay -->
     <div id="chatSearchModal" class="modal hidden">
         <div class="modal-content">
-            <h2>🔍 Nachrichten suchen</h2>
+            <h2><i data-lucide="search" class="lc-icon lc-sm"></i> Nachrichten suchen</h2>
             <input type="text" id="chatSearchInput" placeholder="Suchbegriff…" />
             <div id="chatSearchResults" class="search-results"></div>
             <div class="modal-actions">
@@ -1114,24 +1107,24 @@
     <!-- Settings modal -->
     <div id="settingsModal" class="modal hidden">
         <div class="modal-content">
-            <h2>⚙ Einstellungen</h2>
+            <h2><i data-lucide="settings" class="lc-icon lc-sm"></i> Einstellungen</h2>
 
             <div class="settings-group">
                 <h3>Benachrichtigungen</h3>
                 <label class="setting-row">
-                    <span>🔔 Push-Benachrichtigungen</span>
+                    <span><i data-lucide="bell" class="lc-icon lc-xs"></i> Push-Benachrichtigungen</span>
                     <input type="checkbox" id="setPush" checked />
                 </label>
                 <label class="setting-row">
-                    <span>💬 Chat-Nachrichten</span>
+                    <span><i data-lucide="message-circle" class="lc-icon lc-xs"></i> Chat-Nachrichten</span>
                     <input type="checkbox" id="setChatNotif" checked />
                 </label>
                 <label class="setting-row">
-                    <span>🐾 Neue Matches</span>
+                    <span><i data-lucide="paw-print" class="lc-icon lc-xs"></i> Neue Matches</span>
                     <input type="checkbox" id="setMatchNotif" checked />
                 </label>
                 <label class="setting-row">
-                    <span>⚠ Gefahren in der Nähe</span>
+                    <span><i data-lucide="alert-triangle" class="lc-icon lc-xs"></i> Gefahren in der Nähe</span>
                     <input type="checkbox" id="setDangerNotif" checked />
                 </label>
             </div>
@@ -1139,15 +1132,15 @@
             <div class="settings-group">
                 <h3>Privatsphäre</h3>
                 <label class="setting-row">
-                    <span>🥷 Unsichtbares Swipen <small>(Premium)</small></span>
+                    <span><i data-lucide="eye-off" class="lc-icon lc-xs"></i> Unsichtbares Swipen <small>(Premium)</small></span>
                     <input type="checkbox" id="setInvisible" />
                 </label>
                 <label class="setting-row">
-                    <span>📍 Standort teilen</span>
+                    <span><i data-lucide="map-pin" class="lc-icon lc-xs"></i> Standort teilen</span>
                     <input type="checkbox" id="setLocShare" checked />
                 </label>
                 <label class="setting-row">
-                    <span>👀 Lesebestätigungen senden</span>
+                    <span><i data-lucide="eye" class="lc-icon lc-xs"></i> Lesebestätigungen senden</span>
                     <input type="checkbox" id="setReadReceipts" checked />
                 </label>
             </div>
@@ -1155,11 +1148,11 @@
             <div class="settings-group">
                 <h3>App</h3>
                 <label class="setting-row">
-                    <span>🌙 Dunkler Modus</span>
+                    <span><i data-lucide="moon" class="lc-icon lc-xs"></i> Dunkler Modus</span>
                     <input type="checkbox" id="setDark" />
                 </label>
                 <label class="setting-row">
-                    <span>🗣 Sprache</span>
+                    <span><i data-lucide="languages" class="lc-icon lc-xs"></i> Sprache</span>
                     <select id="setLang">
                         <option value="de" selected>Deutsch</option>
                         <option value="en">English</option>
@@ -1168,7 +1161,7 @@
                     </select>
                 </label>
                 <label class="setting-row">
-                    <span>📏 Entfernungseinheit</span>
+                    <span><i data-lucide="ruler" class="lc-icon lc-xs"></i> Entfernungseinheit</span>
                     <select id="setUnit">
                         <option value="km" selected>Kilometer</option>
                         <option value="mi">Meilen</option>
@@ -1178,13 +1171,13 @@
 
             <div class="settings-group">
                 <h3>Konto</h3>
-                <button class="btn-ghost full" id="exportDataBtn">📦 Daten exportieren</button>
-                <button class="btn-ghost full" id="resetDataBtn">♻ Alle Daten zurücksetzen</button>
-                <button class="btn-danger-outline full" id="deleteAccountBtn">🗑 Account löschen</button>
+                <button class="btn-ghost full" id="exportDataBtn"><i data-lucide="download" class="lc-icon lc-xs"></i> Daten exportieren</button>
+                <button class="btn-ghost full" id="resetDataBtn"><i data-lucide="refresh-cw" class="lc-icon lc-xs"></i> Alle Daten zurücksetzen</button>
+                <button class="btn-danger-outline full" id="deleteAccountBtn"><i data-lucide="trash-2" class="lc-icon lc-xs"></i> Account löschen</button>
             </div>
 
             <div class="settings-group muted-group">
-                <small>PfotenMatch · v0.1.0 · Made with 🐾 in Basel</small>
+                <small>PfotenMatch · v0.1.0 · Made with <i data-lucide="paw-print" class="lc-icon lc-xs"></i> in Basel</small>
             </div>
 
             <div class="modal-actions">
@@ -1198,12 +1191,12 @@
         <div class="story-viewer">
             <div class="story-progress-row" id="storyProgressRow"></div>
             <header class="story-header">
-                <div class="story-av" id="storyAv">🐶</div>
+                <div class="story-av" id="storyAv"><i data-lucide="dog" class="lc-icon lc-sm"></i></div>
                 <div class="story-meta">
                     <strong id="storyName">Rex</strong>
                     <small id="storyTime">vor 1 Std</small>
                 </div>
-                <button id="storyClose" class="story-close">✕</button>
+                <button id="storyClose" class="story-close"><i data-lucide="x" class="lc-icon lc-sm"></i></button>
             </header>
             <div class="story-image-wrap">
                 <img id="storyImage" src="" alt="Story" />
@@ -1212,7 +1205,7 @@
             </div>
             <div class="story-footer" id="storyFooter">
                 <span class="story-caption" id="storyCaption"></span>
-                <button id="storyDelete" class="story-delete hidden">🗑 Löschen</button>
+                <button id="storyDelete" class="story-delete hidden"><i data-lucide="trash-2" class="lc-icon lc-xs"></i> Löschen</button>
             </div>
         </div>
     </div>
@@ -1220,9 +1213,9 @@
     <!-- Photo viewer (lightbox) -->
     <div id="photoViewerModal" class="modal hidden">
         <div class="photo-viewer">
-            <button id="photoViewerClose" class="photo-viewer-close">✕</button>
+            <button id="photoViewerClose" class="photo-viewer-close"><i data-lucide="x" class="lc-icon lc-sm"></i></button>
             <img id="photoViewerImg" src="" alt="" />
-            <button id="photoViewerDelete" class="btn-danger-outline">🗑 Löschen</button>
+            <button id="photoViewerDelete" class="btn-danger-outline"><i data-lucide="trash-2" class="lc-icon lc-xs"></i> Löschen</button>
         </div>
     </div>
 
@@ -1230,7 +1223,7 @@
     <div id="sitterDetailModal" class="modal hidden">
         <div class="modal-content op-fullscreen">
             <header class="op-topbar">
-                <button id="sitterDetailClose" class="op-back-btn">← Zurück</button>
+                <button id="sitterDetailClose" class="op-back-btn"><i data-lucide="arrow-left" class="lc-icon lc-xs"></i> Zurück</button>
                 <span id="sdTopName" class="op-topbar-name"></span>
                 <span></span>
             </header>
@@ -1239,7 +1232,7 @@
                 <div id="sdCover" class="sd-cover-photo"></div>
                 <div class="profile-header" style="margin-top:-36px;position:relative;z-index:2">
                     <div class="profile-avatar-wrap">
-                        <div id="sdAvatar" class="profile-avatar sitter-profile-av">👩</div>
+                        <div id="sdAvatar" class="profile-avatar sitter-profile-av"><i data-lucide="user" class="lc-icon" style="width:48px;height:48px"></i></div>
                         <span class="avatar-ring"></span>
                     </div>
                     <div class="profile-stats">
@@ -1252,9 +1245,9 @@
                     <h2 id="sdName">Name</h2>
                     <p class="handle" id="sdHood">Kleinbasel · 1.2 km</p>
                     <div class="sh-rating-row">
-                        <span class="sh-rating" id="sdRating">⭐ 4.9</span>
+                        <span class="sh-rating" id="sdRating"><i data-lucide="star" class="lc-icon lc-xs" style="color:#f59e0b"></i> 4.9</span>
                         <span id="sdReviews">(47 Bewertungen)</span>
-                        <span id="sdVerified" class="sh-verified hidden">🛡️ ID Verifiziert</span>
+                        <span id="sdVerified" class="sh-verified hidden"><i data-lucide="shield-check" class="lc-icon lc-xs"></i> ID Verifiziert</span>
                     </div>
                     <p class="bio" id="sdBio"></p>
                 </div>
@@ -1264,10 +1257,10 @@
                     <button class="profile-tab" data-sdtab="reviews">Bewertungen</button>
                 </div>
                 <div id="sdInfo" class="profile-info">
-                    <div class="info-row"><span>⏱ Antwortzeit</span><strong id="sdResponse">—</strong></div>
-                    <div class="info-row"><span>🎓 Erfahrung</span><strong id="sdExperience">—</strong></div>
-                    <div class="info-row"><span>📐 Akzeptiert</span><strong id="sdSizes">—</strong></div>
-                    <div class="info-row"><span>📆 Verfügbarkeit</span><strong id="sdAvailability">—</strong></div>
+                    <div class="info-row"><span><i data-lucide="clock" class="lc-icon lc-xs"></i> Antwortzeit</span><strong id="sdResponse">—</strong></div>
+                    <div class="info-row"><span><i data-lucide="award" class="lc-icon lc-xs"></i> Erfahrung</span><strong id="sdExperience">—</strong></div>
+                    <div class="info-row"><span><i data-lucide="ruler" class="lc-icon lc-xs"></i> Akzeptiert</span><strong id="sdSizes">—</strong></div>
+                    <div class="info-row"><span><i data-lucide="calendar" class="lc-icon lc-xs"></i> Verfügbarkeit</span><strong id="sdAvailability">—</strong></div>
                     <div id="sdHomeDetailsWrap"></div>
                     <div class="sd-about-section">
                         <h4>Über mich</h4>
@@ -1279,7 +1272,7 @@
                 <div id="sdPhotos" class="profile-photos op-photo-grid hidden"></div>
                 <div id="sdReviewsList" class="sd-reviews-section hidden">
                     <div id="sdReviewsContent"></div>
-                    <button class="btn-ghost full" id="sdWriteReviewBtn">⭐ Bewertung schreiben</button>
+                    <button class="btn-ghost full" id="sdWriteReviewBtn"><i data-lucide="star" class="lc-icon lc-xs"></i> Bewertung schreiben</button>
                 </div>
             </div>
             <div class="sd-sticky-cta" id="sdStickyCta">
@@ -1292,14 +1285,14 @@
     <!-- Write review modal -->
     <div id="reviewModal" class="modal hidden">
         <div class="modal-content">
-            <h2>⭐ Bewertung schreiben</h2>
+            <h2><i data-lucide="star" class="lc-icon lc-xs"></i> Bewertung schreiben</h2>
             <p id="reviewSitterInfo" class="booking-info"></p>
             <div class="review-stars" id="reviewStars">
-                <button type="button" data-star="1">☆</button>
-                <button type="button" data-star="2">☆</button>
-                <button type="button" data-star="3">☆</button>
-                <button type="button" data-star="4">☆</button>
-                <button type="button" data-star="5">☆</button>
+                <button type="button" data-star="1"><i data-lucide="star" class="lc-icon lc-sm"></i></button>
+                <button type="button" data-star="2"><i data-lucide="star" class="lc-icon lc-sm"></i></button>
+                <button type="button" data-star="3"><i data-lucide="star" class="lc-icon lc-sm"></i></button>
+                <button type="button" data-star="4"><i data-lucide="star" class="lc-icon lc-sm"></i></button>
+                <button type="button" data-star="5"><i data-lucide="star" class="lc-icon lc-sm"></i></button>
             </div>
             <label>Deine Bewertung
                 <textarea id="reviewText" rows="4" maxlength="300" placeholder="Erzähl von deiner Erfahrung…"></textarea>
@@ -1314,7 +1307,7 @@
     <!-- Booking request modal -->
     <div id="bookingModal" class="modal hidden">
         <div class="modal-content">
-            <h2>🗓 Betreuungsanfrage</h2>
+            <h2><i data-lucide="calendar" class="lc-icon lc-sm"></i> Betreuungsanfrage</h2>
             <p id="bookingSitterInfo" class="booking-info"></p>
             <label>Service
                 <select id="bkService"></select>
@@ -1388,40 +1381,40 @@
     <!-- Premium modal -->
     <div id="premiumModal" class="modal hidden">
         <div class="modal-content premium-modal">
-            <div class="pm-hero-icon">🐾</div>
+            <div class="pm-hero-icon"><i data-lucide="paw-print" class="lc-icon" style="width:48px;height:48px"></i></div>
             <h2>PfotenMatch Premium</h2>
             <p class="lead">Sicherere Matches. Bessere Spielkameraden.</p>
             <ul class="premium-features">
                 <li>
-                    <span class="pf-icon">🎯</span>
+                    <span class="pf-icon"><i data-lucide="target" class="lc-icon lc-sm"></i></span>
                     <div>
                         <strong>Kompatibilitäts-Einblicke</strong>
                         <small>Sieh, welche Hunde am besten zu deinem Hund passen</small>
                     </div>
                 </li>
                 <li>
-                    <span class="pf-icon">🛡️</span>
+                    <span class="pf-icon"><i data-lucide="shield-check" class="lc-icon lc-sm"></i></span>
                     <div>
                         <strong>Sicherheits- & Verhaltensfilter</strong>
                         <small>Filtere nach Kastriert, Verträglichkeit und Warn-Tags</small>
                     </div>
                 </li>
                 <li>
-                    <span class="pf-icon">📍</span>
+                    <span class="pf-icon"><i data-lucide="map-pin" class="lc-icon lc-sm"></i></span>
                     <div>
                         <strong>Erweiterte Reichweite</strong>
                         <small>Finde Hunde bis 50 km in deiner Umgebung</small>
                     </div>
                 </li>
                 <li>
-                    <span class="pf-icon">⭐</span>
+                    <span class="pf-icon"><i data-lucide="star" class="lc-icon lc-sm"></i></span>
                     <div>
                         <strong>Premium-Badge</strong>
                         <small>Mehr Vertrauen bei anderen Hundebesitzern</small>
                     </div>
                 </li>
                 <li>
-                    <span class="pf-icon">🎉</span>
+                    <span class="pf-icon"><i data-lucide="party-popper" class="lc-icon lc-sm"></i></span>
                     <div>
                         <strong>Exklusive Gassi-Events</strong>
                         <small>Zugang zu organisierten Hundetreffen in deiner Stadt</small>
@@ -1440,15 +1433,15 @@
     <!-- Share Profile modal -->
     <div id="shareProfileModal" class="modal hidden">
         <div class="modal-content">
-            <h2>🔗 Profil teilen</h2>
+            <h2><i data-lucide="link" class="lc-icon lc-sm"></i> Profil teilen</h2>
             <p class="muted">Teile deinen persönlichen Code mit Freunden, damit sie direkt mit dir matchen können.</p>
             <div class="friend-code-box">
                 <span class="friend-code-label">Dein Code</span>
                 <div class="friend-code" id="myFriendCode">— — — —</div>
-                <button class="btn-ghost full" id="copyCodeBtn">📋 Code kopieren</button>
+                <button class="btn-ghost full" id="copyCodeBtn"><i data-lucide="copy" class="lc-icon lc-xs"></i> Code kopieren</button>
             </div>
             <div class="modal-actions">
-                <button class="btn-primary full" id="shareCodeBtn">📤 Teilen</button>
+                <button class="btn-primary full" id="shareCodeBtn"><i data-lucide="share-2" class="lc-icon lc-xs"></i> Teilen</button>
                 <button class="btn-ghost" id="closeShareProfileBtn">Schließen</button>
             </div>
         </div>
@@ -1457,7 +1450,7 @@
     <!-- Connect Friend modal -->
     <div id="connectFriendModal" class="modal hidden">
         <div class="modal-content">
-            <h2>🤝 Freund verbinden</h2>
+            <h2><i data-lucide="users" class="lc-icon lc-sm"></i> Freund verbinden</h2>
             <p class="muted">Gib den 8-stelligen Code deines Freundes ein.</p>
             <div class="friend-code-input-wrap">
                 <input type="text" id="friendCodeInput" placeholder="z. B. 3F7A-2B1C"
@@ -1496,7 +1489,7 @@
             <h2>Treffen vorschlagen</h2>
             <p id="meetWith"></p>
             <div class="safety-hint-bar">
-                <span>🛡️</span>
+                <span><i data-lucide="shield-check" class="lc-icon lc-sm"></i></span>
                 <span>Treffe dich beim ersten Mal an einem <strong>öffentlichen Ort</strong> mit anderen Menschen in der Nähe.</span>
             </div>
             <label>Ort
@@ -1515,7 +1508,7 @@
     <div id="otherProfileModal" class="modal hidden">
         <div class="modal-content op-fullscreen">
             <header class="op-topbar">
-                <button id="otherProfileClose" class="op-back-btn">← Zurück</button>
+                <button id="otherProfileClose" class="op-back-btn"><i data-lucide="arrow-left" class="lc-icon lc-xs"></i> Zurück</button>
                 <span id="opTopName" class="op-topbar-name"></span>
                 <span></span>
             </header>
@@ -1523,7 +1516,7 @@
                 <div class="profile-header">
                     <div class="profile-avatar-wrap">
                         <button id="opAvatarBtn" class="profile-avatar-btn">
-                            <div id="opAvatar" class="profile-avatar">🐕</div>
+                            <div id="opAvatar" class="profile-avatar"><i data-lucide="dog" class="lc-icon" style="width:48px;height:48px"></i></div>
                             <span class="avatar-ring"></span>
                         </button>
                     </div>
@@ -1540,22 +1533,22 @@
                     <div class="profile-chips" id="opChips"></div>
                 </div>
                 <div class="profile-actions">
-                    <button class="btn-primary full" id="opMessageBtn">💬 Nachricht</button>
-                    <button class="btn-ghost full" id="opMeetBtn">📍 Treffen planen</button>
+                    <button class="btn-primary full" id="opMessageBtn"><i data-lucide="message-circle" class="lc-icon lc-xs"></i> Nachricht</button>
+                    <button class="btn-ghost full" id="opMeetBtn"><i data-lucide="map-pin" class="lc-icon lc-xs"></i> Treffen planen</button>
                 </div>
-                <button class="btn-report-link" id="opReportBtn">⚠ Profil melden</button>
+                <button class="btn-report-link" id="opReportBtn"><i data-lucide="alert-triangle" class="lc-icon lc-xs"></i> Profil melden</button>
                 <div class="profile-tabs" role="tablist">
-                    <button class="profile-tab active" data-optab="photos">🏞️ Fotos</button>
-                    <button class="profile-tab" data-optab="info">ℹ Info</button>
+                    <button class="profile-tab active" data-optab="photos"><i data-lucide="image" class="lc-icon lc-xs"></i> Fotos</button>
+                    <button class="profile-tab" data-optab="info"><i data-lucide="info" class="lc-icon lc-xs"></i> Info</button>
                 </div>
                 <div id="opPhotos" class="profile-photos op-photo-grid"></div>
                 <div id="opInfo" class="profile-info hidden">
-                    <div class="info-row"><span>🐾 Rasse</span><strong id="opBreed">—</strong></div>
-                    <div class="info-row"><span>🎂 Alter</span><strong id="opAge">—</strong></div>
-                    <div class="info-row"><span>📏 Größe</span><strong id="opSize">—</strong></div>
-                    <div class="info-row"><span>✂ Kastriert</span><strong id="opNeutered">—</strong></div>
-                    <div class="info-row"><span>⚡ Energie</span><strong id="opEnergy">—</strong></div>
-                    <div class="info-row"><span>🎾 Spielstil</span><strong id="opPlay">—</strong></div>
+                    <div class="info-row"><span><i data-lucide="paw-print" class="lc-icon lc-xs"></i> Rasse</span><strong id="opBreed">—</strong></div>
+                    <div class="info-row"><span><i data-lucide="cake" class="lc-icon lc-xs"></i> Alter</span><strong id="opAge">—</strong></div>
+                    <div class="info-row"><span><i data-lucide="ruler" class="lc-icon lc-xs"></i> Größe</span><strong id="opSize">—</strong></div>
+                    <div class="info-row"><span><i data-lucide="scissors" class="lc-icon lc-xs"></i> Kastriert</span><strong id="opNeutered">—</strong></div>
+                    <div class="info-row"><span><i data-lucide="zap" class="lc-icon lc-xs"></i> Energie</span><strong id="opEnergy">—</strong></div>
+                    <div class="info-row"><span><i data-lucide="activity" class="lc-icon lc-xs"></i> Spielstil</span><strong id="opPlay">—</strong></div>
                 </div>
             </div>
         </div>
@@ -1564,16 +1557,16 @@
     <!-- Photo detail modal (other user) -->
     <div id="photoDetailModal" class="modal hidden">
         <div class="photo-detail">
-            <button id="photoDetailClose" class="photo-viewer-close">✕</button>
+            <button id="photoDetailClose" class="photo-viewer-close"><i data-lucide="x" class="lc-icon lc-sm"></i></button>
             <img id="photoDetailImg" src="" alt="" />
             <div class="photo-actions">
-                <button id="photoLikeBtn" class="photo-action-btn">🤍 <span id="photoLikeCount">0</span></button>
-                <button id="photoCommentToggle" class="photo-action-btn">💬 <span id="photoCommentCount">0</span></button>
+                <button id="photoLikeBtn" class="photo-action-btn"><i data-lucide="heart" class="lc-icon lc-xs"></i> <span id="photoLikeCount">0</span></button>
+                <button id="photoCommentToggle" class="photo-action-btn"><i data-lucide="message-circle" class="lc-icon lc-xs"></i> <span id="photoCommentCount">0</span></button>
             </div>
             <div id="photoComments" class="photo-comments"></div>
             <div class="photo-comment-input">
                 <input type="text" id="photoCommentInput" placeholder="Kommentar schreiben…" />
-                <button id="photoCommentSend" class="photo-send-btn">➤</button>
+                <button id="photoCommentSend" class="photo-send-btn"><i data-lucide="send" class="lc-icon lc-xs"></i></button>
             </div>
         </div>
     </div>
@@ -1581,15 +1574,15 @@
     <!-- Report user modal -->
     <div id="reportUserModal" class="modal hidden">
         <div class="modal-content">
-            <h2>⚠ Profil melden</h2>
+            <h2><i data-lucide="alert-triangle" class="lc-icon lc-xs"></i> Profil melden</h2>
             <p class="muted" id="reportUserInfo">Warum möchtest du dieses Profil melden?</p>
             <div class="report-reasons">
-                <button class="report-reason-btn" data-reason="fake">🎭 Gefälschtes Profil</button>
-                <button class="report-reason-btn" data-reason="harassment">😤 Belästigung / unangemessenes Verhalten</button>
-                <button class="report-reason-btn" data-reason="danger">⚠ Gefahr für Hunde</button>
-                <button class="report-reason-btn" data-reason="spam">📨 Spam oder Werbung</button>
-                <button class="report-reason-btn" data-reason="photo">📸 Unangemessene Fotos</button>
-                <button class="report-reason-btn" data-reason="other">💬 Sonstiges</button>
+                <button class="report-reason-btn" data-reason="fake"><i data-lucide="mask" class="lc-icon lc-xs"></i> Gefälschtes Profil</button>
+                <button class="report-reason-btn" data-reason="harassment"><i data-lucide="shield-alert" class="lc-icon lc-xs"></i> Belästigung / unangemessenes Verhalten</button>
+                <button class="report-reason-btn" data-reason="danger"><i data-lucide="alert-triangle" class="lc-icon lc-xs"></i> Gefahr für Hunde</button>
+                <button class="report-reason-btn" data-reason="spam"><i data-lucide="mail-warning" class="lc-icon lc-xs"></i> Spam oder Werbung</button>
+                <button class="report-reason-btn" data-reason="photo"><i data-lucide="camera" class="lc-icon lc-xs"></i> Unangemessene Fotos</button>
+                <button class="report-reason-btn" data-reason="other"><i data-lucide="message-circle" class="lc-icon lc-xs"></i> Sonstiges</button>
             </div>
             <label class="report-detail-label hidden" id="reportDetailWrap">
                 Details (optional)
@@ -1605,40 +1598,40 @@
     <!-- Safety tips modal (shown before first meeting) -->
     <div id="safetyTipsModal" class="modal hidden">
         <div class="modal-content safety-tips-modal">
-            <div class="safety-hero-icon">🛡️</div>
+            <div class="safety-hero-icon"><i data-lucide="shield-check" class="lc-icon" style="width:48px;height:48px"></i></div>
             <h2>Sicherheitshinweise</h2>
             <p class="lead">Für ein sicheres erstes Treffen mit einem neuen Hund</p>
             <div class="safety-tips-list">
                 <div class="safety-tip">
-                    <span>📍</span>
+                    <span><i data-lucide="map-pin" class="lc-icon lc-sm"></i></span>
                     <div>
                         <strong>Öffentlicher Ort</strong>
                         <small>Trefft euch an einem belebten Park oder einer Hundewiese — nie allein an abgelegenen Orten.</small>
                     </div>
                 </div>
                 <div class="safety-tip">
-                    <span>👫</span>
+                    <span><i data-lucide="users" class="lc-icon lc-sm"></i></span>
                     <div>
                         <strong>Begleitung mitnehmen</strong>
                         <small>Nimm beim ersten Treffen eine Vertrauensperson mit.</small>
                     </div>
                 </div>
                 <div class="safety-tip">
-                    <span>🐕</span>
+                    <span><i data-lucide="dog" class="lc-icon lc-sm"></i></span>
                     <div>
                         <strong>Hunde angeleint lassen</strong>
                         <small>Beide Hunde zu Beginn an der Leine, bis sie sich beschnuppern konnten.</small>
                     </div>
                 </div>
                 <div class="safety-tip">
-                    <span>📱</span>
+                    <span><i data-lucide="smartphone" class="lc-icon lc-sm"></i></span>
                     <div>
                         <strong>Standort teilen</strong>
                         <small>Teile deinen Standort mit Freunden oder Familie.</small>
                     </div>
                 </div>
                 <div class="safety-tip">
-                    <span>⚠</span>
+                    <span><i data-lucide="alert-triangle" class="lc-icon lc-sm"></i></span>
                     <div>
                         <strong>Vertraue deinem Bauchgefühl</strong>
                         <small>Wenn sich etwas falsch anfühlt, brich das Treffen ab. Du kannst den Nutzer jederzeit melden oder blockieren.</small>
@@ -1653,7 +1646,7 @@
     <div id="adBanner" class="ad-banner hidden">
         <span class="ad-tag">Anzeige</span>
         <span id="adText"></span>
-        <button id="adClose">✕</button>
+        <button id="adClose"><i data-lucide="x" class="lc-icon lc-xs"></i></button>
     </div>
 
     <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>

@@ -448,7 +448,7 @@ function renderActiveFilterChips() {
         f[key].forEach(val => {
             const chip = document.createElement("button");
             chip.className = "active-chip";
-            chip.innerHTML = `${FILTER_LABELS[key][val] || val} <span class="ac-x">✕</span>`;
+            chip.innerHTML = `${FILTER_LABELS[key][val] || val} <span class="ac-x"><i data-lucide="x" class="lc-icon lc-xs"></i></span>`;
             chip.addEventListener("click", () => {
                 const idx = f[key].indexOf(val);
                 if (idx >= 0) f[key].splice(idx, 1);
@@ -461,7 +461,7 @@ function renderActiveFilterChips() {
     if (state.radius !== 10) {
         const chip = document.createElement("button");
         chip.className = "active-chip";
-        chip.innerHTML = `<i data-lucide="map-pin" class="lc-icon lc-xs"></i> ${state.radius} km <span class="ac-x">✕</span>`;
+        chip.innerHTML = `<i data-lucide="map-pin" class="lc-icon lc-xs"></i> ${state.radius} km <span class="ac-x"><i data-lucide="x" class="lc-icon lc-xs"></i></span>`;
         chip.addEventListener("click", () => {
             state.radius = 10;
             $("#radiusSlider").value = 10;
@@ -474,7 +474,7 @@ function renderActiveFilterChips() {
     if (f.breed) {
         const chip = document.createElement("button");
         chip.className = "active-chip premium";
-        chip.innerHTML = `★ ${f.breed} <span class="ac-x">✕</span>`;
+        chip.innerHTML = `<i data-lucide="star" class="lc-icon lc-xs"></i> ${f.breed} <span class="ac-x"><i data-lucide="x" class="lc-icon lc-xs"></i></span>`;
         chip.addEventListener("click", () => {
             f.breed = "";
             $("#fBreed").value = "";
@@ -674,7 +674,7 @@ function addMatch(dog) {
             saveState();
         }).catch(() => {});
     } else {
-        const greetMsg = { id: genMsgId(), from: "them", type: "text", text: `Woof! Ich bin ${dog.name} 🐾`, ts: Date.now(), status: "delivered", reactions: [] };
+        const greetMsg = { id: genMsgId(), from: "them", type: "text", text: `Woof! Ich bin ${dog.name}`, ts: Date.now(), status: "delivered", reactions: [] };
         state.matches.push({
             profile: dog,
             messages: [greetMsg]
@@ -693,11 +693,11 @@ function addMatch(dog) {
 
 // ---------- Match modal ----------
 const MATCH_GREETINGS = [
-    "Hey! Wollen wir zusammen Gassi gehen? 🐾",
-    "Huhu! Dein Hund sieht ja toll aus – Lust auf einen Spieltermin im Park? 🎾",
-    "Hallo! Wir wären gerade in der Nähe – vielleicht ein spontaner Meet-Up? 🐶",
-    "Hey, was für ein süßer Vierbeiner! Treffen wir uns mal? 💕",
-    "Servus! Unsere Hunde würden sich bestimmt super verstehen 🐕"
+    "Hey! Wollen wir zusammen Gassi gehen?",
+    "Huhu! Dein Hund sieht ja toll aus – Lust auf einen Spieltermin im Park?",
+    "Hallo! Wir wären gerade in der Nähe – vielleicht ein spontaner Meet-Up?",
+    "Hey, was für ein süßer Vierbeiner! Treffen wir uns mal?",
+    "Servus! Unsere Hunde würden sich bestimmt super verstehen"
 ];
 
 function pickGreeting(dog) {
@@ -725,7 +725,7 @@ function showMatchModal(dog) {
         }
 
         const pill = $("#matchScorePill");
-        if (pill) pill.innerHTML = `🎯 <strong>${score}%</strong> Match`;
+        if (pill) pill.innerHTML = `<i data-lucide="target" class="lc-icon lc-sm"></i> <strong>${score}%</strong> Match`;
 
         const greeting = pickGreeting(dog);
         $("#matchGreetingText").textContent = greeting;
@@ -760,7 +760,7 @@ function showMatchModal(dog) {
 
         // "Match teilen"
         $("#matchShareBtn").onclick = async () => {
-            const text = `${state.myProfile.name} und ${dog.name} sind ein Match auf PfotenMatch! 🐾❤️ ${score}% Kompatibilität`;
+            const text = `${state.myProfile.name} und ${dog.name} sind ein Match auf PfotenMatch! ${score}% Kompatibilität`;
             if (navigator.share) {
                 try {
                     await navigator.share({ title: "PfotenMatch", text });
@@ -768,7 +768,7 @@ function showMatchModal(dog) {
             } else if (navigator.clipboard) {
                 try {
                     await navigator.clipboard.writeText(text);
-                    showToast && showToast("In Zwischenablage kopiert 📋");
+                    showToast && showToast("In Zwischenablage kopiert");
                 } catch (e) { /* ignore */ }
             }
         };
@@ -996,9 +996,9 @@ function escapeHtml(s) {
 }
 
 function renderTicks(status) {
-    if (status === "sent")      return `<span class="ticks" title="Gesendet">✓</span>`;
-    if (status === "delivered") return `<span class="ticks" title="Zugestellt">✓✓</span>`;
-    if (status === "read")      return `<span class="ticks read" title="Gelesen">✓✓</span>`;
+    if (status === "sent")      return `<span class="ticks" title="Gesendet"><i data-lucide="check" class="lc-icon lc-xs"></i></span>`;
+    if (status === "delivered") return `<span class="ticks" title="Zugestellt"><i data-lucide="check-check" class="lc-icon lc-xs"></i></span>`;
+    if (status === "read")      return `<span class="ticks read" title="Gelesen"><i data-lucide="check-check" class="lc-icon lc-xs"></i></span>`;
     return "";
 }
 
@@ -1033,7 +1033,7 @@ function renderBubbleBody(msg) {
             return `<i style="height:${h}px"></i>`;
         }).join("");
         return `<div class="voice-msg">
-            <button class="play-btn" type="button">▶</button>
+            <button class="play-btn" type="button"><i data-lucide="play" class="lc-icon lc-xs"></i></button>
             <div class="waveform">${bars}</div>
             <span class="duration">${msg.duration || "0:05"}</span>
         </div>`;
@@ -1209,9 +1209,9 @@ function startReplyTo(msgId) {
     if (!msg || msg.deleted) return;
     chatUi.replyTo = msgId;
     $("#replyName").textContent = msg.from === "me" ? "Du" : match.profile.name;
-    const preview = msg.type === "voice"    ? "🎤 Sprachnachricht"
-                  : msg.type === "image"    ? "🖼️ Foto"
-                  : msg.type === "location" ? "📍 Standort"
+    const preview = msg.type === "voice"    ? "Sprachnachricht"
+                  : msg.type === "image"    ? "Foto"
+                  : msg.type === "location" ? "Standort"
                   : msg.text;
     $("#replyText").textContent = preview;
     $("#replyPreview").classList.remove("hidden");
@@ -1260,7 +1260,7 @@ function copyMessage(msgId) {
     const msg = match?.messages.find(m => m.id === msgId);
     if (!msg || !msg.text) return;
     if (navigator.clipboard) navigator.clipboard.writeText(msg.text).catch(() => {});
-    flashToast("📋 Kopiert");
+    flashToast("Kopiert");
 }
 
 // --- Context menu ---
@@ -1450,7 +1450,7 @@ function openReportUser(targetId, targetName) {
 function submitReport() {
     if (!_reportReason) return;
     const detail = ($("#reportDetail")?.value || "").trim();
-    flashToast("⚠ Meldung gesendet. Wir prüfen den Fall.");
+    flashToast("Meldung gesendet. Wir prüfen den Fall.");
     $("#reportUserModal").classList.add("hidden");
     _reportTargetId = null;
     _reportReason = null;
@@ -1654,10 +1654,10 @@ function updatePoiCount(count, loading) {
     const el = $("#osmStatus");
     if (!el) return;
     if (loading) {
-        el.textContent = count > 0 ? `🔄 ${count} Orte geladen, lade weitere…` : "🔄 Lade Orte…";
+        el.textContent = count > 0 ? `${count} Orte geladen, lade weitere…` : "Lade Orte…";
         el.classList.remove("hidden");
     } else if (count > 0) {
-        el.textContent = `✅ ${count} Orte geladen`;
+        el.textContent = `${count} Orte geladen`;
         el.classList.remove("hidden");
         setTimeout(() => el.classList.add("hidden"), 3000);
     } else {
@@ -1894,7 +1894,7 @@ async function loadOsmForView() {
     } catch (err) {
         console.warn("OSM POI load failed:", err);
         const status = $("#osmStatus");
-        if (status) { status.textContent = "⚠ Orte konnten nicht geladen werden"; status.classList.remove("hidden"); setTimeout(() => status.classList.add("hidden"), 4000); }
+        if (status) { status.textContent = "Orte konnten nicht geladen werden"; status.classList.remove("hidden"); setTimeout(() => status.classList.add("hidden"), 4000); }
         showMapLoading(false);
     }
     _osmLoading = false;
@@ -2213,7 +2213,7 @@ function collectPaw(poiId, poi) {
     if (poi) {
         const dist = getPoiDistance(poi);
         if (dist > 30 && !state.paws[poiId]) {
-            flashToast(`🔒 Noch ${Math.round(dist)}m entfernt – komm auf 30m ran!`);
+            flashToast(`Noch ${Math.round(dist)}m entfernt – komm auf 30m ran!`);
             return;
         }
     }
@@ -2221,10 +2221,10 @@ function collectPaw(poiId, poi) {
     state.paws[poiId] = Date.now();
     saveState();
     if (isNew) {
-        flashToast("🐾 Neuer Spot besucht! +1 Pfote");
+        flashToast("Neuer Spot besucht! +1 Pfote");
         burstPawAnimation();
     } else {
-        flashToast("🐾 Erneut besucht");
+        flashToast("Erneut besucht");
     }
     renderMapMarkers();
     renderPawCollector();
@@ -2277,7 +2277,7 @@ function renderPawCollector() {
     const week = pawsThisWeek();
     const goal = 5;
     if (week >= goal) {
-        challenge.textContent = `🎉 Wochen-Challenge geschafft (${week}/${goal})!`;
+        challenge.textContent = `Wochen-Challenge geschafft (${week}/${goal})!`;
         challenge.classList.add("done");
     } else {
         challenge.textContent = `Wochenchallenge: ${week}/${goal} neue Spots besucht`;
@@ -2356,7 +2356,7 @@ function renderMapSearchResults() {
 
     if (results.length === 0) {
         box.innerHTML = _osmLoading
-            ? '<div class="msr-empty">🔄 Orte werden geladen…</div>'
+            ? '<div class="msr-empty">Orte werden geladen…</div>'
             : `<div class="msr-empty">Keine Treffer für "${escapeHtml(q)}"</div>`;
         box.classList.remove("hidden");
         return;
@@ -2537,7 +2537,7 @@ function stopWalk() {
     if (_walkTimerInterval) { clearInterval(_walkTimerInterval); _walkTimerInterval = null; }
     saveState();
     renderWalkTracker();
-    if (durationMin > 0) flashToast(`🏁 Gassi beendet! ${durationMin} Min. gelaufen`);
+    if (durationMin > 0) flashToast(`Gassi beendet! ${durationMin} Min. gelaufen`);
 }
 
 function formatWalkTime(ms) {
@@ -2709,7 +2709,7 @@ function openMeetPlanner(dog) {
         if (match) {
             match.messages.push({
                 from: "system",
-                text: `📅 Treffen vorgeschlagen: ${spot.icon} ${spot.name} am ${date} um ${time}`,
+                text: `Treffen vorgeschlagen: ${spot.name} am ${date} um ${time}`,
                 ts: Date.now()
             });
             saveState();
@@ -2736,7 +2736,7 @@ function activatePremium() {
     $("#premiumBadge").classList.add("active");
     $("#premiumModal").classList.add("hidden");
     saveState();
-    alert("🎉 Willkommen bei PfotenMatch Premium!\n\nDu kannst jetzt sehen, wer dich gelikt hat, nach Rassen filtern und Super-Likes einsetzen.");
+    alert("Willkommen bei PfotenMatch Premium!\n\nDu kannst jetzt sehen, wer dich gelikt hat, nach Rassen filtern und Super-Likes einsetzen.");
 }
 
 // ---------- Profile page (Instagram-Style) ----------
@@ -2914,7 +2914,7 @@ function handleStoryFile(file) {
         saveState();
         renderProfile();
         renderMatches();
-        flashToast("📸 Story veröffentlicht");
+        flashToast("Story veröffentlicht");
     });
 }
 
@@ -3203,8 +3203,8 @@ function renderOtherPhotos(dog) {
         cell.innerHTML =
             `<img src="${photo.src}" alt="" />` +
             `<div class="op-photo-overlay">` +
-                `<span>${pd.liked ? "❤️" : "🤍"} ${pd.likes}</span>` +
-                `<span>💬 ${pd.comments.length}</span>` +
+                `<span><i data-lucide="heart" class="lc-icon lc-xs"${pd.liked ? ' style="color:#ff6b6b;fill:#ff6b6b"' : ""}></i> ${pd.likes}</span>` +
+                `<span><i data-lucide="message-circle" class="lc-icon lc-xs"></i> ${pd.comments.length}</span>` +
             `</div>`;
         cell.addEventListener("click", () => openPhotoDetail(photo, dog));
         grid.appendChild(cell);
@@ -3225,7 +3225,7 @@ function openPhotoDetail(photo, dog) {
 }
 
 function updatePhotoLikeBtn(pd) {
-    $("#photoLikeBtn").innerHTML = `${pd.liked ? "❤️" : "🤍"} <span id="photoLikeCount">${pd.likes}</span>`;
+    $("#photoLikeBtn").innerHTML = `<i data-lucide="heart" class="lc-icon lc-xs"${pd.liked ? ' style="color:#ff6b6b;fill:#ff6b6b"' : ""}></i> <span id="photoLikeCount">${pd.likes}</span>`;
     $("#photoLikeBtn").classList.toggle("liked", pd.liked);
 }
 
@@ -3354,7 +3354,7 @@ function saveSettings() {
     document.documentElement.classList.toggle("dark", state.settings.dark);
     saveState();
     $("#settingsModal").classList.add("hidden");
-    flashToast("⚙ Einstellungen gespeichert");
+    flashToast("Einstellungen gespeichert");
     if (leafletMap) renderMap();
 }
 
@@ -3370,7 +3370,7 @@ function exportData() {
     a.download = "pfotenmatch-export.json";
     a.click();
     URL.revokeObjectURL(url);
-    flashToast("📦 Daten exportiert");
+    flashToast("Daten exportiert");
 }
 function resetAllData() {
     if (!confirm("Wirklich ALLE lokalen Daten löschen? Dies kann nicht rückgängig gemacht werden.")) return;
@@ -3399,9 +3399,9 @@ const sitterUi = {
     detailId: null
 };
 
-const SERVICE_ICONS  = { Gassi: "🚶", Tag: "☀", Nacht: "🌙", Urlaub: "✈" };
+const SERVICE_ICONS  = { Gassi: '<i data-lucide="footprints" class="lc-icon lc-xs"></i>', Tag: '<i data-lucide="sun" class="lc-icon lc-xs"></i>', Nacht: '<i data-lucide="moon" class="lc-icon lc-xs"></i>', Urlaub: '<i data-lucide="plane" class="lc-icon lc-xs"></i>' };
 const SERVICE_LABELS = { Gassi: "Gassi", Tag: "Tagesbetreuung", Nacht: "Übernachtung", Urlaub: "Urlaubspflege" };
-function serviceIcon(s)  { return SERVICE_ICONS[s]  || "🐾"; }
+function serviceIcon(s)  { return SERVICE_ICONS[s]  || '<i data-lucide="paw-print" class="lc-icon lc-xs"></i>'; }
 function serviceLabel(s) { return SERVICE_LABELS[s] || s; }
 
 function sitterDistance(s) {
@@ -3473,7 +3473,7 @@ function renderSitters() {
     if (countEl) countEl.textContent = `${filtered.length} Sitter in deiner Nähe`;
 
     if (filtered.length === 0) {
-        list.innerHTML = `<p class="empty-state">Keine Sitter mit diesen Filtern gefunden 🐾</p>`;
+        list.innerHTML = `<p class="empty-state">Keine Sitter mit diesen Filtern gefunden</p>`;
         return;
     }
 
@@ -3491,9 +3491,9 @@ function renderSitters() {
         const meBadge = isMe ? '<span class="me-badge">Du</span>' : '';
         const photoHtml = s.avatarImage
             ? `<img src="${s.avatarImage}" alt="${escapeHtml(s.name)}" />`
-            : `<div class="rv-photo-fallback">${s.avatar || "🐾"}</div>`;
+            : `<div class="rv-photo-fallback"><i data-lucide="user" class="lc-icon" style="width:48px;height:48px"></i></div>`;
         const verifiedBadge = (s.verified || s.identityVerified)
-            ? `<span class="rv-badge verified">🛡️ Verifiziert</span>` : '';
+            ? `<span class="rv-badge verified"><i data-lucide="shield-check" class="lc-icon lc-xs"></i> Verifiziert</span>` : '';
         card.innerHTML = `
             <div class="rv-card-photo">
                 ${photoHtml}
@@ -3503,12 +3503,12 @@ function renderSitters() {
             </div>
             <div class="rv-card-body">
                 <h4>${escapeHtml(s.name)}${meBadge}</h4>
-                <div class="rv-card-meta"><span class="rv-rating">⭐ ${s.rating.toFixed(1)}</span> (${s.reviewCount}) · ${escapeHtml(s.neighborhood)} · ${s.distance.toFixed(1)} km</div>
+                <div class="rv-card-meta"><span class="rv-rating"><i data-lucide="star" class="lc-icon lc-xs" style="color:#f59e0b"></i> ${s.rating.toFixed(1)}</span> (${s.reviewCount}) · ${escapeHtml(s.neighborhood)} · ${s.distance.toFixed(1)} km</div>
                 <p class="rv-card-bio">${escapeHtml(s.bio)}</p>
                 <div class="rv-card-chips">${svcChips}</div>
                 <div class="rv-card-footer">
                     <span class="rv-card-price">${priceDisplay}</span>
-                    <span class="rv-card-response">⏱ ${s.responseTime}</span>
+                    <span class="rv-card-response"><i data-lucide="clock" class="lc-icon lc-xs"></i> ${s.responseTime}</span>
                 </div>
             </div>
         `;
@@ -3521,6 +3521,7 @@ function renderSitters() {
         });
         list.appendChild(card);
     });
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 function openSitterDetail(id) {
@@ -3580,10 +3581,10 @@ function openSitterDetail(id) {
             hdWrap.innerHTML = `
                 <h4 style="margin:16px 0 8px;font-size:14px;font-weight:700">Über das Zuhause</h4>
                 <div class="sd-home-grid">
-                    <div class="sd-home-item"><span>🌳</span>${hd.yard ? "Garten vorhanden" : "Kein Garten"}</div>
-                    <div class="sd-home-item"><span>🐾</span>${hd.otherPets || "Keine Tiere"}</div>
-                    <div class="sd-home-item"><span>👶</span>${hd.children ? "Kinder im Haushalt" : "Keine Kinder"}</div>
-                    <div class="sd-home-item"><span>🚭</span>${hd.smokeFree ? "Rauchfrei" : "Raucher-Haushalt"}</div>
+                    <div class="sd-home-item"><span><i data-lucide="tree-pine" class="lc-icon lc-xs"></i></span>${hd.yard ? "Garten vorhanden" : "Kein Garten"}</div>
+                    <div class="sd-home-item"><span><i data-lucide="paw-print" class="lc-icon lc-xs"></i></span>${hd.otherPets || "Keine Tiere"}</div>
+                    <div class="sd-home-item"><span><i data-lucide="baby" class="lc-icon lc-xs"></i></span>${hd.children ? "Kinder im Haushalt" : "Keine Kinder"}</div>
+                    <div class="sd-home-item"><span><i data-lucide="cigarette-off" class="lc-icon lc-xs"></i></span>${hd.smokeFree ? "Rauchfrei" : "Raucher-Haushalt"}</div>
                 </div>`;
         } else {
             hdWrap.innerHTML = "";
@@ -3594,10 +3595,10 @@ function openSitterDetail(id) {
     const prices = $("#sdPrices");
     prices.innerHTML = "";
     const items = [];
-    if (s.services.includes("Gassi")  && s.priceHour)  items.push(["🚶", "Gassi gehen",    `CHF ${s.priceHour}/Std`]);
-    if (s.services.includes("Tag")    && s.priceDay)   items.push(["☀", "Tagesbetreuung", `CHF ${s.priceDay}/Tag`]);
-    if (s.services.includes("Nacht")  && s.priceNight) items.push(["🌙", "Übernachtung",   `CHF ${s.priceNight}/Nacht`]);
-    if (s.services.includes("Urlaub") && s.priceNight) items.push(["✈", "Urlaubspflege",  `CHF ${s.priceNight}/Nacht`]);
+    if (s.services.includes("Gassi")  && s.priceHour)  items.push(['<i data-lucide="footprints" class="lc-icon lc-xs"></i>', "Gassi gehen",    `CHF ${s.priceHour}/Std`]);
+    if (s.services.includes("Tag")    && s.priceDay)   items.push(['<i data-lucide="sun" class="lc-icon lc-xs"></i>', "Tagesbetreuung", `CHF ${s.priceDay}/Tag`]);
+    if (s.services.includes("Nacht")  && s.priceNight) items.push(['<i data-lucide="moon" class="lc-icon lc-xs"></i>', "Übernachtung",   `CHF ${s.priceNight}/Nacht`]);
+    if (s.services.includes("Urlaub") && s.priceNight) items.push(['<i data-lucide="plane" class="lc-icon lc-xs"></i>', "Urlaubspflege",  `CHF ${s.priceNight}/Nacht`]);
     items.forEach(([icon, label, p]) => {
         const row = document.createElement("div");
         row.className = "price-row";
@@ -3635,6 +3636,7 @@ function openSitterDetail(id) {
     switchSitterDetailTab("info");
 
     $("#sitterDetailModal").classList.remove("hidden");
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 function switchSitterDetailTab(name) {
@@ -3657,9 +3659,9 @@ function renderSitterReviews(s) {
 
     const fullStars = Math.floor(rating);
     const halfStar = (rating - fullStars) >= 0.5;
-    let starsHtml = "★".repeat(fullStars);
-    if (halfStar) starsHtml += "½";
-    starsHtml += "☆".repeat(5 - fullStars - (halfStar ? 1 : 0));
+    let starsHtml = Array(fullStars).fill('<i data-lucide="star" class="lc-icon lc-xs" style="color:#f59e0b;fill:#f59e0b"></i>').join("");
+    if (halfStar) starsHtml += '<i data-lucide="star-half" class="lc-icon lc-xs" style="color:#f59e0b;fill:#f59e0b"></i>';
+    starsHtml += Array(5 - fullStars - (halfStar ? 1 : 0)).fill('<i data-lucide="star" class="lc-icon lc-xs" style="color:#d1d5db"></i>').join("");
 
     // Star distribution
     const dist = [0, 0, 0, 0, 0];
@@ -3693,7 +3695,7 @@ function renderSitterReviews(s) {
     reviews.forEach(r => {
         const card = document.createElement("div");
         card.className = "review-card";
-        const stars = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
+        const stars = Array(r.rating).fill('<i data-lucide="star" class="lc-icon lc-xs" style="color:#f59e0b;fill:#f59e0b"></i>').join("") + Array(5 - r.rating).fill('<i data-lucide="star" class="lc-icon lc-xs" style="color:#d1d5db"></i>').join("");
         const ago = timeAgo(r.ts);
         card.innerHTML = `
             <div class="review-header">
@@ -3728,12 +3730,13 @@ function openWriteReview() {
     _reviewSitterId = s.id;
     _reviewRating = 0;
     $$("#reviewStars button").forEach(b => {
-        b.textContent = "☆";
+        b.innerHTML = '<i data-lucide="star" class="lc-icon lc-sm"></i>';
         b.classList.remove("active");
     });
     $("#reviewText").value = "";
     $("#reviewSitterInfo").innerHTML = `Bewertung für <strong>${escapeHtml(s.name)}</strong>`;
     $("#reviewModal").classList.remove("hidden");
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 function submitReview() {
@@ -3844,7 +3847,7 @@ function submitBooking() {
     state.bookings.unshift(booking);
     saveState();
     $("#bookingModal").classList.add("hidden");
-    flashToast(`📨 Anfrage an ${s.name} gesendet`);
+    flashToast(`Anfrage an ${s.name} gesendet`);
     updateBookingsBadge();
     if (sitterUi.mode === "bookings") renderMyBookings();
 
@@ -3855,9 +3858,9 @@ function submitBooking() {
         b.status = Math.random() < 0.85 ? "confirmed" : "declined";
         saveState();
         if (b.status === "confirmed") {
-            flashToast(`✅ ${s.name} hat deine Anfrage bestätigt!`);
+            flashToast(`${s.name} hat deine Anfrage bestätigt!`);
         } else {
-            flashToast(`😔 ${s.name} ist an dem Termin leider nicht verfügbar`);
+            flashToast(`${s.name} ist an dem Termin leider nicht verfügbar`);
         }
         if ($("#view-sitter")?.classList.contains("active")) renderMyBookings();
         updateBookingsBadge();
@@ -3868,7 +3871,7 @@ function renderMyBookings() {
     const list = $("#bookingList");
     if (!list) return;
     if (state.bookings.length === 0) {
-        list.innerHTML = `<p class="empty-state">Noch keine Buchungen. Finde einen Sitter und sende deine erste Anfrage! 🐾</p>`;
+        list.innerHTML = `<p class="empty-state">Noch keine Buchungen. Finde einen Sitter und sende deine erste Anfrage!</p>`;
         return;
     }
     list.innerHTML = "";
@@ -3876,10 +3879,10 @@ function renderMyBookings() {
         const s = DOG_SITTERS.find(x => x.id === b.sitterId);
         if (!s) return;
         const statusText = ({
-            pending:   "⏳ Wartet auf Bestätigung",
-            confirmed: "✅ Bestätigt",
-            declined:  "❌ Abgelehnt",
-            completed: "🏁 Abgeschlossen"
+            pending:   "Wartet auf Bestätigung",
+            confirmed: "Bestätigt",
+            declined:  "Abgelehnt",
+            completed: "Abgeschlossen"
         })[b.status] || b.status;
         const detail = b.service === "Gassi"
             ? `${b.hours} Std am ${b.dateFrom}`
@@ -3899,7 +3902,7 @@ function renderMyBookings() {
                 <div class="bc-sub">${serviceIcon(b.service)} ${serviceLabel(b.service)} · ${escapeHtml(detail)}</div>
                 <div class="bc-status">${statusText}</div>
             </div>
-            <button class="bc-cancel" data-cancel="${b.id}" title="Stornieren">✕</button>
+            <button class="bc-cancel" data-cancel="${b.id}" title="Stornieren"><i data-lucide="x" class="lc-icon lc-xs"></i></button>
         `;
         card.querySelector(".bc-cancel").addEventListener("click", (e) => {
             e.stopPropagation();
@@ -3907,6 +3910,7 @@ function renderMyBookings() {
         });
         list.appendChild(card);
     });
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 function updateBookingsBadge() {
@@ -3927,14 +3931,14 @@ function cancelBooking(id) {
     saveState();
     renderMyBookings();
     updateBookingsBadge();
-    flashToast("🗑 Buchung storniert");
+    flashToast("Buchung storniert");
 }
 
 // ============================================================
 // "SITTER WERDEN" – Registrierung, Dashboard, Anfragen
 // ============================================================
 
-const sitterForm = { selectedAvatar: "👩", selectedSizes: [], avatarImage: null, photos: [] };
+const sitterForm = { selectedAvatar: "", selectedSizes: [], avatarImage: null, photos: [] };
 
 function renderBecomeSitter() {
     const hasProfile = !!state.mySitterProfile;
@@ -3958,7 +3962,7 @@ function initSitterFormDefaults() {
         if (sitterForm.avatarImage) {
             avPreview.innerHTML = `<img src="${sitterForm.avatarImage}" alt="Profilbild" />`;
         } else {
-            avPreview.innerHTML = `<span class="sitter-avatar-placeholder">📷</span>`;
+            avPreview.innerHTML = `<span class="sitter-avatar-placeholder"><i data-lucide="camera" class="lc-icon lc-sm"></i></span>`;
         }
     }
     // Gallery preview
@@ -3976,7 +3980,7 @@ function renderSitterGalleryPreview() {
     sitterForm.photos.forEach((src, i) => {
         const cell = document.createElement("div");
         cell.className = "sitter-gallery-cell";
-        cell.innerHTML = `<img src="${src}" alt="Foto ${i + 1}" /><button class="gallery-remove" data-idx="${i}">✕</button>`;
+        cell.innerHTML = `<img src="${src}" alt="Foto ${i + 1}" /><button class="gallery-remove" data-idx="${i}"><i data-lucide="x" class="lc-icon lc-xs"></i></button>`;
         cell.querySelector(".gallery-remove").addEventListener("click", (e) => {
             e.stopPropagation();
             sitterForm.photos.splice(i, 1);
@@ -3988,7 +3992,7 @@ function renderSitterGalleryPreview() {
         const addBtn = document.createElement("button");
         addBtn.type = "button";
         addBtn.className = "sitter-gallery-add";
-        addBtn.innerHTML = `<span>➕</span><small>Hinzufügen</small>`;
+        addBtn.innerHTML = `<span><i data-lucide="plus" class="lc-icon lc-sm"></i></span><small>Hinzufügen</small>`;
         addBtn.addEventListener("click", () => $("#msGalleryInput")?.click());
         gallery.appendChild(addBtn);
     }
@@ -4108,10 +4112,10 @@ function saveMySitterProfile() {
     }).catch(e => console.warn("Sitter sync failed:", e));
 
     if (isNew) {
-        flashToast("🎉 Sitter-Profil gespeichert!");
+        flashToast("Sitter-Profil gespeichert!");
         setTimeout(seedDemoSitterRequests, 1500);
     } else {
-        flashToast("✓ Profil aktualisiert");
+        flashToast("Profil aktualisiert");
     }
 
     renderBecomeSitter();
@@ -4129,7 +4133,7 @@ function editMySitterProfile() {
     $("#msLng").value = p.lng || "";
     $("#msCity").value = p.city || p.neighborhood || "";
     if (p.lat && p.lng) {
-        $("#msLocationStatus").textContent = `📍 ${p.city || p.neighborhood} (${p.lat.toFixed(2)}, ${p.lng.toFixed(2)})`;
+        $("#msLocationStatus").textContent = ` ${p.city || p.neighborhood} (${p.lat.toFixed(2)}, ${p.lng.toFixed(2)})`;
     }
     $("#msBio").value = p.bio;
     $("#msExperience").value = p.experience;
@@ -4176,7 +4180,7 @@ function deleteMySitterProfile() {
     state.sitterRequests = [];
     _sitterIdentityVerified = false;
     _sitterIdentityStatus = "not_started";
-    sitterForm.selectedAvatar = "👩";
+    sitterForm.selectedAvatar = "";
     sitterForm.avatarImage = null;
     sitterForm.photos = [];
     sitterForm.selectedSizes = [];
@@ -4187,7 +4191,7 @@ function deleteMySitterProfile() {
     renderBecomeSitter();
     renderSitters();
     updateSitterRequestsBadge();
-    flashToast("🗑 Profil gelöscht");
+    flashToast("Profil gelöscht");
     if (leafletMap) renderMapMarkers();
 }
 
@@ -4229,7 +4233,7 @@ function seedDemoSitterRequests() {
     saveState();
     renderSitterDashboard();
     updateSitterRequestsBadge();
-    flashToast(`📥 ${count} neue Anfragen!`);
+    flashToast(`${count} neue Anfragen!`);
 }
 
 function computeRequestTotal(sitter, svc, hours) {
@@ -4259,9 +4263,9 @@ function renderSitterDashboard() {
         const subActive = (p.subscriptionStatus || "inactive") === "active";
         const hasReviews = (p.reviewCount || 0) > 0;
         trustBar.innerHTML = `
-            <div class="trust-item${isVerified ? " done" : ""}"><span>🛡️</span> ID geprüft</div>
-            <div class="trust-item${subActive ? " done" : ""}"><span>⭐</span> Premium</div>
-            <div class="trust-item${hasReviews ? " done" : ""}"><span>💬</span> ${(p.reviewCount || 0)} Bewertung${(p.reviewCount || 0) !== 1 ? "en" : ""}</div>
+            <div class="trust-item${isVerified ? " done" : ""}"><span><i data-lucide="shield-check" class="lc-icon lc-xs"></i></span> ID geprüft</div>
+            <div class="trust-item${subActive ? " done" : ""}"><span><i data-lucide="star" class="lc-icon lc-xs"></i></span> Premium</div>
+            <div class="trust-item${hasReviews ? " done" : ""}"><span><i data-lucide="message-circle" class="lc-icon lc-xs"></i></span> ${(p.reviewCount || 0)} Bewertung${(p.reviewCount || 0) !== 1 ? "en" : ""}</div>
         `;
     }
 
@@ -4269,10 +4273,10 @@ function renderSitterDashboard() {
     const subEl = $("#dashSubStatus");
     if (subEl) {
         if (subStatus === "active") {
-            subEl.innerHTML = `<span class="sub-active">⭐ Sitter Premium aktiv</span><span class="sub-hint">Dein Profil ist öffentlich sichtbar</span>`;
+            subEl.innerHTML = `<span class="sub-active"><i data-lucide="star" class="lc-icon lc-xs"></i> Sitter Premium aktiv</span><span class="sub-hint">Dein Profil ist öffentlich sichtbar</span>`;
             $("#dashUpgradeBtn")?.classList.add("hidden");
         } else {
-            subEl.innerHTML = `<span class="sub-inactive">🔒 Sitter Premium inaktiv</span><span class="sub-hint">Profil ist nicht öffentlich sichtbar</span>`;
+            subEl.innerHTML = `<span class="sub-inactive"><i data-lucide="lock" class="lc-icon lc-xs"></i> Sitter Premium inaktiv</span><span class="sub-hint">Profil ist nicht öffentlich sichtbar</span>`;
             const upgradeBtn = $("#dashUpgradeBtn");
             if (upgradeBtn) {
                 upgradeBtn.classList.remove("hidden");
@@ -4291,7 +4295,7 @@ function renderSitterDashboard() {
     const reqList = $("#sitterRequestsList");
     const pending = state.sitterRequests.filter(r => r.status === "pending");
     if (pending.length === 0) {
-        reqList.innerHTML = `<p class="empty-mini">Noch keine offenen Anfragen. 🐾</p>`;
+        reqList.innerHTML = `<p class="empty-mini">Noch keine offenen Anfragen.</p>`;
     } else {
         reqList.innerHTML = "";
         pending.forEach(r => {
@@ -4312,7 +4316,7 @@ function renderSitterDashboard() {
                 <p class="req-msg">"${escapeHtml(r.message)}"</p>
                 <div class="req-actions">
                     <button class="btn-ghost" data-decline="${r.id}">Ablehnen</button>
-                    <button class="btn-primary" data-accept="${r.id}">Annehmen ✓</button>
+                    <button class="btn-primary" data-accept="${r.id}">Annehmen <i data-lucide="check" class="lc-icon lc-xs"></i></button>
                 </div>
             `;
             card.querySelector("[data-accept]").addEventListener("click", () => acceptSitterRequest(r.id));
@@ -4330,9 +4334,9 @@ function renderSitterDashboard() {
         jobsList.innerHTML = "";
         others.forEach(r => {
             const statusText = ({
-                accepted:  "✅ Angenommen",
-                completed: "🏁 Abgeschlossen",
-                declined:  "❌ Abgelehnt"
+                accepted:  "Angenommen",
+                completed: "Abgeschlossen",
+                declined:  "Abgelehnt"
             })[r.status] || r.status;
             const row = document.createElement("div");
             row.className = `job-row status-${r.status}`;
@@ -4347,6 +4351,7 @@ function renderSitterDashboard() {
             jobsList.appendChild(row);
         });
     }
+    if (typeof lucide !== "undefined") lucide.createIcons();
 }
 
 function acceptSitterRequest(id) {
@@ -4356,7 +4361,7 @@ function acceptSitterRequest(id) {
     saveState();
     renderSitterDashboard();
     updateSitterRequestsBadge();
-    flashToast(`✅ ${r.fromName} wurde angenommen`);
+    flashToast(`${r.fromName} wurde angenommen`);
     // Nach 6–10 s automatisch als "completed" markieren (simuliert)
     setTimeout(() => {
         const still = state.sitterRequests.find(x => x.id === id);
@@ -4424,7 +4429,7 @@ function bindSitterLocationSearch() {
                         const cityName = r.display_name.split(",").slice(0, 2).join(", ");
                         $("#msCity").value = cityName;
                         inp.value = cityName;
-                        $("#msLocationStatus").textContent = `📍 ${cityName}`;
+                        $("#msLocationStatus").textContent = ` ${cityName}`;
                         results.classList.add("hidden");
                     });
                     results.appendChild(item);
@@ -4438,7 +4443,7 @@ function bindSitterLocationSearch() {
     if (gpsBtn) {
         gpsBtn.addEventListener("click", () => {
             if (!navigator.geolocation) { flashToast("GPS nicht verfügbar"); return; }
-            gpsBtn.textContent = "📡";
+            gpsBtn.textContent = "Suche…";
             navigator.geolocation.getCurrentPosition(
                 async (pos) => {
                     const lat = pos.coords.latitude;
@@ -4451,17 +4456,17 @@ function bindSitterLocationSearch() {
                         const city = data.address?.city || data.address?.town || data.address?.village || "Mein Standort";
                         $("#msCity").value = city;
                         inp.value = city;
-                        $("#msLocationStatus").textContent = `📍 ${city}`;
+                        $("#msLocationStatus").textContent = ` ${city}`;
                     } catch (e) {
                         inp.value = "GPS Standort";
                         $("#msCity").value = "GPS Standort";
-                        $("#msLocationStatus").textContent = `📍 Standort erkannt`;
+                        $("#msLocationStatus").textContent = ` Standort erkannt`;
                     }
-                    gpsBtn.textContent = "📍";
+                    gpsBtn.textContent = "GPS";
                 },
                 () => {
                     flashToast("Standort konnte nicht ermittelt werden");
-                    gpsBtn.textContent = "📍";
+                    gpsBtn.textContent = "GPS";
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
             );
@@ -4477,23 +4482,23 @@ function bindIdentityVerification() {
 
     async function startVerification() {
         const btn = startBtn || retryBtn;
-        if (btn) { btn.textContent = "⏳ Wird gestartet…"; btn.disabled = true; }
+        if (btn) { btn.textContent = "Wird gestartet…"; btn.disabled = true; }
         try {
             const session = await sbCreateIdentitySession();
             if (session?.url) {
                 _sitterIdentityStatus = "pending";
                 updateIdentityVerifyUi();
                 window.open(session.url, "_blank");
-                flashToast("🛡️ Stripe Identity wird geöffnet…");
+                flashToast("Stripe Identity wird geöffnet…");
             } else {
                 _sitterIdentityStatus = "pending";
                 updateIdentityVerifyUi();
-                flashToast("🛡️ Verifizierung gestartet – prüfe den Status in wenigen Minuten");
+                flashToast("Verifizierung gestartet – prüfe den Status in wenigen Minuten");
             }
         } catch (e) {
             flashToast("Fehler: " + (e.message || "Verifizierung konnte nicht gestartet werden"));
         } finally {
-            if (btn) { btn.textContent = "🛡️ Jetzt Identität verifizieren"; btn.disabled = false; }
+            if (btn) { btn.textContent = "Jetzt Identität verifizieren"; btn.disabled = false; }
         }
     }
 
@@ -4502,7 +4507,7 @@ function bindIdentityVerification() {
 
     if (checkBtn) {
         checkBtn.addEventListener("click", async () => {
-            checkBtn.textContent = "⏳ Prüfe…";
+            checkBtn.textContent = "Prüfe…";
             checkBtn.disabled = true;
             try {
                 const status = await sbCheckIdentityStatus();
@@ -4515,12 +4520,12 @@ function bindIdentityVerification() {
                         state.mySitterProfile.identityStatus = "verified";
                         saveState();
                     }
-                    flashToast("✅ Identität erfolgreich verifiziert!");
+                    flashToast("Identität erfolgreich verifiziert!");
                 } else if (status?.status === "requires_input") {
                     _sitterIdentityStatus = "failed";
-                    flashToast("❌ Verifizierung fehlgeschlagen – bitte erneut versuchen");
+                    flashToast("Verifizierung fehlgeschlagen – bitte erneut versuchen");
                 } else {
-                    flashToast("⏳ Verifizierung wird noch geprüft…");
+                    flashToast("Verifizierung wird noch geprüft…");
                 }
             } catch (e) {
                 flashToast("Status konnte nicht geprüft werden");
@@ -4557,7 +4562,7 @@ async function loadRemoteSitters() {
             remoteId: s.id,
             userId: s.user_id,
             name: s.name,
-            avatar: s.avatar || "👩",
+            avatar: s.avatar || "",
             neighborhood: s.city || "",
             lat: s.approx_lat,
             lng: s.approx_lng,
@@ -4766,16 +4771,16 @@ function bindEvents() {
             if (kind === "addPhoto")  $("#galleryInput").click();
             if (kind === "settings")  openSettings();
             if (kind === "premium")   openPremium();
-            if (kind === "help")      flashToast("💌 Feedback an hallo@pfotenmatch.app");
+            if (kind === "help")      flashToast("Feedback an hallo@pfotenmatch.app");
             if (kind === "logout") {
                 if (confirm("Wirklich abmelden? Deine lokalen Daten bleiben erhalten.")) {
                     sbSignOut().then(() => {
                         state.onboarded = false;
                         saveState();
-                        flashToast("👋 Abgemeldet");
+                        flashToast("Abgemeldet");
                         showOnboarding();
                     }).catch(() => {
-                        flashToast("👋 Abgemeldet");
+                        flashToast("Abgemeldet");
                         state.onboarded = false;
                         saveState();
                         showOnboarding();
@@ -4790,17 +4795,17 @@ function bindEvents() {
     $("#closeShareProfileBtn").addEventListener("click", () => $("#shareProfileModal").classList.add("hidden"));
     $("#copyCodeBtn").addEventListener("click", () => {
         const code = $("#myFriendCode").textContent;
-        if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => flashToast("📋 Code kopiert!")).catch(() => {});
+        if (navigator.clipboard) navigator.clipboard.writeText(code).then(() => flashToast("Code kopiert!")).catch(() => {});
     });
     $("#shareCodeBtn").addEventListener("click", () => {
         const code = $("#myFriendCode").textContent;
         const p = state.myProfile;
-        const txt = `Verbinde dich mit ${p.name} auf PfotenMatch! 🐾 Dein Code: ${code}`;
+        const txt = `Verbinde dich mit ${p.name} auf PfotenMatch! Dein Code: ${code}`;
         if (navigator.share) {
             navigator.share({ title: "PfotenMatch", text: txt }).catch(() => {});
         } else {
             if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {});
-            flashToast("🔗 In Zwischenablage kopiert");
+            flashToast("In Zwischenablage kopiert");
         }
     });
     // Connect friend
@@ -4930,9 +4935,10 @@ function bindEvents() {
             _reviewRating = parseInt(b.dataset.star);
             $$("#reviewStars button").forEach(s => {
                 const val = parseInt(s.dataset.star);
-                s.textContent = val <= _reviewRating ? "★" : "☆";
+                s.innerHTML = val <= _reviewRating ? '<i data-lucide="star" class="lc-icon lc-sm" style="color:#f59e0b;fill:#f59e0b"></i>' : '<i data-lucide="star" class="lc-icon lc-sm"></i>';
                 s.classList.toggle("active", val <= _reviewRating);
             });
+            if (typeof lucide !== "undefined") lucide.createIcons();
         });
     });
     $("#reviewCancel")?.addEventListener("click", () => $("#reviewModal").classList.add("hidden"));
@@ -4966,8 +4972,8 @@ const onb = {
         age: 3,
         size: "Mittel (10–25kg)",
         neutered: "Nein",
-        energy: "Ausgeglichen 🐾",
-        playStyle: "Rennend 🏃",
+        energy: "Ausgeglichen",
+        playStyle: "Rennend",
         bio: "",
         emoji: "🐕",
         avatarImage: null,
@@ -5022,7 +5028,7 @@ function onbValidateStep(step) {
     if (step === 2) {
         const name = $("#onbName").value.trim();
         if (!name) {
-            flashToast("🐶 Bitte gib deinem Hund einen Namen");
+            flashToast("Bitte gib deinem Hund einen Namen");
             $("#onbName").focus();
             return false;
         }
@@ -5040,7 +5046,7 @@ const TYPE_LINES = [
     "Finde sichere Spielkameraden für deinen Hund.",
     "In deiner Nähe. Vertrauensvoll. Kostenlos.",
     "Damit jeder Spaziergang ein Abenteuer wird.",
-    "Für glücklichere Hunde. Und Menschen. 🐾"
+    "Für glücklichere Hunde. Und Menschen."
 ];
 let typeTimer = null;
 function runTypewriter() {
@@ -5252,7 +5258,7 @@ function onbUseGps() {
     }
     const btn = $("#useGpsBtn");
     const orig = btn.textContent;
-    btn.textContent = "📡 Standort wird ermittelt…";
+    btn.textContent = "Standort wird ermittelt…";
     btn.disabled = true;
     navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -5260,9 +5266,9 @@ function onbUseGps() {
             onb.draft.city = "Mein Standort";
             $("#onbCity").value = "";
             $$(".city-chips button").forEach(b => b.classList.remove("selected"));
-            btn.textContent = "✅ Standort erfasst";
+            btn.textContent = "Standort erfasst";
             setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
-            flashToast("📍 Standort übernommen");
+            flashToast("Standort übernommen");
         },
         () => {
             btn.textContent = orig;
@@ -5289,17 +5295,18 @@ function renderDoneSummary() {
     if (d.avatarImage) avEl.innerHTML = `<img src="${d.avatarImage}" alt="" />`;
     else avEl.textContent = d.emoji;
     const rows = [
-        ["🐕", "Name", d.name],
-        ["🦴", "Rasse", d.breed],
-        ["🎂", "Alter", d.age + " Jahre"],
-        ["📏", "Größe", d.size],
-        ["⚡", "Energie", d.energy],
-        ["📍", "Standort", d.city]
+        ['<i data-lucide="dog" class="lc-icon lc-xs"></i>', "Name", d.name],
+        ['<i data-lucide="bone" class="lc-icon lc-xs"></i>', "Rasse", d.breed],
+        ['<i data-lucide="cake" class="lc-icon lc-xs"></i>', "Alter", d.age + " Jahre"],
+        ['<i data-lucide="ruler" class="lc-icon lc-xs"></i>', "Größe", d.size],
+        ['<i data-lucide="zap" class="lc-icon lc-xs"></i>', "Energie", d.energy],
+        ['<i data-lucide="map-pin" class="lc-icon lc-xs"></i>', "Standort", d.city]
     ];
     const box = $("#doneSummary");
     box.innerHTML = rows.map(r =>
         `<div class="line"><span>${r[0]} ${r[1]}</span><strong>${escapeHtml(r[2])}</strong></div>`
     ).join("");
+    if (typeof lucide !== "undefined") lucide.createIcons();
     // Konfetti
     launchConfetti();
 }
@@ -5363,7 +5370,7 @@ function finishOnboarding() {
         leafletMap.setView([d.location.lat, d.location.lng], 14);
         renderMap();
     }
-    flashToast(`🐾 Willkommen, ${d.name}!`);
+    flashToast(`Willkommen, ${d.name}!`);
 }
 
 function bindOnboarding() {
@@ -5402,7 +5409,7 @@ function bindOnboarding() {
     // Name preview
     $("#onbName").addEventListener("input", (e) => {
         const v = e.target.value.trim();
-        $("#namePreview").textContent = v ? `Hallo, ${v}! 🐾` : "";
+        $("#namePreview").textContent = v ? `Hallo, ${v}!` : "";
         if (v) $("#step3Title").textContent = `Erzähl uns von ${v}`;
     });
     // Emoji strip
@@ -5445,12 +5452,12 @@ async function openShareProfileModal() {
     $("#shareProfileModal").classList.remove("hidden");
     const codeEl = $("#myFriendCode");
     if (!_sbReady()) {
-        codeEl.textContent = "⚠ Verbindung fehlgeschlagen";
+        codeEl.textContent = "Verbindung fehlgeschlagen";
         codeEl.style.fontSize = "1rem";
         return;
     }
     codeEl.style.fontSize = "";
-    codeEl.textContent = "⏳ Wird geladen…";
+    codeEl.textContent = "Wird geladen…";
     try {
         const session = await sbGetSession();
         if (!session) {
@@ -5474,12 +5481,12 @@ async function connectFriendByCode() {
     const btn = $("#confirmConnectBtn");
     const resultEl = $("#friendLookupResult");
     btn.disabled = true;
-    btn.textContent = "⏳ Suche…";
+    btn.textContent = "Suche…";
     resultEl.classList.add("hidden");
     try {
         const profile = await sbFindByFriendCode(code);
         if (!profile) {
-            resultEl.textContent = "❌ Kein Hund mit diesem Code gefunden.";
+            resultEl.textContent = "Kein Hund mit diesem Code gefunden.";
             resultEl.classList.remove("hidden");
             btn.disabled = false;
             btn.textContent = "Verbinden";
@@ -5488,7 +5495,7 @@ async function connectFriendByCode() {
         // Check not own code
         const me = await sbGetUser();
         if (me && profile.user_id === me.id) {
-            resultEl.textContent = "😄 Das ist dein eigener Code!";
+            resultEl.textContent = "Das ist dein eigener Code!";
             resultEl.classList.remove("hidden");
             btn.disabled = false;
             btn.textContent = "Verbinden";
@@ -5516,9 +5523,9 @@ async function connectFriendByCode() {
             friendUserId: profile.user_id,
             friendCode: profile.friend_code
         };
-        resultEl.innerHTML = `✅ <strong>${profile.name}</strong> gefunden! (${profile.breed || "Mischling"}, ${profile.age || "?"} J.) – Verbinden?`;
+        resultEl.innerHTML = `<strong>${profile.name}</strong> gefunden! (${profile.breed || "Mischling"}, ${profile.age || "?"} J.) – Verbinden?`;
         resultEl.classList.remove("hidden");
-        btn.textContent = "✓ Ja, verbinden!";
+        btn.textContent = "Ja, verbinden!";
         btn.disabled = false;
         btn.onclick = () => finalizeFriendConnect();
     } catch (e) {
@@ -5534,7 +5541,7 @@ async function finalizeFriendConnect() {
     const dog = _pendingFriendProfile;
     _pendingFriendProfile = null;
     if (state.matches.some(m => m.profile.friendCode === dog.friendCode)) {
-        flashToast("Ihr seid bereits verbunden! 🐾");
+        flashToast("Ihr seid bereits verbunden!");
         $("#connectFriendModal").classList.add("hidden");
         return;
     }
@@ -5550,7 +5557,7 @@ async function finalizeFriendConnect() {
     saveState();
     $("#connectFriendModal").classList.add("hidden");
     switchView("matches");
-    flashToast(`🎉 Mit ${dog.name} verbunden! Starte jetzt den Chat.`);
+    flashToast(`Mit ${dog.name} verbunden! Starte jetzt den Chat.`);
     const btn = $("#confirmConnectBtn");
     btn.textContent = "Verbinden";
     btn.onclick = connectFriendByCode;
@@ -5571,7 +5578,7 @@ async function syncFromSupabase() {
             _matchDbIds[dbm.dog_id] = dbm.id;
             if (state.matches.some(m => m.profile.id === dbm.dog_id)) continue;
             const msgs = await sbLoadMessages(dbm.id);
-            state.matches.push({ profile: dog, messages: msgs.length ? msgs : [{ id: genMsgId(), from: "them", type: "text", text: `Woof! Ich bin ${dog.name} 🐾`, ts: new Date(dbm.created_at).getTime(), status: "delivered", reactions: [] }] });
+            state.matches.push({ profile: dog, messages: msgs.length ? msgs : [{ id: genMsgId(), from: "them", type: "text", text: `Woof! Ich bin ${dog.name}`, ts: new Date(dbm.created_at).getTime(), status: "delivered", reactions: [] }] });
         }
     } catch (e) { /* offline or tables not created yet */ }
 }

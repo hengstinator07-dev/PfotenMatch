@@ -288,12 +288,12 @@ const DEMO_CHECKINS = [
 
 // Automatische Chat-Antworten
 const AUTO_REPLIES = [
-    "Wuff! 🐾 Klingt super!",
+    "Wuff! Klingt super!",
     "Mein Hund würde sich freuen!",
     "Wann habt ihr Zeit?",
     "Lass uns das Wochenende einplanen!",
     "Wir waren schon mal dort – sehr schön!",
-    "Super, bis dann! 🐶"
+    "Super, bis dann!"
 ];
 
 // Hundesitter in Basel & Umgebung
